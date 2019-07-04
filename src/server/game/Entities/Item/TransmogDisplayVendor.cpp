@@ -245,10 +245,10 @@ bool TransmogDisplayVendorMgr::SuitableForTransmogrification(Player* player, Ite
         if ((proto->Flags2 & ITEM_FLAG2_FACTION_ALLIANCE) && player->GetTeam() != ALLIANCE)
             return false;
 
-        if (!IgnoreReqClass && (proto->AllowableClass & player->getClassMask()) == 0)
+        if (!IgnoreReqClass && (proto->AllowableClass & player->GetClassMask()) == 0)
             return false;
 
-        if (!IgnoreReqRace && (proto->AllowableRace & player->getRaceMask()) == 0)
+        if (!IgnoreReqRace && (proto->AllowableRace & player->GetRaceMask()) == 0)
             return false;
 
         if (!IgnoreReqSkill && proto->RequiredSkill != 0)
@@ -262,7 +262,7 @@ bool TransmogDisplayVendorMgr::SuitableForTransmogrification(Player* player, Ite
         if (!IgnoreReqSpell && proto->RequiredSpell != 0 && !player->HasSpell(proto->RequiredSpell))
             return false;
 
-        if (!IgnoreReqLevel && player->getLevel() < proto->RequiredLevel)
+        if (!IgnoreReqLevel && player->GetLevel() < proto->RequiredLevel)
             return false;
     }
 
