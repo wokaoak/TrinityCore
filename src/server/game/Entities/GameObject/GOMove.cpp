@@ -85,16 +85,14 @@ void GOMove::DeleteGameObject(GameObject * object)
         return;
 
     // copy paste .gob del command
-    ObjectGuid ownerGuid = object->GetOwnerGUID();
-    if (ownerGuid != ObjectGuid::Empty)
+    auto spawnid = object->GetSpawnId();
+    if (ObjectGuid ownerGuid = object->GetOwnerGUID())
     {
         Unit* owner = ObjectAccessor::GetUnit(*object, ownerGuid);
         if (owner && ownerGuid.IsPlayer())
             owner->RemoveGameObject(object, false);
     }
-    object->SetRespawnTime(0);
-    object->Delete();
-    object->DeleteFromDB();
+    GameObject::DeleteFromDB(spawnid);
 }
 
 GameObject * GOMove::SpawnGameObject(Player* player, float x, float y, float z, float o, uint32 p, uint32 entry)
