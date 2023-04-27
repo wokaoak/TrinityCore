@@ -1805,7 +1805,7 @@ bool GameObject::IsNeverVisibleFor(WorldObject const* seer, bool allowServerside
     if (GetGOInfo()->GetServerOnly() && !allowServersideObjects)
         return true;
 
-    if (!GetDisplayId())
+    if (!GetDisplayId() && GetGOInfo()->IsDisplayMandatory())
         return true;
 
     return false;
