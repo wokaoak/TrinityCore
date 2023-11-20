@@ -5340,7 +5340,7 @@ void AuraEffect::HandlePeriodicTriggerSpellAuraTick(Unit* target, Unit* caster) 
         TC_LOG_WARN("spells.aura.effect.nospell", "AuraEffect::HandlePeriodicTriggerSpellAuraTick: Spell {} [EffectIndex: {}] does not have triggered spell.", GetId(), GetEffIndex());
         return;
     }
-    
+
     if (SpellInfo const* triggeredSpellInfo = sSpellMgr->GetSpellInfo(triggerSpellId, GetBase()->GetCastDifficulty()))
     {
         if (Unit* triggerCaster = triggeredSpellInfo->NeedsToBeTriggeredByCaster(m_spellInfo) ? caster : target)
@@ -5594,7 +5594,7 @@ void AuraEffect::HandlePeriodicHealthLeechAuraTick(Unit* target, Unit* caster) c
 
     // Set trigger flag
     ProcFlagsInit procAttacker = PROC_FLAG_DEAL_HARMFUL_PERIODIC;
-    ProcFlagsInit procVictim = PROC_FLAG_TAKE_HARMFUL_PERIODIC;
+    ProcFlagsInit procVictim   = PROC_FLAG_TAKE_HARMFUL_PERIODIC;
     ProcFlagsHit hitMask = damageInfo.GetHitMask();
     if (damage)
     {
