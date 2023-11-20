@@ -166,7 +166,8 @@ public:
             size_t saction = 0;
             if (action >= 10000) {
                 saction = action - 10000;
-            } else {
+            }
+            else {
                 vaction = action;
             }
             std::string vstr = "";
@@ -185,7 +186,7 @@ public:
                 int32 type = AA_SafeObjectAtIndex(types, 0);
                 int32 value = AA_SafeObjectAtIndex(values, 0);
                 if (value == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品没有觉醒属性，无法传承!");
+                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000该物品没有觉醒属性，无法传承!");
                     return;
                 }
                 std::map<int32, int32> cuiqus; cuiqus.clear();
@@ -197,7 +198,7 @@ public:
                 }
                 AA_Stat a_conf = aaCenter.aa_stats[type];
                 if (types2.size() > action && types2.size() == values2.size()) {
-                    for (size_t i = 0; i<types.size(); i++) {
+                    for (size_t i = 0; i < types.size(); i++) {
                         uint32 type_id = types[i];
                         AA_Stat s_conf = aaCenter.aa_stats[type_id];
                         for (auto itr : cuiqus) {
@@ -215,9 +216,9 @@ public:
                     aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].fm_values = fm_values;
                     time_t timep;
                     time(&timep);
-                    aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].isUpdate = true;
+                    sAAData->AA_REP_Character_Instances.insert(player->aa_target_item->GetGUIDLow());
                     aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].update_time = timep;
-                    name = "+"+std::to_string(value)+a_conf.text;
+                    name = "+" + std::to_string(value) + a_conf.text;
                     AA_Message aa_message;
                     aa_message.use_item = item;
                     aa_message.target_item = player->aa_target_item;
@@ -227,7 +228,8 @@ public:
                     uint32 count = 1;
                     player->DestroyItemCount(item, count, true);
                 }
-            } else if ( type_ids.size() > saction && conf.fm_spell_count > 0 && conf2.fm_spell_count > 0) { //传承技能
+            }
+            else if (type_ids.size() > saction && conf.fm_spell_count > 0 && conf2.fm_spell_count > 0) { //传承技能
                 std::vector<int32> spells; spells.clear();
                 aaCenter.AA_StringToVectorInt(conf.fm_spells, spells, ",");
 
@@ -236,7 +238,7 @@ public:
 
                 uint32 spellid = AA_SafeObjectAtIndex(spells, 0);
                 if (spellid == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品没有觉醒技能，无法传承!");
+                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000该物品没有觉醒技能，无法传承!");
                     return;
                 }
                 std::map<int32, int32> cuiqus; cuiqus.clear();
@@ -247,7 +249,7 @@ public:
                     cuiqus[i] = conf.cuiqu_only;
                 }
                 if (spells2.size() > saction) {
-                    for (size_t i = 0; i<spells.size(); i++) {
+                    for (size_t i = 0; i < spells.size(); i++) {
                         uint32 spell_id = spells[i];
                         AA_Spell s_conf = aaCenter.aa_spells[spell_id];
                         for (auto itr : cuiqus) {
@@ -265,7 +267,7 @@ public:
                     aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].fm_spells = fm_spells;
                     time_t timep;
                     time(&timep);
-                    aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].isUpdate = true;
+                    sAAData->AA_REP_Character_Instances.insert(player->aa_target_item->GetGUIDLow());
                     aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].update_time = timep;
                     QueryResult result = WorldDatabase.PQuery("SELECT 客户端显示 FROM _模板_物品技能 where id = {}", spellid);
                     if (result) {
@@ -284,13 +286,15 @@ public:
             }
             player->aa_item = nullptr;
             player->aa_target_item = nullptr;
-        } else { //萃取
+        }
+        else { //萃取
             //装备萃取
             size_t vaction = 0;
             size_t saction = 0;
             if (action >= 10000) {
                 saction = action - 10000;
-            } else {
+            }
+            else {
                 vaction = action;
             }
             std::string vstr = "";
@@ -305,7 +309,7 @@ public:
                     int32 type = types[action];
                     int32 value = values[action];
                     if (type == 999999) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法萃取插槽!");
+                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000无法萃取插槽!");
                         CloseGossipMenuFor(player);
                         return;
                     }
@@ -314,24 +318,26 @@ public:
                     if (conf.cuiqu_need > 0) {
                         if (!aaCenter.M_CanNeed(player, conf.cuiqu_need)) {
                             return;
-                        } else {
+                        }
+                        else {
                             aaCenter.M_Need(player, conf.cuiqu_need);
                         }
                     }
-                    name = "+"+std::to_string(value)+conf.text;
+                    name = "+" + std::to_string(value) + conf.text;
                     types[action] = 999999;
                     values[action] = 0;
                     std::string fm_values = "";
                     aaCenter.AA_VectorToString(fm_values, types, values);
                     aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].fm_values = fm_values;
                 }
-            } else if ( type_ids.size() > saction) { //萃取技能
+            }
+            else if (type_ids.size() > saction) { //萃取技能
                 std::vector<int32> spells; spells.clear();
                 aaCenter.AA_StringToVectorInt(conf.fm_spells, spells, ",");
-                if (spells.size() > (action-10000)) {
-                    int32 spellid = spells[action-10000];
+                if (spells.size() > (action - 10000)) {
+                    int32 spellid = spells[action - 10000];
                     if (spellid == 999999) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法萃取插槽!");
+                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000无法萃取插槽!");
                         CloseGossipMenuFor(player);
                         return;
                     }
@@ -340,7 +346,8 @@ public:
                     if (conf.cuiqu_need > 0) {
                         if (!aaCenter.M_CanNeed(player, conf.cuiqu_need)) {
                             return;
-                        } else {
+                        }
+                        else {
                             aaCenter.M_Need(player, conf.cuiqu_need);
                         }
                     }
@@ -357,17 +364,19 @@ public:
             }
             time_t timep;
             time(&timep);
-            aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].isUpdate = true;
+            sAAData->AA_REP_Character_Instances.insert(player->aa_target_item->GetGUIDLow());
             aaCenter.aa_character_instances[player->aa_target_item->GetGUIDLow()].update_time = timep;
             //萃取券
             if (vstr != "") { // 属性
                 aaCenter.aa_character_instances[item->GetGUIDLow()].fm_value_count = 1;
-            } else {
+            }
+            else {
                 aaCenter.aa_character_instances[item->GetGUIDLow()].fm_value_count = 0;
             }
             if (sstr != "") { // 技能
                 aaCenter.aa_character_instances[item->GetGUIDLow()].fm_spell_count = 1;
-            } else {
+            }
+            else {
                 aaCenter.aa_character_instances[item->GetGUIDLow()].fm_spell_count = 0;
             }
             std::string val2 = aaCenter.aa_cuiqu_items[item->GetEntry()].cuiqu_pos;
@@ -383,7 +392,7 @@ public:
             }
             aaCenter.aa_character_instances[item->GetGUIDLow()].fm_values = vstr;
             aaCenter.aa_character_instances[item->GetGUIDLow()].fm_spells = sstr;
-            aaCenter.aa_character_instances[item->GetGUIDLow()].isUpdate = true;
+            sAAData->AA_REP_Character_Instances.insert(item->GetGUIDLow());
             aaCenter.aa_character_instances[item->GetGUIDLow()].update_time = timep;
             ItemTemplate const* pProto = item->GetTemplate();
             if (pProto) {

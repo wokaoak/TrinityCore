@@ -643,7 +643,15 @@ bool Creature::UpdateEntry(uint32 entry, CreatureData const* data /*= nullptr*/,
 
     // checked and error show at loading templates
     if (FactionTemplateEntry const* factionTemplate = sFactionTemplateStore.LookupEntry(cInfo->faction))
+    {
         SetPvP((factionTemplate->Flags & FACTION_TEMPLATE_FLAG_PVP) != 0);
+        if (IsTaxi())
+        {
+            uint32 taxiNodesId = sObjectMgr->GetNearestTaxiNode(GetPositionX(), GetPositionY(), GetPositionZ(), GetMapId(),
+                factionTemplate->FactionGroup & FACTION_MASK_ALLIANCE ? ALLIANCE : HORDE);
+            SetUpdateFieldValue(m_values.ModifyValue(&Unit::m_unitData).ModifyValue(&UF::UnitData::TaxiNodesID), taxiNodesId);
+        }
+    }
 
     // updates spell bars for vehicles and set player's faction - should be called here, to overwrite faction that is set from the new template
     if (IsVehicle())
@@ -1551,11 +1559,22 @@ void Creature::SaveToDB(uint32 mapid, std::vector<Difficulty> const& spawnDiffic
 
 void Creature::SelectLevel()
 {
-    if (!GetOwner() && !IsTotem()) {
-        if (!ToTempSummon() || (ToTempSummon() && this->aa_id == 0)) {
-            AA_Creature conf = aaCenter.AA_GetCreatureConf(this);
-            this->aa_id = conf.id;
-        }
+    bool isOk = true;
+    if (GetOwner() && GetOwner()->ToPlayer()) {
+        isOk = false;
+    }
+    if (IsTotem()) {
+        isOk = false;
+    }
+    if (ToTempSummon() && this->aa_id > 0) {
+        isOk = false;
+    }
+    if (aa_petzhan_id > 0) {
+        isOk = false;
+    }
+    if (isOk) {
+        AA_Creature conf = aaCenter.AA_GetCreatureConf(this);
+        this->aa_id = conf.id;
     }
 
     // Level

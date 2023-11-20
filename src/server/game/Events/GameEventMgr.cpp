@@ -140,13 +140,20 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
 {
     GameEventData &data = mGameEvent[event_id];
     AA_Event_GameEvent econf = aaCenter.aa_event_gameevents[event_id];
-    std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-    for (auto p : players) {
+    for (auto p : aaCenter.aa_onlinePlayers) {
         if (econf.gm1 != "" && econf.gm1 != "0") {
             aaCenter.AA_DoCommand(p, econf.gm1.c_str());
         }
         if (econf.target == 0) {
             break;
+        }
+    }
+    //自动组队，增加zone
+    for (auto& itr : aaCenter.aa_xitong_groups) {
+        if (itr.second.game_event > 0 && itr.second.game_event == event_id) {
+            if (aaCenter.aa_xitong_group_zones.find(itr.second.zoneid) == aaCenter.aa_xitong_group_zones.end()) {
+                aaCenter.aa_xitong_group_zones.insert(itr.second.zoneid);
+            }
         }
     }
     //百团战场开始，赋予当前战场事件
@@ -176,8 +183,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 aaCenter.aa_biwu_winners.clear();
 
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_biwu_index = 1;
                     aaCenter.aa_biwu_isnotice = conf.wait_time;
                     std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00比武大会将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
@@ -200,8 +206,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 aaCenter.aa_shouling_Bs.clear();
 
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_shouling_isnotice = conf.wait_time;
                     std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
                     aaCenter.AA_SendMessage(p, 0, msg.c_str());
@@ -223,8 +228,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 aaCenter.aa_ziyuan_start_time = conf.wait_time * 1000;
 
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_ziyuan_isnotice = conf.wait_time;
                     std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00抢占资源将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
                     aaCenter.AA_SendMessage(p, 0, msg.c_str());
@@ -246,8 +250,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 aaCenter.aa_gongcheng_start_time = conf.wait_time * 1000;
 
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_gongcheng_isnotice = conf.wait_time;
                     std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00活动将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
                     aaCenter.AA_SendMessage(p, 0, msg.c_str());
@@ -301,8 +304,7 @@ void GameEventMgr::StopEvent(uint16 event_id, bool overwrite)
 {
     GameEventData &data = mGameEvent[event_id];
     AA_Event_GameEvent econf = aaCenter.aa_event_gameevents[event_id];
-    std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-    for (auto p : players) {
+    for (auto p : aaCenter.aa_onlinePlayers) {
         if (econf.gm2 != "" && econf.gm2 != "0") {
             aaCenter.AA_DoCommand(p, econf.gm2.c_str());
         }
@@ -310,6 +312,15 @@ void GameEventMgr::StopEvent(uint16 event_id, bool overwrite)
             break;
         }
     }
+    //自动组队，取消zone
+    for (auto& itr : aaCenter.aa_xitong_groups) {
+        if (itr.second.game_event > 0 && itr.second.game_event == event_id) {
+            if (aaCenter.aa_xitong_group_zones.find(itr.second.zoneid) != aaCenter.aa_xitong_group_zones.end()) {
+                aaCenter.aa_xitong_group_zones.erase(itr.second.zoneid);
+            }
+        }
+    }
+
     //百团战场结束，赋予当前战场事件
     for (auto itr : aaCenter.aa_battleground_confs) {
         AA_Battleground_Conf conf;

@@ -429,7 +429,7 @@ LootStoreItem const* LootTemplate::LootGroup::Roll(uint16 lootMode, Player const
 
     if (!possibleLoot.empty())                             // First explicitly chanced entries are checked
     {
-        float roll = (float)rand_chance();
+        float roll = rand_chance();
 
         //aawow 自定义掉落修改，爆率
         float itemChance = 0;

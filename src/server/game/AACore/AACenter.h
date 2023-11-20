@@ -42,6 +42,127 @@ inline AAString AA_SafeStringAtIndex(std::vector<AAString> objects, size_t index
     }
 }
 
+struct AA_Item_Zuobiao {
+    uint32 guid = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    uint32 index = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    uint32 itemEntry = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    std::string map_name = "";//` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+    std::string area_name = "";//` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+    int32 map = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    int32 zone = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    int32 area = 0;//` int(10) unsigned NOT NULL DEFAULT '0',
+    float x = 0;//` float NOT NULL DEFAULT '0',
+    float y = 0;//` float NOT NULL DEFAULT '0',
+    float z = 0;//` float NOT NULL DEFAULT '0' COMMENT '品质id',
+    float o = 0;//` float NOT NULL DEFAULT '0',
+    uint32 nanduid = 0;
+    uint32 update_time = 0;//` int(11) unsigned NOT NULL DEFAULT '0',
+};
+struct AA_Item_Zuobiao_Conf {
+    uint32 entry = 0;
+    std::string maps = "";
+    std::string zones = "";
+    std::string areas = "";
+    uint32 count = 0;
+};
+struct AA_Character_Hongbao {
+    uint32 id = 0;//id
+    uint32 account = 0;//account
+    uint32 guid = 0;//guid
+    std::string name = "";//玩家姓名
+    uint32 fangshi = 0;//发放方式
+    int32 type = 0;//红包类型
+    uint32 money_all = 0;//红包金额
+    uint32 money = 0;//红包剩余金额
+    uint32 count_all = 0;//红包总数量
+    uint32 count = 0;//红包剩余数量
+    std::string text = "";//红包描述
+    std::string lq_count = "";//红包领取数量
+    std::string lq_guids = "";//红包领取玩家
+    uint32 update_time = 0;
+};
+struct AA_Character_PetZhan
+{
+    uint32 id = 0;//id
+    uint32 owner_guid = 0;//owner_guid
+    uint32 pet_id = 0;//宠物id
+    uint32 level = 0;//宠物等级
+    uint32 exp = 0;//宠物经验
+    uint32 pet_level_zu = 0;//等级组
+    float chengzhang = 0;//成长
+    float qihe = 0;//契合
+    float jicheng = 0;//继承
+    uint32 health = 0;//生命
+    uint32 shanghai = 0;//伤害
+    uint32 fashu = 0;//法术
+    uint32 zhiliao = 0;//治疗
+    uint32 hujia = 0;//护甲
+    std::string spell_pet = "";//宠物技能
+    std::string spell_owner = "";//主人技能
+    uint32 is_chuzhan = 0;//已出战
+    uint32 is_heti = 0;//已出战
+    uint32 update_time = 0;
+};
+
+struct AA_PetZhan_Conf
+{
+    uint32 id = 0;
+    uint32 value1 = 0;
+    std::string value2 = "";
+};
+
+struct AA_PetZhan
+{
+    uint32 id = 0;//id
+    uint32 zu = 0;//组
+    uint32 chance = 0;// 随机几率` int(10) unsigned NOT NULL DEFAULT '100' COMMENT '公式：当前几率除以一个组的几率之和',
+    uint32 creature_entry = 0;//生物entry
+    std::string icon = "";//宠物头像路径
+    float scale = 0;//模型大小
+    uint32 wuqi = 0;//是否同步显示主人武器
+    uint32 level_zu = 0;//_宠物_等级_组
+    float cz_min = 0;//成长最小值
+    float cz_max = 0;//成长最大值
+    float qihe_min = 0;//契合最小值
+    float qihe_max = 0;//契合最大值
+    float jicheng_min = 0;//继承最小值
+    float jicheng_max = 0;//继承最大值
+    uint32 health_min = 0;//生命资质最小值
+    uint32 health_max = 0;//生命资质最大值
+    uint32 shanghai_min = 0;//伤害资质最小值
+    uint32 shanghai_max = 0;//伤害资质最大值
+    uint32 fashu_min = 0;//法术资质最小值
+    uint32 fashu_max = 0;//法术资质最大值
+    uint32 zhiliao_min = 0;//治疗资质最小值
+    uint32 zhiliao_max = 0;//治疗资质最大值
+    uint32 hujia_min = 0;//护甲资质最小值
+    uint32 hujia_max = 0;//护甲资质最大值
+    std::string spell_need_pet = "";//宠物技能组和激活需求
+    std::string spell_need_owner = "";//主人技能组和激活需求
+    uint32 notice = 0;//公告
+};
+
+struct AA_PetZhan_Level
+{
+    uint32 id = 0;//id
+    uint32 zu = 0;//组
+    uint32 level = 0;//等级
+    uint32 exp = 0;//升级经验
+    float spell_pet_chance = 0;
+    float spell_owner_chance = 0;
+    std::string gm = "";//GM命令
+};
+
+struct AA_PetZhan_Spell
+{
+    std::string text = "";
+    uint32 id = 0;
+    uint32 zu = 0;
+    uint32 spellid = 0;
+    uint32 chance = 0;
+    std::string ais = "";
+};
+
 struct AA_Huoyue_Conf
 {
     uint32 id = 0;//id
@@ -374,7 +495,6 @@ struct AA_Item_Instance
     std::string bonusListIDs = "";//` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
     std::string weizhi = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Shop
@@ -521,7 +641,6 @@ struct AA_Account
     std::string diy_account = "";
     uint32 dianka = 0;
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_System
@@ -538,7 +657,6 @@ struct AA_Character_Juanxian
     uint32 juanxian = 0;
     uint32 juanxian_zhou = 0;
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Characters
@@ -562,7 +680,6 @@ struct AA_Characters
     std::string huoyue_jindus = "";
     std::string huoyue_jindu_status = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Vip_Conf
@@ -606,7 +723,6 @@ struct AA_Characters_Douqi
     uint32 tianfu = 0;
     std::string value = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Junxian_Conf
@@ -629,7 +745,6 @@ struct AA_Characters_Junxian
     uint32 tianfu = 0;
     std::string value = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Dianfeng_Conf
@@ -652,7 +767,6 @@ struct AA_Characters_Dianfeng
     uint32 tianfu = 0;
     std::string value = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 struct AA_Need_Conf
@@ -797,7 +911,6 @@ struct AA_Character_Instance
     uint32 item_set = 0;
     uint64 zulin_time = 0;
     uint32 update_time = 0; //update_time
-    bool isUpdate = false;
 };
 struct AA_Stat {
     std::string text = "";
@@ -994,6 +1107,11 @@ struct AA_Aura_Conf
     uint32 dietime = 0;
     uint32 zu = 0; //光环唯一组
     std::string items = "";
+    float hudun_gq = 0;
+    float hudun_fq = 0;
+    float hudun_hp = 0;
+    float hudun_hplost = 0;
+    float hudun_hpmax = 0;
 };
 
 struct AA_Spell_Conf
@@ -1016,6 +1134,12 @@ struct AA_Spell_Conf
     float chance = 0;//`触发机率`
     uint32 shifangxianzhi = 0;//施放限制开关,开启后不消耗符文、能量、魔法值、怒气。不限制变身，狂暴姿势、防御姿势、战斗姿势、隐身模式，不限制射程太近
     float Periodic[3];//`周期123`
+    float a_qiege_hp = 0;
+    float a_qiege_hplost = 0;
+    float a_qiege_hpmax = 0;
+    float v_qiege_hp = 0;
+    float v_qiege_hplost = 0;
+    float v_qiege_hpmax = 0;
 };
 
 struct AA_Pet
@@ -1024,11 +1148,10 @@ struct AA_Pet
     uint32 zu = 0;
     float chance = 0;
     std::string name = "";
-    float agility = 0;
-    float strength = 0;
-    float intellect = 0;
-    float spirit = 0;
-    float stamina = 0;
+    float health = 0;
+    float shanghai = 0;
+    float fashu = 0;
+    float zhiliao = 0;
     std::string pet_moxing = "";
     std::string pet_moxing1 = "";
     std::string pet_moxing2 = "";
@@ -1170,31 +1293,32 @@ struct AA_Player_Stats_Conf
     uint32 anyingbl = 0;
     uint32 aoshu = 0;
     uint32 aoshubl = 0;
-    uint32 blocksx = 0;//0' COMMENT '格挡上限数值',
-    uint32 parrysx = 0;//0' COMMENT '招架数值上限',
-    uint32 dodgesx = 0;//100' COMMENT '闪避数值上限',
-    uint32 bjsx = 0;//100' COMMENT '暴击上限',
+    float blocksx = 0;//0' COMMENT '格挡上限数值',
+    float parrysx = 0;//0' COMMENT '招架数值上限',
+    float dodgesx = 0;//100' COMMENT '闪避数值上限',
+    float bjsx = 0;//100' COMMENT '暴击上限',
     uint32 renxingsx = 0;//100' COMMENT '韧性上限',
-    uint32 renxingbl = 0;//100' COMMENT '韧性倍率   公式为:当前韧性 除以 renxingbl',
+    float renxingbl = 0;//100' COMMENT '韧性倍率   公式为:当前韧性 除以 renxingbl',
     uint32 hujiasx = 0;//100' COMMENT '护甲上限',
-    uint32 hujiabl = 0;//100' COMMENT '护甲倍率   公式为:当前护甲 除以 hujiabl',
+    float hujiabl = 0;//100' COMMENT '护甲倍率   公式为:当前护甲 除以 hujiabl',
     uint32 jzsx = 0;//100' COMMENT '精通上限',
-    uint32 jzbl = 0;//100' COMMENT '精通倍率',
+    float jzbl = 0;//100' COMMENT '精通倍率',
+    uint32 hpxx = 0;//100' COMMENT '血量下限',
     uint32 hpsx = 0;//100' COMMENT '血量上限',
-    uint32 hpbl = 0;//100' COMMENT '血量倍率',
+    float hpbl = 0;//100' COMMENT '血量倍率',
     uint32 jssx = 0;//100' COMMENT '急速上限',
-    uint32 jsbl = 0;//100' COMMENT '急速倍率',
+    float jsbl = 0;//100' COMMENT '急速倍率',
     uint32 ptshsx = 0;//100' COMMENT '普通伤害上限',
-    uint32 ptshbl = 0;//100' COMMENT 'PVP普通伤害倍率 公式为:PVP普通伤害 乘以 ptshbl',
-    uint32 cptshbl = 0;//100' COMMENT 'PVE普通伤害倍率 公式为:PVE普通伤害 乘以 cptshbl',
+    float ptshbl = 0;//100' COMMENT 'PVP普通伤害倍率 公式为:PVP普通伤害 乘以 ptshbl',
+    float cptshbl = 0;//100' COMMENT 'PVE普通伤害倍率 公式为:PVE普通伤害 乘以 cptshbl',
     uint32 jnshsx = 0;//100' COMMENT '技能伤害上限',
-    uint32 jnshbl = 0;//100' COMMENT 'PVP技能伤害倍率 公式为:PVP技能伤害 乘以 jnshbl',
-    uint32 cjnshbl = 0;//100' COMMENT 'PVE技能伤害倍率 公式为:PVE技能伤害 乘以 cjnshbl',
+    float jnshbl = 0;//100' COMMENT 'PVP技能伤害倍率 公式为:PVP技能伤害 乘以 jnshbl',
+    float cjnshbl = 0;//100' COMMENT 'PVE技能伤害倍率 公式为:PVE技能伤害 乘以 cjnshbl',
     uint32 zlshsx = 0;//100' COMMENT '治疗伤害上限',
-    uint32 zlshbl = 0;//100' COMMENT 'PVP治疗伤害倍率 公式为:PVP治疗伤害 乘以 zlshbl',
-    uint32 czlshbl = 0;//100' COMMENT 'PVE治疗伤害倍率 公式为:PVE治疗伤害 乘以 czlshbl',
-    int32 jianshangpvp = 0;
-    int32 jianshangpve = 0;
+    float zlshbl = 0;//100' COMMENT 'PVP治疗伤害倍率 公式为:PVP治疗伤害 乘以 zlshbl',
+    float czlshbl = 0;//100' COMMENT 'PVE治疗伤害倍率 公式为:PVE治疗伤害 乘以 czlshbl',
+    float jianshangpvp = 0;
+    float jianshangpve = 0;
     float lltofq = 0;// 力量转法强，
     float mjtofq = 0;// 敏捷转法强，
     float nltofq = 0;// 耐力转法强，
@@ -1720,6 +1844,7 @@ struct AA_Duihuanma_Conf {
 
 struct AA_PaihangX {
     uint32 id = 0;
+    uint32 paiming = 0;
     std::string type = "";
     std::string type_diy_guid = "";
     std::string type_diy_account = "";
@@ -1749,6 +1874,7 @@ struct AA_Paihang { //军衔等级，斗气等级，巅峰等级，今日累充�
     std::vector<std::pair<ObjectGuid, uint32>> aa_leichong;
     std::vector<std::pair<ObjectGuid, uint32>> aa_jinrileichong;
     std::vector<std::pair<ObjectGuid, uint32>> aa_renwu;
+    std::vector<std::pair<ObjectGuid, uint32>> aa_hongbao;
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_ItemLevel;
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_Quality;
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_jd;
@@ -1830,7 +1956,6 @@ struct AA_Player_Map_Value {
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Player_Zone_Value {
     ObjectGuid::LowType guidlow = 0;
@@ -1838,7 +1963,6 @@ struct AA_Player_Zone_Value {
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Player_Area_Value {
     ObjectGuid::LowType guidlow = 0;
@@ -1846,7 +1970,6 @@ struct AA_Player_Area_Value {
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Player_Instance_Value {
     ObjectGuid::LowType guidlow = 0;
@@ -1854,35 +1977,30 @@ struct AA_Player_Instance_Value {
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Map_Map_Value {
     int32 mapid = 0;
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Map_Zone_Value {
     int32 mapid = 0;
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Map_Area_Value {
     int32 mapid = 0;
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 struct AA_Map_Instance_Value {
     int32 mapid = 0;
     std::string valueb = "";
     std::string valuev = "";
     uint32 update_time = 0;
-    bool isUpdate = false;
 };
 
 class AACenter
@@ -1902,6 +2020,10 @@ public:
 
     void Update(Unit* unit, uint32 diff);
 
+    //传送坐标石
+    std::unordered_map<uint32, std::map<int32, AA_Item_Zuobiao>> aa_item_zuobiaos;
+    std::unordered_map<uint32, AA_Item_Zuobiao_Conf> aa_item_zuobiao_confs;
+
     //物品租赁
     std::unordered_map<uint32, AA_Item_Zulin> aa_item_zulins;
 
@@ -1915,8 +2037,9 @@ public:
     std::unordered_map<int32, AA_Diy_Duel> aa_diy_duels;
 
     //系统自动组队
-    std::unordered_map<int32, std::set<Group *>> aa_groups;
+    std::unordered_map<int32, std::set<ObjectGuid>> aa_groups;
     std::unordered_map<uint32, AA_Xitong_Group> aa_xitong_groups;
+    std::set<uint32> aa_xitong_group_zones;
 
     //获取物品属性数量
     uint32 AA_GetItemValueCount(uint32 entry);
@@ -2042,6 +2165,7 @@ public:
     std::set<uint32> aa_spell_values; //所有带属性的物品技能
     std::unordered_map<uint32, std::vector<uint32>> aa_spell_zus;
     std::unordered_map<ObjectGuid, std::vector<uint32> > aa_allspells; //所有技能
+    std::unordered_map<ObjectGuid, std::vector<uint32> > aa_allpetspells; //所有战宠技能
     std::unordered_map<ObjectGuid, std::unordered_map<uint32, std::vector<uint32>> > aa_allsetspells; //所有套装技能
     std::unordered_map<ObjectGuid, std::unordered_map<ObjectGuid::LowType, std::vector<uint32> >> aa_allitemspells; //所有物品技能
     std::unordered_map<uint32, AA_Item_Upgrade> aa_item_upgrades;
@@ -2110,6 +2234,7 @@ public:
     std::unordered_map<uint32, std::vector<AA_Object>> aa_object_zus;
     std::unordered_map<uint32, AA_Item> aa_items;
     std::unordered_map<uint32, AA_Map_Player_Conf> aa_map_player_confs;
+    std::set<uint32> aa_map_player_conf_hdguanghuans;
     //副本-   [区域][模式][难度][队伍人数]
     std::unordered_map < uint32, std::unordered_map < uint32, uint32>> aa_map_player_conf_areas;
     std::unordered_map < uint32, std::unordered_map < uint32, uint32>> aa_map_player_conf_zones;
@@ -2125,6 +2250,39 @@ public:
     std::unordered_map<uint32, std::vector<uint32>> aa_pet_zus;
     std::unordered_map<uint32, AA_Pet_Id> aa_pet_ids;
     std::unordered_map<uint8, AA_Pet_Class> aa_pet_classs;
+
+    // 战宠部分
+    std::unordered_map<uint32, AA_Character_PetZhan> aa_character_petzhans;
+    std::unordered_map<uint32, std::vector<uint32>> aa_character_petzhan_owner;
+    std::unordered_map<uint32, AA_PetZhan> aa_petzhans;
+    std::set<uint32> aa_petzhan_entry_cs;
+    std::unordered_map<uint32, AA_PetZhan_Conf> aa_petzhan_confs;
+    std::unordered_map<uint32, std::vector<uint32>> aa_petzhan_conf_zus;
+    std::unordered_map<uint32, AA_PetZhan_Level> aa_petzhan_levels;
+    std::unordered_map<uint32, std::unordered_map<uint32, uint32>> aa_petzhan_level_zus; //<组, <level ,level_id>>
+    std::unordered_map<uint32, AA_PetZhan_Spell> aa_petzhan_spells;
+    std::unordered_map<uint32, std::vector<uint32>> aa_petzhan_spell_zus;
+    std::unordered_map<uint32, uint32> aa_petzhan_resptimes;
+
+    bool AA_UpdatePetWuqi(Player* player, Unit* unit); //同步生物显示主人武器
+    uint32 AA_PetZhan_GetSpellIndexPet(uint32 id);
+    uint32 AA_PetZhan_GetSpellIndexOwner(uint32 id);
+    bool AA_PetZhan_Init(Player* player, uint32 id); //战宠初始化
+    bool AA_PetZhan_Reset(Player* player, uint32 id); //战宠重生
+    bool AA_PetZhan_GiveExp(Player* player, uint32 id, uint32 exp); //战宠经验
+    bool AA_PetZhan_AddSpellPet(Player* player, uint32 id, uint32 index, bool isNeed = false); //激活位置技能
+    bool AA_PetZhan_AddSpellOwner(Player* player, uint32 id, uint32 index, bool isNeed = false); //激活位置技能
+    uint32 AA_PetZhan_GetPingfen(uint32 id);
+    uint32 AA_PetZhan_GetPetHealth(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetPetShanghai(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetPetFashu(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetPetZhiliao(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetPetHujia(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetOwnerHealth(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetOwnerShanghai(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetOwnerFashu(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetOwnerZhiliao(Player* player, uint32 id);
+    uint32 AA_PetZhan_GetOwnerHujia(Player* player, uint32 id);
 
     std::unordered_map<uint32, AA_Player_Stats_Conf> aa_player_stats_confs;
     //[区域][class][id]
@@ -2202,12 +2360,16 @@ public:
     bool AA_VerifyCode(std::string code);
     std::unordered_map<uint32, uint32> aa_boss_time;
     void M_SendMap_Jindu(Player* p);
-    void M_SendBoss_Paihang(std::list<Player*> list, Creature* creture, std::vector<std::pair<ObjectGuid, uint32>> aa_boss_dmg);
+    void M_SendBoss_Paihang(Creature* creture, std::vector<std::pair<ObjectGuid, uint32>> aa_boss_dmg);
     std::unordered_map<std::string, AA_Duihuanma> aa_duihuanmas;
     std::unordered_map<uint32, AA_Duihuanma_Conf> aa_duihuanma_confs;
     std::unordered_map<uint32, std::unordered_map<std::string, AA_PaihangX>> aa_paihangxs;
     std::unordered_map<uint32, std::unordered_map<std::string, AA_PaihangX>> aa_paihangx_guids;
     std::unordered_map<uint32, std::unordered_map<std::string, AA_PaihangX>> aa_paihangx_accounts;
+    std::set<int32> aa_paihangx_aura_all;
+    std::unordered_map<uint32, std::unordered_map<std::string, std::vector<int32>>> aa_paihangx_auras;
+    std::unordered_map<uint32, std::unordered_map<std::string, std::vector<int32>>> aa_paihangx_guid_auras;
+    std::unordered_map<uint32, std::unordered_map<std::string, std::vector<int32>>> aa_paihangx_account_auras;
     AA_Paihang AA_GetPaihangs();
     std::string AA_GetPaihangInfo(std::string& message, AA_Paihang conf);
     void AA_PaihangReward(bool isAura = false);
@@ -2250,6 +2412,7 @@ public:
     void AA_StringToVectorFloat(const std::string s, std::vector<float>& v1, std::vector<float>& v2);
     void AA_StringToVector2(const std::string s, std::vector<int32>& v1, std::vector<int32>& v2);
     void AA_StringToVector3(const std::string s, std::vector<std::string>& v1, std::vector<std::string>& v2);
+    void AA_Vector3ToString(std::string& s, const std::vector<std::string> v1, const std::vector<std::string> v2);
     void AA_VectorToString(std::string& s, const std::vector<int32>& v1, const std::vector<int32>& v2);
     void AA_VectorToStringSort(std::string& s, const std::vector<int32>& v1, const std::vector<int32>& v2);
     //功 能：将s转化为map
@@ -2282,7 +2445,7 @@ public:
     std::string AA_GetItemLink(uint32 itemid);
     std::string AA_GetItemLinkJd(Item* item);
     std::string AA_GetMoneyLink(uint32 money);
-    std::set<uint32> M_GetAllItemSpell(ObjectGuid::LowType guidlow); // 获取某装备的所有技能
+    std::vector<uint32> M_GetAllItemSpell(ObjectGuid::LowType guidlow); // 获取某装备的所有技能
     bool AA_UnequipItem(Player* player, Item* item); //取下装备
     uint32 AA_GetRealItemGuid(uint32 id, uint32 entry);
 
@@ -2305,8 +2468,8 @@ public:
     std::set<Creature*> m_ai_creatures;
 
     /*弹窗*/
-    void AA_EventMapStart(Player* eventer, AA_Event_Map conf);
-    bool AA_EventStart(Player* eventer, uint32 eventid);
+    bool AA_EventMapStart(Player* eventer, AA_Event_Map conf);
+    void AA_EventStart(Player* eventer, uint32 eventid);
     void AA_SendEvent(Player* player, std::string title, std::string text, uint32 id = 0, ObjectGuid guid = ObjectGuid::Empty);
     void AA_CallBack_Event(Player* eventer, uint32 eventid, uint32 timep, uint32 button);
 
@@ -2342,7 +2505,7 @@ public:
     void M_GetItemTextDisplay(Player* player, std::vector<uint32> itemEntrys);
     void M_GetItemText(Player* player, std::vector<uint32> itemIds, std::vector<uint32> itemEntrys, std::vector<uint32> itemTimes);
     void M_GetItemTextPet(Player* player, std::vector<uint32> itemIds, std::vector<uint32> itemEntrys, std::vector<uint32> itemTimes);
-    void M_SendAA_Conf(Player* player, std::string type);
+    void M_SendAA_Conf(Player* player, std::string type, std::string msg = "");
     std::string M_GetItemTemplateGuid(Player* player, std::vector<uint32> itemGuids, std::vector<uint32> itemEntrys);
     std::string M_GetItemTemplate(std::set<uint32> itemIds);
     Item* GetEquipItemByEntry(Player* player, uint32 entry);
@@ -2408,7 +2571,8 @@ public:
     //装备回收
     AA_Huishou_Conf AA_GetHuiShouConf(Player* player, ObjectGuid::LowType guidlow, uint32 itemEntry);
     bool AA_Huishou(Player* player);
-    std::vector<Player*> GetOnlinePlayers();
+    std::vector<Player*> aa_onlinePlayers;
+    void UpdateOnlinePlayers();
 
     //命令相关
     void AA_TeleportMoban(Player* player, uint32 mobanid);
@@ -2416,6 +2580,7 @@ public:
     //定制专区
     std::unordered_map<uint32, uint32> aa_jishas;
     std::unordered_map<uint32, uint32> aa_renwus;
+    std::unordered_map<uint32, uint32> aa_hongbaos;
     //    std::string GetPaihangInfo(, std::string message,AA_Message aa_message, bool nnn) {
 
     //随机副本人数
@@ -2546,6 +2711,7 @@ public:
     std::unordered_map <uint32, AA_Quest> aa_quests;
     //一命通关模式
     std::unordered_map <uint32, AA_Yiming_Conf> aa_yiming_confs;
+    void AA_Update_YimingAura(Player* player);
 
     //答题
     std::unordered_map<uint32, AA_Dati_Conf> aa_dati_confs;
@@ -2554,6 +2720,14 @@ public:
     std::string aa_dati_first_name = "";
     uint32 aa_dati_id = 0;
     uint32 aa_dati_Time = 0;
+
+    //红包战区
+    std::map<uint32, AA_Character_Hongbao> aa_character_hongbaos;
+    void AA_SendHongbaoAddon(Player* player, std::vector<uint32> ids);
+    std::unordered_map<uint32, std::vector<ObjectGuid::LowType>> aa_hongbao_guids;
+    std::unordered_map<uint32, std::vector<uint32>> aa_hongbao_moneys;
+    std::unordered_map<uint32, std::vector<std::string>> aa_hongbao_names;
+    void AA_Hongbao_Sort(uint32);
 
     //修改攻击
     void AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage1, SpellInfo const* spellInfo = nullptr, bool isDot = false, bool isHeal = false);

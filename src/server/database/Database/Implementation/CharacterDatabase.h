@@ -648,7 +648,10 @@ enum CharacterDatabaseStatements : uint32
     _AA_REP_Character_Juanxian,
     _AA_UPD_Character_Paihang_Jisha,
     _AA_UPD_Character_Paihang_Renwu,
+    _AA_UPD_Character_Paihang_Hongbao,
     _AA_REP_Character_Instance,
+    _AA_REP_Character_ZhanPet,
+    _AA_DEL_Character_ZhanPet,
     _AA_REP_Characters,
     _AA_REP_Systems,
     _AA_REP_Characters_Dianfeng,
@@ -666,6 +669,10 @@ enum CharacterDatabaseStatements : uint32
     _AA_REP_Map_Instance_Value,
     
     _AA_REP_Item_Instance,
+    _AA_REP_Item_Zuobiao,
+
+    _AA_REP_Character_Hongbao,
+    _AA_DEL_Character_Hongbao,
 
     MAX_CHARACTERDATABASE_STATEMENTS
 };

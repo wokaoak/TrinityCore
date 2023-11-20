@@ -467,6 +467,10 @@ void WorldSession::HandleChatMessage(ChatMsg type, Language lang, std::string ms
                 : ChannelMgr::GetChannelForPlayerByNamePart(target, sender);
             if (chn)
             {
+                if (ChatChannelsEntry const* chatChannel = sChatChannelsStore.LookupEntry(chn->GetChannelId()))
+                    if (chatChannel->GetFlags().HasFlag(ChatChannelFlags::ReadOnly))
+                        return;
+
                 sScriptMgr->OnPlayerChat(sender, type, lang, msg, chn);
                 chn->Say(sender->GetGUID(), msg, lang);
             }
@@ -505,6 +509,11 @@ void WorldSession::HandleChatAddonMessageTargetedOpcode(WorldPackets::Chat::Chat
         chatAddonMessageTargeted.Params.IsLogged, chatAddonMessageTargeted.Target, chatAddonMessageTargeted.ChannelGUID);
 }
 
+void AA_ChatHandler(Player* sender, std::string prefix, std::string text)
+{
+    aaCenter.AA_ReceiveAddon(sender, prefix, text);
+}
+
 void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std::string text, bool isLogged, std::string target /*= ""*/, Optional<ObjectGuid> channelGuid /*= {}*/)
 {
     Player* sender = GetPlayer();
@@ -513,7 +522,16 @@ void WorldSession::HandleChatAddonMessage(ChatMsg type, std::string prefix, std:
         return;
 
     if (type == CHAT_MSG_WHISPER && target == "AA") {
-        aaCenter.AA_ReceiveAddon(sender, prefix, text);
+        //if (aaCenter.aa_world_confs[76].value1 > 0) {
+        /*std::future<void> resultFromParam = */std::async(std::launch::async, AA_ChatHandler, sender, prefix, text);
+        ////    //resultFromParam.wait();
+        ////    //thread t(AA_World_Update, this, diff);  //带参数子线程
+        ////    //t.detach();
+        ////}
+        ////else {
+        //    AA_ChatHandler(sender, prefix, text);
+        //}
+        //AA_ChatHandler(sender, prefix, text);
         return;
     }
 
@@ -816,4 +834,15 @@ void WorldSession::HandleChatCanLocalWhisperTargetRequest(WorldPackets::Chat::Ca
     canLocalWhisperTargetResponse.WhisperTarget = canLocalWhisperTargetRequest.WhisperTarget;
     canLocalWhisperTargetResponse.Status = status;
     SendPacket(canLocalWhisperTargetResponse.Write());
+}
+
+void WorldSession::HandleChatUpdateAADCStatus(WorldPackets::Chat::UpdateAADCStatus const& /*updateAADCStatus*/)
+{
+    // disabling chat not supported
+    // send Sueccess and force chat disabled to false instead of sending that change failed
+    // this makes client change the cvar back to false instead of just printing error message in console
+    WorldPackets::Chat::UpdateAADCStatusResponse response;
+    response.Success = true;
+    response.ChatDisabled = false;
+    SendPacket(response.Write());
 }

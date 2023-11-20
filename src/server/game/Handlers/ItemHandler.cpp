@@ -1080,8 +1080,8 @@ void WorldSession::HandleSocketGems(WorldPackets::Item::SocketGems& socketGems)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_character_instances[guidlow].update_time = timep;
-            aaCenter.aa_character_instances[guidlow].isUpdate = true;
             aaCenter.aa_character_instances[guidlow].baoshi_entry = iGemProto->GetId();
+            sAAData->AA_REP_Character_Instances.insert(guidlow);
         }
 
         // unique item (for new and already placed bit removed enchantments

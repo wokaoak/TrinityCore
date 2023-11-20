@@ -7,8 +7,8 @@
 #include "World.h"
 #include "Guild.h"
 #include "GuildMgr.h"
-
-
+#include "Group.h"
+#include "SpellInfo.h"
 
 class aa_player_script : public PlayerScript
 {
@@ -25,6 +25,16 @@ public:
         //10x BUG，上线学习200749
         if (!player->HasSpell(200749)) {
             player->LearnSpell(200749, true);
+        }
+
+        //战宠，登录时加载战宠信息
+        std::vector<uint32> ids = aaCenter.aa_character_petzhan_owner[player->GetGUIDLow()];
+        for (auto& it : ids)
+        {
+            AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[it];
+            if (conf.is_heti == 1) {
+                player->AA_ReloadAllPetSpell(it, true);
+            }
         }
 
         //点卡模式
@@ -219,41 +229,10 @@ public:
                     aaCenter.AA_SendNotice(player, notice, true, aa_message);
                 }
             }
-            {
-                //一命模式 模式等级光环
-                ObjectGuid::LowType guidlow = player->GetGUIDLow();
-                uint32 level = aaCenter.aa_characterss[guidlow].yiming;
-                AA_Yiming_Conf conf = aaCenter.aa_yiming_confs[level];
-                for (auto vipconf : aaCenter.aa_yiming_confs) {
-                    if (vipconf.first == 0) {
-                        continue;
-                    }
-                    if (vipconf.second.guanghuans != "" && vipconf.second.guanghuans != "0") {
-                        std::vector<int32> spellids; spellids.clear();
-                        aaCenter.AA_StringToVectorInt(vipconf.second.guanghuans, spellids, ",");
-                        for (size_t i = 0; i < spellids.size(); i++) {
-                            int32 spellid = spellids[i];
-                            if (spellid == 0) {
-                                continue;
-                            }
-                            if (player->HasAura(spellid)) {
-                                player->RemoveAura(spellid);
-                            }
-                        }
-                    }
-                }
-                if (conf.guanghuans != "" && conf.guanghuans != "0") {
-                    std::vector<int32> spellids; spellids.clear();
-                    aaCenter.AA_StringToVectorInt(conf.guanghuans, spellids, ",");
-                    for (size_t i = 0; i < spellids.size(); i++) {
-                        int32 spellid = spellids[i];
-                        if (spellid == 0) {
-                            continue;
-                        }
-                        player->AddAura(spellid, player);
-                    }
-                }
-            }
+
+            //刷新一命光环
+            aaCenter.AA_Update_YimingAura(player);
+
             {
                 for (auto vipconf : aaCenter.aa_junxian_confs) {
                     if (vipconf.second.spells != "" && vipconf.second.spells != "0") {
@@ -359,6 +338,17 @@ public:
         {
             return;
         }
+        //切换zone
+        //自动组队，退出组队
+        if (player->GetMap() && player->GetZoneId()) {
+            if (aaCenter.aa_xitong_group_zones.find(player->GetZoneId()) != aaCenter.aa_xitong_group_zones.end()) {
+                if (Group* group = player->GetGroup()) {
+                    if (group->IsMember(player->GetGUID())) {
+                        group->RemoveMember(player->GetGUID());
+                    }
+                }
+            }
+        }
 
         //首领争霸
         if (aaCenter.aa_shouling_event_id > 0) {
@@ -380,18 +370,30 @@ public:
         aaCenter.aa_allsetspells.erase(guid);
         aaCenter.aa_allspells.erase(guid);
         aaCenter.aa_allitemspells.erase(guid);
+        aaCenter.aa_allpetspells.erase(guid);
         aaCenter.aa_allitems.erase(guid);
         aaCenter.aa_allitems1.erase(guid);
         aaCenter.aa_vendor_guid.erase(guid);
         aaCenter.m_aiTimes.erase(guid);
         aaCenter.m_aiGGTimes.erase(guid);
-
-        if (!player || !player->IsInWorld()/* || player->GetSession()->IsBot()*/) {
-            return;
-        }
     }
     void OnUpdateArea(Player* player, uint32 oldArea, uint32 newArea) override
     {
+        //移除所有地图中获得的光环、获得该地图中的光环
+        for (auto spellid : aaCenter.aa_map_player_conf_hdguanghuans) {
+            if (spellid > 0) {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellid, DIFFICULTY_NONE);
+                if (spellInfo)
+                {
+                    if (SpellMgr::IsSpellValid(spellInfo))
+                    {
+                        if (player->HasAura(spellid)) {
+                            player->RemoveAurasDueToSpell(spellInfo->Id);
+                        }
+                    }
+                }
+            }
+        }
         player->UpdateAllStats();
     }
     void OnUpdateZone(Player* player, uint32 newZone, uint32 /*newArea*/) override

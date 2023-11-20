@@ -1508,8 +1508,8 @@ void Item::ClearEnchantment(EnchantmentSlot slot)
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
         aaCenter.aa_character_instances[guidlow].baoshi_entry = 0;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
     }
 
     auto enchantmentField = m_values.ModifyValue(&Item::m_itemData).ModifyValue(&UF::ItemData::Enchantment, slot);

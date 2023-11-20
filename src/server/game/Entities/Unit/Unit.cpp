@@ -409,42 +409,18 @@ Unit::~Unit()
     ASSERT(m_removedAuras.empty());
     ASSERT(m_gameObj.empty());
     ASSERT(m_dynObj.empty());
+    ASSERT(m_areaTrigger.empty());
     ASSERT(!m_unitMovedByMe || (m_unitMovedByMe == this));
     ASSERT(!m_playerMovingMe || (m_playerMovingMe == this));
 }
 
+void AA_Unit_Update(Unit* unit, uint32 p_time)
+{
+    aaCenter.Update(unit, p_time);
+}
+
 void Unit::Update(uint32 p_time)
 {
-    //点卡模式
-    if (aaCenter.aa_world_confs[100].value1 == 1) {
-        if (Player* p = ToPlayer()) {
-            uint32 accountid = p->GetSession()->GetAccountId();
-            if (accountid > 0) {
-                time_t timep;
-                time(&timep); /*当前time_t类型UTC时间*/
-                aaCenter.aa_accounts[accountid].update_time = timep;
-                aaCenter.aa_accounts[accountid].isUpdate = true;
-                if (aaCenter.aa_accounts[accountid].dianka >= p_time) {
-                    aaCenter.aa_accounts[accountid].dianka = aaCenter.aa_accounts[accountid].dianka - p_time;
-                }
-                else {
-                    aaCenter.aa_accounts[accountid].dianka = 0;
-                    if (p->aa_dianka == 120000) {
-                        std::string msg = "|cff00FFFF[账号提示]|cffFF0000游戏时间已不足，你将在2分钟后被强制下线，请联系管理员充值。";
-                        aaCenter.AA_SendMessage(p, 0, msg.c_str());
-                    }
-                    else if (p->aa_dianka == 0) {
-                        p->GetSession()->KickPlayer("dianka");
-                        return;
-                    }
-                    p->aa_dianka = p->aa_dianka >= p_time ? p->aa_dianka - p_time : 0;
-                }
-            }
-        }
-    }
-
-    aa_die_time += p_time;
-
     uint32 currTime = GameTime::GetGameTime();
     // WARNING! Order of execution here is important, do not change.
     // Spells must be processed with event system BEFORE they go to _UpdateSpells.
@@ -521,7 +497,12 @@ void Unit::Update(uint32 p_time)
         UpdateCharmAI();
     RefreshAI();
 
-    aaCenter.Update(this, p_time);
+    if (p_time > 0) {
+        /*std::future<void> resultFromParam = */ std::async(std::launch::async, AA_Unit_Update, this, p_time);
+        //resultFromParam.wait();
+
+        //AA_Unit_Update(this, p_time);
+    }
 }
 
 bool Unit::haveOffhandWeapon() const
@@ -1345,6 +1326,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 }
             }
         }
+        //官方修复，宠物或者战宠，单独击杀没有奖励
         if (attacker && victim && victim->ToCreature() && (attacker->aa_petzhan_id > 0 || attacker->ToPet()) && attacker->GetOwner() && attacker->GetOwner()->ToPlayer()) {
             victim->ToCreature()->LowerPlayerDamageReq(1);
             Unit::Kill(attacker->GetOwner(), victim, durabilityLoss, skipSettingDeathState);
@@ -1582,7 +1564,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
         }
         if (xixue > 0 && attacker->aa_xixue_time >= 1000) {
             attacker->aa_xixue_time = 0;
-            SpellInfo const* synhealInfo = sSpellMgr->GetSpellInfo(28839);
+            SpellInfo const* synhealInfo = sSpellMgr->GetSpellInfo(28839, DIFFICULTY_NONE);
             HealInfo healInfo(attacker, attacker, xixue, synhealInfo, synhealInfo->GetSchoolMask());
             attacker->HealBySpell(healInfo);
         }
@@ -2456,7 +2438,7 @@ void Unit::HandleEmoteCommand(Emote emoteId, Player* target /*=nullptr*/, Trinit
             discreteResistProbability[i] = std::max(0.5f - 2.5f * std::fabs(0.1f * i - averageResist), 0.0f);
     }
 
-    float roll = float(rand_norm());
+    float roll = rand_norm();
     float probabilitySum = 0.0f;
 
     uint32 resistance = 0;
@@ -3211,7 +3193,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit* victim, SpellInfo const* spellInfo
 
     bool canDodge = !spellInfo->HasAttribute(SPELL_ATTR7_NO_ATTACK_DODGE);
     bool canParry = !spellInfo->HasAttribute(SPELL_ATTR7_NO_ATTACK_PARRY);
-    bool canBlock = true; // all melee and ranged attacks can be blocked
+    bool canBlock = !spellInfo->HasAttribute(SPELL_ATTR8_NO_ATTACK_BLOCK);
 
     // if victim is casting or cc'd it can't avoid attacks
     if (victim->IsNonMeleeSpellCast(false, false, true) || victim->HasUnitState(UNIT_STATE_CONTROLLED))
@@ -3931,7 +3913,7 @@ Aura* Unit::_TryStackingOrRefreshingExistingAura(AuraCreateInfo& createInfo)
                 if (createInfo.BaseAmount)
                     bp = *(createInfo.BaseAmount + spellEffectInfo.EffectIndex);
                 else
-                    bp = spellEffectInfo.BasePoints;
+                    bp = int32(spellEffectInfo.BasePoints);
 
                 int32* oldBP = const_cast<int32*>(&(auraEff->m_baseAmount)); // todo 6.x review GetBaseAmount and GetCastItemGUID in this case
                 *oldBP = bp;
@@ -3962,7 +3944,7 @@ void Unit::_AddAura(UnitAura* aura, Unit* caster)
     ASSERT(!m_cleanupDone);
     m_ownedAuras.emplace(aura->GetId(), aura);
 
-    _RemoveNoStackAurasDueToAura(aura);
+    _RemoveNoStackAurasDueToAura(aura, true);
 
     if (aura->IsRemoved())
         return;
@@ -4056,7 +4038,7 @@ void Unit::_ApplyAura(AuraApplication* aurApp, uint32 effMask)
 {
     Aura* aura = aurApp->GetBase();
 
-    _RemoveNoStackAurasDueToAura(aura);
+    _RemoveNoStackAurasDueToAura(aura, false);
 
     if (aurApp->GetRemoveMode())
         return;
@@ -4094,8 +4076,14 @@ void Unit::_ApplyAura(AuraApplication* aurApp, uint32 effMask)
     }
 
     if (Player* player = ToPlayer())
+    {
         if (sConditionMgr->IsSpellUsedInSpellClickConditions(aurApp->GetBase()->GetId()))
             player->UpdateVisibleGameobjectsOrSpellClicks();
+
+        player->FailCriteria(CriteriaFailEvent::GainAura, aurApp->GetBase()->GetId());
+        player->StartCriteria(CriteriaStartEvent::GainAura, aurApp->GetBase()->GetId());
+        player->UpdateCriteria(CriteriaType::GainAura, aurApp->GetBase()->GetId());
+    }
 }
 
 // removes aura application from lists and unapplies effects
@@ -4183,8 +4171,12 @@ void Unit::_UnapplyAura(AuraApplicationMap::iterator& i, AuraRemoveMode removeMo
     aura->HandleAuraSpecificMods(aurApp, caster, false, false);
 
     if (Player* player = ToPlayer())
+    {
         if (sConditionMgr->IsSpellUsedInSpellClickConditions(aurApp->GetBase()->GetId()))
             player->UpdateVisibleGameobjectsOrSpellClicks();
+
+        player->FailCriteria(CriteriaFailEvent::LoseAura, aurApp->GetBase()->GetId());
+    }
 
     i = m_appliedAuras.begin();
 }
@@ -4210,7 +4202,7 @@ void Unit::_UnapplyAura(AuraApplication* aurApp, AuraRemoveMode removeMode)
     ABORT();
 }
 
-void Unit::_RemoveNoStackAurasDueToAura(Aura* aura)
+void Unit::_RemoveNoStackAurasDueToAura(Aura* aura, bool owned)
 {
     SpellInfo const* spellProto = aura->GetSpellInfo();
 
@@ -4224,29 +4216,23 @@ void Unit::_RemoveNoStackAurasDueToAura(Aura* aura)
         return;
     }
 
-    bool remove = false;
-    for (AuraApplicationMap::iterator i = m_appliedAuras.begin(); i != m_appliedAuras.end(); ++i)
-    {
-        if (remove)
-        {
-            remove = false;
-            i = m_appliedAuras.begin();
-        }
-
-        if (aura->CanStackWith(i->second->GetBase()))
-            continue;
-
-        RemoveAura(i, AURA_REMOVE_BY_DEFAULT);
-        if (i == m_appliedAuras.end())
-            break;
-        remove = true;
-    }
+    if (owned)
+        RemoveOwnedAuras([aura](Aura const* ownedAura) { return !aura->CanStackWith(ownedAura); }, AURA_REMOVE_BY_DEFAULT);
+    else
+        RemoveAppliedAuras([aura](AuraApplication const* appliedAura) { return !aura->CanStackWith(appliedAura->GetBase()); }, AURA_REMOVE_BY_DEFAULT);
 }
 
 void Unit::_RegisterAuraEffect(AuraEffect* aurEff, bool apply)
 {
     if (apply)
+    {
         m_modAuras[aurEff->GetAuraType()].push_front(aurEff);
+        if (Player* player = ToPlayer())
+        {
+            player->StartCriteria(CriteriaStartEvent::GainAuraEffect, aurEff->GetAuraType());
+            player->FailCriteria(CriteriaFailEvent::GainAuraEffect, aurEff->GetAuraType());
+        }
+    }
     else
         Trinity::Containers::Lists::RemoveUnique(m_modAuras[aurEff->GetAuraType()], aurEff);
 }
@@ -4521,7 +4507,7 @@ void Unit::RemoveAurasDueToSpellByDispel(uint32 spellId, uint32 dispellerSpellId
             // Call OnDispel hook on AuraScript
             aura->CallScriptDispel(&dispelInfo);
 
-            if (aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_CHARGES))
+            if (aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_REMOVES_CHARGES))
                 aura->ModCharges(-dispelInfo.GetRemovedCharges(), AURA_REMOVE_BY_ENEMY_SPELL);
             else
                 aura->ModStackAmount(-dispelInfo.GetRemovedCharges(), AURA_REMOVE_BY_ENEMY_SPELL);
@@ -4566,7 +4552,7 @@ void Unit::RemoveAurasDueToSpellBySteal(uint32 spellId, ObjectGuid casterGUID, W
                 }
             }
 
-            bool stealCharge = aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_CHARGES);
+            bool stealCharge = aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_REMOVES_CHARGES);
             // Cast duration to unsigned to prevent permanent aura's such as Righteous Fury being permanently added to caster
             uint32 dur = std::min(2u * MINUTE * IN_MILLISECONDS, uint32(aura->GetDuration()));
 
@@ -5270,7 +5256,7 @@ void Unit::GetDispellableAuraList(WorldObject const* caster, uint32 dispelMask, 
             // The charges / stack amounts don't count towards the total number of auras that can be dispelled.
             // Ie: A dispel on a target with 5 stacks of Winters Chill and a Polymorph has 1 / (1 + 1) -> 50% chance to dispell
             // Polymorph instead of 1 / (5 + 1) -> 16%.
-            bool const dispelCharges = aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_CHARGES);
+            bool const dispelCharges = aura->GetSpellInfo()->HasAttribute(SPELL_ATTR7_DISPEL_REMOVES_CHARGES);
             uint8 charges = dispelCharges ? aura->GetCharges() : aura->GetStackAmount();
             if (charges > 0)
                 dispelList.emplace_back(aura, chance, charges);
@@ -5970,7 +5956,7 @@ void Unit::_RegisterAreaTrigger(AreaTrigger* areaTrigger)
 
 void Unit::_UnregisterAreaTrigger(AreaTrigger* areaTrigger)
 {
-    m_areaTrigger.erase(std::remove(m_areaTrigger.begin(), m_areaTrigger.end(), areaTrigger));
+    std::erase(m_areaTrigger, areaTrigger);
     if (GetTypeId() == TYPEID_UNIT && IsAIEnabled())
         ToCreature()->AI()->JustUnregisteredAreaTrigger(areaTrigger);
 }
@@ -5993,8 +5979,6 @@ std::vector<AreaTrigger*> Unit::GetAreaTriggers(uint32 spellId) const
 
 void Unit::RemoveAreaTrigger(uint32 spellId)
 {
-    if (m_areaTrigger.empty())
-        return;
     for (AreaTriggerList::iterator i = m_areaTrigger.begin(); i != m_areaTrigger.end();)
     {
         AreaTrigger* areaTrigger = *i;
@@ -6010,8 +5994,6 @@ void Unit::RemoveAreaTrigger(uint32 spellId)
 
 void Unit::RemoveAreaTrigger(AuraEffect const* aurEff)
 {
-    if (m_areaTrigger.empty())
-        return;
     for (AreaTrigger* areaTrigger : m_areaTrigger)
     {
         if (areaTrigger->GetAuraEffect() == aurEff)
@@ -6025,7 +6007,7 @@ void Unit::RemoveAreaTrigger(AuraEffect const* aurEff)
 void Unit::RemoveAllAreaTriggers()
 {
     while (!m_areaTrigger.empty())
-        m_areaTrigger.front()->Remove();
+        m_areaTrigger.back()->Remove();
 }
 
 void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
@@ -6069,10 +6051,20 @@ void Unit::SendSpellNonMeleeDamageLog(SpellNonMeleeDamage const* log)
     }
 
     WeaponAttackType attType = damageInfo ? damageInfo->GetAttackType() : BASE_ATTACK;
-    if (typeMaskActor && actor)
+    SpellInfo const* spellInfo = [&]() -> SpellInfo const*
+    {
+        if (spell)
+            return spell->GetSpellInfo();
+        if (damageInfo)
+            return damageInfo->GetSpellInfo();
+        if (healInfo)
+            return healInfo->GetSpellInfo();
+        return nullptr;
+    }();
+    if (typeMaskActor && actor && !(spellInfo && spellInfo->HasAttribute(SPELL_ATTR3_SUPPRESS_CASTER_PROCS)))
         actor->ProcSkillsAndReactives(false, actionTarget, typeMaskActor, hitMask, attType);
 
-    if (typeMaskActionTarget && actionTarget)
+    if (typeMaskActionTarget && actionTarget && !(spellInfo && spellInfo->HasAttribute(SPELL_ATTR3_SUPPRESS_TARGET_PROCS)))
         actionTarget->ProcSkillsAndReactives(true, actor, typeMaskActionTarget, hitMask, attType);
 
     if (actor)
@@ -6402,8 +6394,9 @@ bool Unit::Attack(Unit* victim, bool meleeAttack)
         creature->SendAIReaction(AI_REACTION_HOSTILE);
         creature->CallAssistance();
 
-        // Remove emote state - will be restored on creature reset
+        // Remove emote and stand state - will be restored on creature reset
         SetEmoteState(EMOTE_ONESHOT_NONE);
+        SetStandState(UNIT_STAND_STATE_STAND);
     }
 
     // delay offhand weapon attack by 50% of the base attack time
@@ -6862,95 +6855,71 @@ void Unit::SetMinion(Minion *minion, bool apply)
     if (minion && GetTypeId() == TYPEID_PLAYER)
     {
         Pet* pet = minion->ToPet();
+        //属性调整宠物
         if (pet) {
             uint32 zu = 0;
-            if (pet->aa_id == 0) {
-                AA_Pet_Id conf_id = aaCenter.aa_pet_ids[pet->GetEntry()];
-                zu = conf_id.zu;
-                if (zu == 0) {
-                    AA_Pet_Class conf_class = aaCenter.aa_pet_classs[GetClass()];
-                    zu = conf_class.zu;
+            if (pet->aa_pet_id == 0) {
+                CreatureTemplate const* cInfo = pet->GetCreatureTemplate();
+                if (cInfo) {
+                    AA_Pet_Id conf_id = aaCenter.aa_pet_ids[cInfo->Entry];
+                    zu = conf_id.zu;
+                    if (zu == 0) {
+                        AA_Pet_Class conf_class = aaCenter.aa_pet_classs[GetClass()];
+                        zu = conf_class.zu;
+                    }
                 }
-            }
-            if (zu > 0) {
-                uint32 id = 0;
-                std::vector<uint32> ids = aaCenter.aa_pet_zus[zu];
-                //获取总chance，分母
-                int count = ids.size();
-                if (count > 0) {
-                    uint32 chanceMax = 0;
-                    for (int i = 0; i < count; i++) {
-                        uint32 id = ids[i];
-                        AA_Pet conf = aaCenter.aa_pets[id];
-                        chanceMax += conf.chance;
-                    }
-                    //获取随机chance，分子
-                    if (chanceMax == 0) { // 数据库的chance都为0
-                        chanceMax = 1;
-                    }
-                    uint32 chanceVal = rand() % chanceMax;
-                    //获取Index
-                    uint32 max = 0;
-                    uint32 min = 0;
-                    int index = 0;
-                    for (int i = 0; i < count; i++) {
-                        uint32 id = ids[i];
-                        AA_Pet conf = aaCenter.aa_pets[id];
-                        max = conf.chance + max;
-                        min = 0;
-                        if (i == 0) {
-                            min = 0;
-                        }
-                        else {
-                            uint32 id = ids[i - 1];
+                if (zu > 0) {
+                    uint32 id = 0;
+                    std::vector<uint32> ids = aaCenter.aa_pet_zus[zu];
+                    //获取总chance，分母
+                    int count = ids.size();
+                    if (count > 0) {
+                        uint32 chanceMax = 0;
+                        for (int i = 0; i < count; i++) {
+                            uint32 id = ids[i];
                             AA_Pet conf = aaCenter.aa_pets[id];
-                            min = conf.chance + min;
+                            chanceMax += conf.chance;
                         }
-                        if (min <= chanceVal && chanceVal < max) {
-                            index = i;
-                            break;
+                        //获取随机chance，分子
+                        if (chanceMax == 0) { // 数据库的chance都为0
+                            chanceMax = 1;
                         }
+                        uint32 chanceVal = rand() % chanceMax;
+                        //获取Index
+                        uint32 max = 0;
+                        uint32 min = 0;
+                        int index = 0;
+                        for (int i = 0; i < count; i++) {
+                            uint32 id = ids[i];
+                            AA_Pet conf = aaCenter.aa_pets[id];
+                            max = conf.chance + max;
+                            min = 0;
+                            if (i == 0) {
+                                min = 0;
+                            }
+                            else {
+                                uint32 id = ids[i - 1];
+                                AA_Pet conf = aaCenter.aa_pets[id];
+                                min = conf.chance + min;
+                            }
+                            if (min <= chanceVal && chanceVal < max) {
+                                index = i;
+                                break;
+                            }
+                        }
+                        id = ids[index];
+                        pet->aa_pet_id = id;
                     }
-                    id = ids[index];
-                    pet->aa_id = id;
                 }
             }
+
             CreatureTemplate const* cInfo = pet->GetCreatureTemplate();
-            if (pet->aa_id > 0 && cInfo) {
-                AA_Pet conf = aaCenter.aa_pets[pet->aa_id];
+            if (pet->aa_pet_id > 0 && cInfo) {
+                AA_Pet conf = aaCenter.aa_pets[pet->aa_pet_id];
 
                 if (conf.name != "") {
                     pet->SetName(conf.name);
                 }
-
-                float minjie = GetStat(STAT_AGILITY);
-                float liliang = GetStat(STAT_STRENGTH);
-                float zhili = GetStat(STAT_INTELLECT);
-                float naili = GetStat(STAT_STAMINA);
-                float hujia = GetArmor();
-                float mana = GetCreateMana();
-                minjie = conf.agility > 0 ? minjie * conf.agility * 0.01 : minjie;
-                liliang = conf.strength > 0 ? liliang * conf.strength * 0.01 : liliang;
-                zhili = conf.intellect > 0 ? zhili * conf.intellect * 0.01 : zhili;
-                naili = conf.stamina > 0 ? naili * conf.stamina * 0.01 : naili;
-
-                float baseStam = naili < 20 ? naili : 20;
-                float moreStam = naili - baseStam;
-                pet->SetCreateHealth(baseStam + (moreStam * 10.0f));
-                pet->SetStatFlatModifier(UNIT_MOD_HEALTH, BASE_VALUE, pet->GetCreateHealth());
-                pet->SetCreateMana(mana);
-                pet->SetStatFlatModifier(UNIT_MOD_MANA, BASE_VALUE, pet->GetCreateMana());
-                pet->SetStatFlatModifier(UNIT_MOD_ARMOR, BASE_VALUE, hujia);
-
-                pet->SetCreateStat(STAT_STRENGTH, liliang);
-                pet->SetCreateStat(STAT_AGILITY, minjie);
-                pet->SetCreateStat(STAT_STAMINA, naili);
-                pet->SetCreateStat(STAT_INTELLECT, zhili);
-
-                pet->UpdateStats(STAT_STRENGTH);
-                pet->UpdateStats(STAT_AGILITY);
-                pet->UpdateStats(STAT_STAMINA);
-                pet->UpdateStats(STAT_INTELLECT);
 
                 std::string pet_moxing = "";
                 std::string pet_moxing1 = "";
@@ -7029,23 +6998,26 @@ void Unit::SetMinion(Minion *minion, bool apply)
                 else {
                     pet->SetObjectScale(cInfo->scale);
                 }
-                if (conf.pet_spells != "" && conf.pet_spells != "0") {
-                    std::vector<int32> spells; spells.clear();
-                    aaCenter.AA_StringToVectorInt(conf.pet_spells, spells, ",");
-                    if (spells.size() > 0) {
-                        for (auto s : spells) {
-                            if (apply) {
-                                if (!pet->HasSpell(s)) {
-                                    pet->learnSpell(s);
+                if (Pet* pet1 = pet->ToPet()) {
+                    if (conf.pet_spells != "" && conf.pet_spells != "0") {
+                        std::vector<int32> spells; spells.clear();
+                        aaCenter.AA_StringToVectorInt(conf.pet_spells, spells, ",");
+                        if (spells.size() > 0) {
+                            for (auto s : spells) {
+                                if (apply) {
+                                    if (!pet1->HasSpell(s)) {
+                                        pet1->learnSpell(s);
+                                    }
                                 }
-                            }
-                            else {
-                                if (pet->HasSpell(s)) {
-                                    pet->unlearnSpell(s, pet);
+                                else {
+                                    if (pet1->HasSpell(s)) {
+                                        pet1->unlearnSpell(s, pet1);
+                                    }
                                 }
                             }
                         }
                     }
+
                 }
                 if (conf.pet_auras != "" && conf.pet_auras != "0") {
                     std::vector<int32> spells; spells.clear();
@@ -7065,38 +7037,41 @@ void Unit::SetMinion(Minion *minion, bool apply)
                         }
                     }
                 }
-                if (Player* player = pet->GetOwner()) {
-                    if (conf.player_spells != "" && conf.player_spells != "0") {
-                        std::vector<int32> spells; spells.clear();
-                        aaCenter.AA_StringToVectorInt(conf.player_spells, spells, ",");
-                        if (spells.size() > 0) {
-                            for (auto s : spells) {
-                                if (apply) {
-                                    if (!player->HasSpell(s)) {
-                                        player->LearnSpell(s, true);
+                if (pet->GetOwner()) {
+                    if (Player* player = pet->GetOwner()->ToPlayer())
+                    {
+                        if (conf.player_spells != "" && conf.player_spells != "0") {
+                            std::vector<int32> spells; spells.clear();
+                            aaCenter.AA_StringToVectorInt(conf.player_spells, spells, ",");
+                            if (spells.size() > 0) {
+                                for (auto s : spells) {
+                                    if (apply) {
+                                        if (!player->HasSpell(s)) {
+                                            player->LearnSpell(s, true);
+                                        }
                                     }
-                                }
-                                else {
-                                    if (player->HasSpell(s)) {
-                                        player->RemoveSpell(s);
+                                    else {
+                                        if (player->HasSpell(s)) {
+                                            player->RemoveSpell(s);
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
-                    if (conf.player_auras != "" && conf.player_auras != "0") {
-                        std::vector<int32> spells; spells.clear();
-                        aaCenter.AA_StringToVectorInt(conf.player_auras, spells, ",");
-                        if (spells.size() > 0) {
-                            for (auto s : spells) {
-                                if (apply) {
-                                    if (!player->HasAura(s)) {
-                                        player->AddAura(s, player);
+                        if (conf.player_auras != "" && conf.player_auras != "0") {
+                            std::vector<int32> spells; spells.clear();
+                            aaCenter.AA_StringToVectorInt(conf.player_auras, spells, ",");
+                            if (spells.size() > 0) {
+                                for (auto s : spells) {
+                                    if (apply) {
+                                        if (!player->HasAura(s)) {
+                                            player->AddAura(s, player);
+                                        }
                                     }
-                                }
-                                else {
-                                    if (player->HasAura(s)) {
-                                        player->RemoveAura(s);
+                                    else {
+                                        if (player->HasAura(s)) {
+                                            player->RemoveAura(s);
+                                        }
                                     }
                                 }
                             }
@@ -7240,8 +7215,9 @@ void Unit::SetCharm(Unit* charm, bool apply)
     {
         if (Player* player = unit->ToPlayer())
         {
-            if (Battleground* bg = player->GetBattleground())
-                bg->UpdatePlayerScore(player, SCORE_HEALING_DONE, gain);
+            if (!healInfo.GetSpellInfo() || !healInfo.GetSpellInfo()->HasAttribute(SPELL_ATTR7_DO_NOT_COUNT_FOR_PVP_SCOREBOARD))
+                if (Battleground* bg = player->GetBattleground())
+                    bg->UpdatePlayerScore(player, SCORE_HEALING_DONE, gain);
 
             // use the actual gain, as the overheal shall not be counted, skip gain 0 (it ignored anyway in to criteria)
             if (gain)
@@ -8341,7 +8317,7 @@ bool Unit::IsImmunedToDamage(SpellSchoolMask schoolMask) const
     return false;
 }
 
-bool Unit::IsImmunedToDamage(SpellInfo const* spellInfo) const
+bool Unit::IsImmunedToDamage(SpellInfo const* spellInfo, SpellEffectInfo const* spellEffectInfo /*= nullptr*/) const
 {
     if (!spellInfo)
         return false;
@@ -8351,6 +8327,9 @@ bool Unit::IsImmunedToDamage(SpellInfo const* spellInfo) const
         return false;
 
     if (spellInfo->HasAttribute(SPELL_ATTR1_IMMUNITY_TO_HOSTILE_AND_FRIENDLY_EFFECTS) || spellInfo->HasAttribute(SPELL_ATTR2_NO_SCHOOL_IMMUNITIES))
+        return false;
+
+    if (spellEffectInfo && spellEffectInfo->EffectAttributes.HasFlag(SpellEffectAttributes::NoImmunity))
         return false;
 
     if (uint32 schoolMask = spellInfo->GetSchoolMask())
@@ -8502,6 +8481,9 @@ bool Unit::IsImmunedToSpellEffect(SpellInfo const* spellInfo, SpellEffectInfo co
         return false;
 
     if (spellInfo->HasAttribute(SPELL_ATTR0_NO_IMMUNITIES))
+        return false;
+
+    if (spellEffectInfo.EffectAttributes.HasFlag(SpellEffectAttributes::NoImmunity))
         return false;
 
     auto hasImmunity = [requireImmunityPurgesEffectAttribute](SpellImmuneContainer const& container, uint32 key)
@@ -8776,7 +8758,7 @@ int32 Unit::MeleeDamageBonusTaken(Unit* attacker, int32 pdamage, WeaponAttackTyp
     return int32(std::max(tmpDamage, 0.0f));
 }
 
-void Unit::ApplySpellImmune(uint32 spellId, uint32 op, uint32 type, bool apply)
+void Unit::ApplySpellImmune(uint32 spellId, SpellImmunity op, uint32 type, bool apply)
 {
     if (apply)
         m_spellImmune[op].emplace(type, spellId);
@@ -8842,22 +8824,8 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             }
         }
 
-        // unsummon pet
-        Pet* pet = player->GetPet();
-        if (pet)
-        {
-            Battleground* bg = ToPlayer()->GetBattleground();
-            // don't unsummon pet in arena but SetFlag UNIT_FLAG_STUNNED to disable pet's interface
-            if (bg && bg->isArena())
-                pet->SetUnitFlag(UNIT_FLAG_STUNNED);
-            else
-                player->UnsummonPetTemporaryIfAny();
-        }
-
-        // if we have charmed npc, stun him also (everywhere)
-        if (Unit* charm = player->GetCharmed())
-            if (charm->GetTypeId() == TYPEID_UNIT)
-                charm->SetUnitFlag(UNIT_FLAG_STUNNED);
+        // disable pet controls
+        player->DisablePetControlsOnMount(REACT_PASSIVE, COMMAND_FOLLOW);
 
         player->SendMovementSetCollisionHeight(player->GetCollisionHeight(), WorldPackets::Movement::UpdateCollisionHeightReason::Mount);
     }
@@ -8892,18 +8860,8 @@ void Unit::Dismount()
     // (it could probably happen when logging in after a previous crash)
     if (Player* player = ToPlayer())
     {
-        if (Pet* pPet = player->GetPet())
-        {
-            if (pPet->HasUnitFlag(UNIT_FLAG_STUNNED) && !pPet->HasUnitState(UNIT_STATE_STUNNED))
-                pPet->RemoveUnitFlag(UNIT_FLAG_STUNNED);
-        }
-        else
-            player->ResummonPetTemporaryUnSummonedIfAny();
-
-        // if we have charmed npc, remove stun also
-        if (Unit* charm = player->GetCharmed())
-            if (charm->GetTypeId() == TYPEID_UNIT && charm->HasUnitFlag(UNIT_FLAG_STUNNED) && !charm->HasUnitState(UNIT_STATE_STUNNED))
-                charm->RemoveUnitFlag(UNIT_FLAG_STUNNED);
+        player->EnablePetControlsOnDismount();
+        player->ResummonPetTemporaryUnSummonedIfAny();
     }
 }
 
@@ -9007,6 +8965,9 @@ MountCapabilityEntry const* Unit::GetMountCapability(uint32 mountType) const
 
 void Unit::UpdateMountCapability()
 {
+    if (IsLoading())
+        return;
+
     AuraEffectVector mounts = CopyAuraEffectList(GetAuraEffectsByType(SPELL_AURA_MOUNTED));
     for (AuraEffect* aurEff : mounts)
     {
@@ -9585,6 +9546,7 @@ void Unit::setDeathState(DeathState s)
         SetHealth(0);
         SetPower(GetPowerType(), 0);
         SetEmoteState(EMOTE_ONESHOT_NONE);
+        SetStandState(UNIT_STAND_STATE_STAND);
 
         // players in instance don't have ZoneScript, but they have InstanceScript
         if (ZoneScript* zoneScript = GetZoneScript() ? GetZoneScript() : GetInstanceScript())
@@ -13075,10 +13037,10 @@ bool Unit::CanApplyResilience() const
     *damage -= target->GetDamageReduction(*damage);
 }
 
-int32 Unit::CalculateAOEAvoidance(int32 damage, uint32 schoolMask, ObjectGuid const& casterGuid) const
+int32 Unit::CalculateAOEAvoidance(int32 damage, uint32 schoolMask, bool npcCaster) const
 {
     damage = int32(float(damage) * GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_AOE_DAMAGE_AVOIDANCE, schoolMask));
-    if (casterGuid.IsAnyTypeCreature())
+    if (npcCaster)
         damage = int32(float(damage) * GetTotalAuraMultiplierByMiscMask(SPELL_AURA_MOD_CREATURE_AOE_DAMAGE_AVOIDANCE, schoolMask));
 
     return damage;
@@ -13286,27 +13248,11 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form, uint32 spellId) const
         }
     }
 
-    uint32 modelid = 0;
     SpellShapeshiftFormEntry const* formEntry = sSpellShapeshiftFormStore.LookupEntry(form);
-    if (formEntry && formEntry->CreatureDisplayID[0])
-    {
-        // Take the alliance modelid as default
-        if (GetTypeId() != TYPEID_PLAYER)
-            return formEntry->CreatureDisplayID[0];
-        else
-        {
-            if (Player::TeamForRace(GetRace()) == ALLIANCE)
-                modelid = formEntry->CreatureDisplayID[0];
-            else
-                modelid = formEntry->CreatureDisplayID[1];
+    if (formEntry && formEntry->CreatureDisplayID)
+        return formEntry->CreatureDisplayID;
 
-            // If the player is horde but there are no values for the horde modelid - take the alliance modelid
-            if (!modelid && Player::TeamForRace(GetRace()) == HORDE)
-                modelid = formEntry->CreatureDisplayID[0];
-        }
-    }
-
-    return modelid;
+    return 0;
 }
 
 void Unit::JumpTo(float speedXY, float speedZ, float angle, Optional<Position> dest)
@@ -13387,7 +13333,7 @@ void Unit::HandleSpellClick(Unit* clicker, int8 seatId /*= -1*/)
             {
                 int32 bp[MAX_SPELL_EFFECTS] = { };
                 for (SpellEffectInfo const& spellEffectInfo : spellEntry->GetEffects())
-                    bp[spellEffectInfo.EffectIndex] = spellEffectInfo.BasePoints;
+                    bp[spellEffectInfo.EffectIndex] = int32(spellEffectInfo.BasePoints);
 
                 bp[i] = seatId;
 
@@ -14931,16 +14877,23 @@ void Unit::Whisper(uint32 textId, Player* target, bool isBossWhisper /*= false*/
     target->SendDirectMessage(packet.Write());
 }
 
-SpellInfo const* Unit::GetCastSpellInfo(SpellInfo const* spellInfo) const
+SpellInfo const* Unit::GetCastSpellInfo(SpellInfo const* spellInfo, TriggerCastFlags& triggerFlag) const
 {
-    auto findMatchingAuraEffectIn = [this, spellInfo](AuraType type) -> SpellInfo const*
+    auto findMatchingAuraEffectIn = [this, spellInfo, &triggerFlag](AuraType type) -> SpellInfo const*
     {
         for (AuraEffect const* auraEffect : GetAuraEffectsByType(type))
         {
             bool matches = auraEffect->GetMiscValue() ? uint32(auraEffect->GetMiscValue()) == spellInfo->Id : auraEffect->IsAffectingSpell(spellInfo);
             if (matches)
+            {
                 if (SpellInfo const* newInfo = sSpellMgr->GetSpellInfo(auraEffect->GetAmount(), GetMap()->GetDifficultyID()))
+                {
+                    if (auraEffect->GetSpellInfo()->HasAttribute(SPELL_ATTR8_IGNORE_SPELLCAST_OVERRIDE_COST))
+                        triggerFlag |= TRIGGERED_IGNORE_POWER_AND_REAGENT_COST;
+
                     return newInfo;
+                }
+            }
         }
 
         return nullptr;
@@ -15027,4 +14980,10 @@ std::string Unit::GetDebugInfo() const
     }
 
     return sstr.str();
+}
+
+DeclinedName::DeclinedName(UF::DeclinedNames const& uf)
+{
+    for (std::size_t i = 0; i < MAX_DECLINED_NAME_CASES; ++i)
+        name[i] = uf.Name[i];
 }

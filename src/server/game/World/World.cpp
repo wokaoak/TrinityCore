@@ -110,6 +110,10 @@
 
 #include <boost/algorithm/string.hpp>
 
+#include "AAVerify.h"
+#include <Mail.h>
+#include "Item.h"
+
 AACenter& aaCenter = AACenter::get_instance();
 
 TC_GAME_API std::atomic<bool> World::m_stopEvent(false);
@@ -899,12 +903,12 @@ void World::LoadConfigSettings(bool reload)
 
     if (reload)
     {
-        uint32 val = sConfigMgr->GetIntDefault("RealmZone", REALM_ZONE_DEVELOPMENT);
+        uint32 val = sConfigMgr->GetIntDefault("RealmZone", HARDCODED_DEVELOPMENT_REALM_CATEGORY_ID);
         if (val != m_int_configs[CONFIG_REALM_ZONE])
             TC_LOG_ERROR("server.loading", "RealmZone option can't be changed at worldserver.conf reload, using current value ({}).", m_int_configs[CONFIG_REALM_ZONE]);
     }
     else
-        m_int_configs[CONFIG_REALM_ZONE] = sConfigMgr->GetIntDefault("RealmZone", REALM_ZONE_DEVELOPMENT);
+        m_int_configs[CONFIG_REALM_ZONE] = sConfigMgr->GetIntDefault("RealmZone", HARDCODED_DEVELOPMENT_REALM_CATEGORY_ID);
 
     m_bool_configs[CONFIG_ALLOW_TWO_SIDE_INTERACTION_CALENDAR]= sConfigMgr->GetBoolDefault("AllowTwoSide.Interaction.Calendar", false);
     m_bool_configs[CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL] = sConfigMgr->GetBoolDefault("AllowTwoSide.Interaction.Channel", false);
@@ -1309,10 +1313,12 @@ void World::LoadConfigSettings(bool reload)
 
     m_float_configs[CONFIG_THREAT_RADIUS] = sConfigMgr->GetFloatDefault("ThreatRadius", 60.0f);
 
-    // always use declined names in the russian client
-    m_bool_configs[CONFIG_DECLINED_NAMES_USED] =
+    m_bool_configs[CONFIG_DECLINED_NAMES_USED] = sConfigMgr->GetBoolDefault("DeclinedNames", false);
 
-        (m_int_configs[CONFIG_REALM_ZONE] == REALM_ZONE_RUSSIAN) ? true : sConfigMgr->GetBoolDefault("DeclinedNames", false);
+    // always use declined names in the russian client
+    if (Cfg_CategoriesEntry const* category = sCfgCategoriesStore.LookupEntry(m_int_configs[CONFIG_REALM_ZONE]))
+        if (category->GetCreateCharsetMask().HasFlag(CfgCategoriesCharsets::Russian))
+            m_bool_configs[CONFIG_DECLINED_NAMES_USED] = true;
 
     m_float_configs[CONFIG_LISTEN_RANGE_SAY]       = sConfigMgr->GetFloatDefault("ListenRange.Say", 25.0f);
     m_float_configs[CONFIG_LISTEN_RANGE_TEXTEMOTE] = sConfigMgr->GetFloatDefault("ListenRange.TextEmote", 25.0f);
@@ -1801,7 +1807,7 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("misc", "Loading hotfix blobs...");
     sDB2Manager.LoadHotfixBlob(m_availableDbcLocaleMask);
     TC_LOG_INFO("misc", "Loading hotfix info...");
-    sDB2Manager.LoadHotfixData();
+    sDB2Manager.LoadHotfixData(m_availableDbcLocaleMask);
     TC_LOG_INFO("misc", "Loading hotfix optional data...");
     sDB2Manager.LoadHotfixOptionalData(m_availableDbcLocaleMask);
     ///- Close hotfix database - it is only used during DB2 loading
@@ -2126,9 +2132,6 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading LFG entrance positions..."); // Must be after areatriggers
     sLFGMgr->LoadLFGDungeons();
-
-    TC_LOG_INFO("server.loading", "Loading Dungeon boss data...");
-    sObjectMgr->LoadInstanceEncounters();
 
     TC_LOG_INFO("server.loading", "Loading LFG rewards...");
     sLFGMgr->LoadRewards();
@@ -2837,22 +2840,25 @@ void World::SetInitialWorldSettings()
             TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证通过  〔3.5k    特制功能   定制用户：蚂蚁〕");
         }
         else {
-            aaCenter.aa_yiming_confs.clear();
             TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证失败  〔3.5k    特制功能   定制用户：蚂蚁〕");
         }
         if (aaCenter.AA_VerifyCode("a405b")) {
             TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证通过  〔2.0k    特制功能   定制用户：技术〕");
         }
         else {
-            aaCenter.aa_quests.clear();
             TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证失败  〔2.0k    特制功能   定制用户：技术〕");
         }
         if (aaCenter.AA_VerifyCode("a406b")) {
             TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证通过  〔2.0k    特制功能   定制用户：AH〕");
         }
         else {
-            aaCenter.aa_quests.clear();
             TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证失败  〔2.0k    特制功能   定制用户：AH〕");
+        }
+        if (aaCenter.AA_VerifyCode("a407b")) {
+            TC_LOG_INFO("server.loading", ">> 『 红包系统 』 → 验证通过  〔1.5k    定制功能   定制用户：AA〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 红包系统 』 → 验证失败  〔1.5k    定制功能   定制用户：AA〕");
         }
         TC_LOG_INFO("server.loading", ">> 其他众多脑洞功能，都可以通过功能之间的相互搭配来自由创作，比如：『 国战玩法 』，『 罪魂之塔 』，『 公会战系统 』，『 阵营战系统 』，『 跑酷玩法 』，『 温泉泡点 』，『 空中比赛 』");
 
@@ -2924,20 +2930,24 @@ void World::LoadAutobroadcasts()
 
     TC_LOG_INFO("server.loading", ">> Loaded {} autobroadcast definitions in {} ms", m_Autobroadcasts.size(), GetMSTimeDiffToNow(oldMSTime));
 }
-
-/// Update the World !
-void World::Update(uint32 diff)
+//mutex aa_lock;
+void AA_World_Update(World* world, uint32 diff)
 {
-    aa_second_2 += diff;
-    aa_second_20 += diff;
-    aa_minute_1 += diff;
-    aa_minute_2 += diff;
-    aa_minute_5 += diff;
-    aa_minute_10 += diff;
-    aa_minute_60 += diff;
-    aa_minute_180 += diff;
-    aa_jiarenTime += diff;
+    //aa_lock.lock();
+    world->aa_second_1 += diff;
+    world->aa_second_2 += diff;
+    world->aa_second_20 += diff;
+    world->aa_minute_1 += diff;
+    world->aa_minute_2 += diff;
+    world->aa_minute_5 += diff;
+    world->aa_minute_10 += diff;
+    world->aa_minute_60 += diff;
+    world->aa_minute_180 += diff;
+    world->aa_jiarenTime += diff;
+    world->aa_LastResurrectTime += diff;
 
+    //获取在线玩家
+    aaCenter.UpdateOnlinePlayers();
     // 比武大会
     aaCenter.AA_Biwu_Update(diff);
     // 首领争霸
@@ -2947,13 +2957,99 @@ void World::Update(uint32 diff)
     // 攻城战
     aaCenter.AA_Gongcheng_Update(diff);
 
-    std::vector<Player*> players = aaCenter.GetOnlinePlayers();
+    uint32 entry_lm = 8;
+    uint32 entry_bl = 9;
+    uint32 entry_all = 10;
 
-    if (aa_second_2 >= 2000) {
+    if (world->aa_second_1 >= 1000) {
+        for (auto player : aaCenter.aa_onlinePlayers) {
+            AA_Map_Player_Conf conf = aaCenter.AA_GetAA_Map_Player_Conf(player);
+            //刷新副本通关显示
+            if (aaCenter.AA_VerifyCode("a101b")) {
+                if (conf.dietime > 0 || conf.xianzhitime > 0 || (conf.jindu_exp != "" && conf.jindu_exp != "0") || (conf.jindu_reward != "" && conf.jindu_reward != "0")) {
+                    if (conf.m_xianzhitime && conf.m_xianzhitime < 2 * world->aa_second_1) {
+                        aaCenter.M_SendMap_Jindu(player);
+                    }
+                    player->jindu_time += world->aa_second_1;
+                    if (player->jindu_time >= 10000) {
+                        player->jindu_time = 0;
+                        aaCenter.M_SendMap_Jindu(player);
+                    }
+                }
+            }
+
+            if (!player->isDead()) {
+                continue;
+            }
+            TeamId team = player->GetTeamId();
+            uint32 entry = 0;
+            if (team == TEAM_ALLIANCE) {
+                entry = entry_lm;
+            }
+            else if (team == TEAM_HORDE) {
+                entry = entry_bl;
+            }
+            else {
+                continue;
+            }
+            std::list<Creature*> cList;
+            player->GetCreatureListWithEntryInGrid(cList, 15.0f, entry_all);
+
+            if (cList.size() == 0) {
+                player->GetCreatureListWithEntryInGrid(cList, 15.0f, entry);
+            }
+            Creature* creature = nullptr;
+            for (auto c : cList) {
+                creature = c;
+                break;
+            }
+            if (!creature) {
+                continue;
+            }
+
+            if (world->aa_LastResurrectTime >= RESURRECTION_INTERVAL)
+            {
+                if (player->IsInWorld())
+                {
+                    creature->CastSpell(creature, SPELL_SPIRIT_HEAL, true);
+                }
+                // Resurrection visual
+                player->CastSpell(player, SPELL_RESURRECTION_VISUAL, true);
+
+                player->ResurrectPlayer(1.0f);
+                player->CastSpell(player, 6962, true);
+                player->CastSpell(player, SPELL_SPIRIT_HEAL_MANA, true);
+                player->SpawnCorpseBones(false);
+
+                std::ostringstream oss;
+                oss << "你复活了。";
+                creature->Whisper(oss.str().c_str(), LANG_UNIVERSAL, player);
+            }
+            else {
+                uint32 time_ = (RESURRECTION_INTERVAL - world->aa_LastResurrectTime) / 1000;
+                if (time_ > 0 && world->aa_yishis[time_] == false) {
+                    world->aa_yishis[time_] = true;
+                    std::ostringstream oss;
+                    oss << "复活剩余 " << time_ << " 秒。";
+                    creature->Whisper(oss.str().c_str(), LANG_UNIVERSAL, player);
+                }
+            }
+        }
+
+        if (world->aa_LastResurrectTime >= RESURRECTION_INTERVAL)
+        {
+            world->aa_yishis.clear();
+            world->aa_LastResurrectTime = 0;
+        }
+
+        world->aa_second_1 = 0;
+    }
+
+    if (world->aa_second_2 >= 2000) {
         //答题
         if (aaCenter.aa_dati_confs.size() > 0) {
             if (aaCenter.aa_dati_Time > 0) {
-                aaCenter.aa_dati_Time = aaCenter.aa_dati_Time > aa_second_2 ? aaCenter.aa_dati_Time - aa_second_2 : 0;
+                aaCenter.aa_dati_Time = aaCenter.aa_dati_Time > world->aa_second_2 ? aaCenter.aa_dati_Time - world->aa_second_2 : 0;
                 if (aaCenter.aa_dati_Time == 0) {
                     aaCenter.aa_dati_id = 0;
                 }
@@ -2961,7 +3057,7 @@ void World::Update(uint32 diff)
         }
         // 自动组队
         if (aaCenter.aa_xitong_groups.size() > 0) {
-            for (auto itr : aaCenter.aa_xitong_groups) {
+            for (auto& itr : aaCenter.aa_xitong_groups) {
                 AA_Xitong_Group conf = itr.second;
                 if (conf.count == 0) {
                     continue;
@@ -2971,7 +3067,7 @@ void World::Update(uint32 diff)
                         continue;
                     }
                 }
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     if (!p->GetMap()) {
                         continue;
                     }
@@ -2979,34 +3075,43 @@ void World::Update(uint32 diff)
                     Group* group = p->GetGroup();
                     if (conf.zoneid == -1 || zoneid == conf.zoneid) {
                         uint32 zoneid = p->GetZoneId();
-                        std::set<Group*> groups = aaCenter.aa_groups[zoneid];
+                        //删除不存在的队伍
+                        for (auto it = aaCenter.aa_groups[zoneid].begin(); it != aaCenter.aa_groups[zoneid].end();)
+                        {
+                            Group* g = sGroupMgr->GetGroupByGUID(*it);
+                            if (!g || !g->IsCreated()) {
+                                it = aaCenter.aa_groups[zoneid].erase(it);
+                            }
+                            else {
+                                it++;
+                            }
+                        }
+                        //如果玩家队伍不是自动组队队伍，离掉自身的队伍
                         if (group) {
                             bool isOk = true;
-                            for (auto g : groups) {
-                                if (g->GetLeaderGUID() == group->GetLeaderGUID()) {
-                                    isOk = false;
-                                    break;
+                            for (auto guidlow : aaCenter.aa_groups[zoneid]) {
+                                if (Group* g = sGroupMgr->GetGroupByGUID(guidlow)) {
+                                    if (g == group) {
+                                        isOk = false;
+                                        break;
+                                    }
                                 }
                             }
                             if (isOk) {
-                                group->RemoveMember(p->GetGUID());
+                                if (p->GetGroupInvite())
+                                    p->UninviteFromGroup();
+                                if (p->GetGroupInvite())
+                                    p->UninviteFromGroup();
+                                //group->RemoveMember(p->GetGUID());
                             }
                         }
+                        //如果玩家没有队伍
                         if (p->GetGroup() == nullptr) {
-                            Group* mgroup = nullptr;
-                            for (auto it = groups.begin(); it != groups.end();)
-                            {
-                                Group* g = *it;
-                                if (g && g->GetMembersCount() > 0) {
-                                    it++;
-                                }
-                                else {
-                                    it = groups.erase(it);
-                                }
-                            }
-                            aaCenter.aa_groups[zoneid] = groups;
-                            for (auto g : groups) {
-                                if (!g) {
+                            //从自动组队的队伍集中取一个队伍
+                            Group* group = nullptr;
+                            for (auto& guidlow : aaCenter.aa_groups[zoneid]) {
+                                Group* g = sGroupMgr->GetGroupByGUID(guidlow);
+                                if (!g || !g->IsCreated()) {
                                     continue;
                                 }
                                 if (g->IsFull()) {
@@ -3029,19 +3134,26 @@ void World::Update(uint32 diff)
                                         }
                                     }
                                 }
-                                mgroup = g;
+                                group = g;
                                 break;
                             }
-                            if (mgroup) {
-                                mgroup->AddMember(p);
+                            if (!group) {
+                                group = new Group();
+                                if (group->Create(p))
+                                {
+                                    sGroupMgr->AddGroup(group);
+                                    group->BroadcastGroupUpdate();
+                                    group->ConvertToRaid();
+                                    ObjectGuid gguid = group->GetGUID();
+                                    aaCenter.aa_groups[zoneid].insert(gguid);
+                                }
+                                else {
+                                    delete group;
+                                    group = nullptr;
+                                }
                             }
                             else {
-                                mgroup = new Group;
-                                if (mgroup->Create(p))
-                                {
-                                    mgroup->ConvertToRaid();
-                                }
-                                aaCenter.aa_groups[zoneid].insert(mgroup);
+                                group->AddMember(p);
                             }
                         }
                     }
@@ -3054,7 +3166,7 @@ void World::Update(uint32 diff)
             //2、人数满了强行开启活动
             uint32 count = aaCenter.aa_jijie_times.size();
             std::map<ObjectGuid::LowType, std::set<Player*>> jj_players; jj_players.clear();
-            for (auto p : players)
+            for (auto p : aaCenter.aa_onlinePlayers)
             {
                 if (p->aa_jijie_guidlow > 0) {
                     jj_players[p->aa_jijie_guidlow].insert(p);
@@ -3062,8 +3174,8 @@ void World::Update(uint32 diff)
             }
             for (size_t i = 0; i < count; i++)
             {
-                if (aaCenter.aa_jijie_times[i] >= aa_second_2) {
-                    aaCenter.aa_jijie_times[i] -= aa_second_2;
+                if (aaCenter.aa_jijie_times[i] >= world->aa_second_2) {
+                    aaCenter.aa_jijie_times[i] -= world->aa_second_2;
                 }
                 else {
                     aaCenter.aa_jijie_times[i] = 0;
@@ -3074,7 +3186,7 @@ void World::Update(uint32 diff)
                     ObjectGuid::LowType guidlow_dz = aaCenter.aa_jijie_guidlows[i];
                     std::set<Player*> ps = jj_players[guidlow_dz];
                     if (ps.size() < conf.count_min) {
-                        std::string msg = "|cff00FFFF[系统提示]|cffFF0000你所在的活动开启后不足" + std::to_string(conf.count_min) + "人被解散!";
+                        std::string msg = "|cff00FFFF[集结号]|cffFF0000你所在的活动开启后不足" + std::to_string(conf.count_min) + "人被解散!";
                         for (auto p : ps) {
                             aaCenter.AA_SendMessage(p, 1, msg.c_str());
                             aaCenter.AA_SendMessage(p, 0, msg.c_str());
@@ -3086,23 +3198,37 @@ void World::Update(uint32 diff)
                                 //解散队长的队伍，创建一个新队伍
                                 Group* group = p_dz->GetGroup();
                                 if (group && group->IsMember(p_dz->GetGUID())) {
-                                    group->RemoveMember(p_dz->GetGUID());
+                                    if (p_dz->GetGroupInvite())
+                                        p_dz->UninviteFromGroup();
+                                    if (p_dz->GetGroupInvite())
+                                        p_dz->UninviteFromGroup();
                                 }
-                                Group* new_group = new Group;
+                                Group* new_group = new Group();
                                 if (new_group->Create(p_dz))
                                 {
+                                    sGroupMgr->AddGroup(new_group);
+                                    new_group->BroadcastGroupUpdate();
                                     new_group->ConvertToRaid();
                                 }
-                                for (auto p : ps) {
-                                    p->aa_jijie_guidlow = 0;
-                                    if (p != p_dz) {
-                                        //解散队员的队伍，加入队长的队伍
-                                        Group* group = p->GetGroup();
-                                        if (group && group->IsMember(p->GetGUID())) {
-                                            group->RemoveMember(p->GetGUID());
-                                        }
-                                        if (!new_group->IsFull()) {
-                                            new_group->AddMember(p);
+                                else {
+                                    delete new_group;
+                                    new_group = nullptr;
+                                }
+                                if (new_group && new_group->IsCreated()) {
+                                    for (auto p : ps) {
+                                        p->aa_jijie_guidlow = 0;
+                                        if (p != p_dz) {
+                                            //解散队员的队伍，加入队长的队伍
+                                            Group* group = p->GetGroup();
+                                            if (group && group->IsMember(p->GetGUID())) {
+                                                if (p->GetGroupInvite())
+                                                    p->UninviteFromGroup();
+                                                if (p->GetGroupInvite())
+                                                    p->UninviteFromGroup();
+                                            }
+                                            if (new_group && !new_group->IsFull()) {
+                                                new_group->AddMember(p);
+                                            }
                                         }
                                     }
                                 }
@@ -3123,7 +3249,7 @@ void World::Update(uint32 diff)
                     aaCenter.aa_jijie_msgs.erase(aaCenter.aa_jijie_msgs.begin() + i);
 
                     //发送队伍列表信息、
-                    for (auto p : players) {
+                    for (auto p : aaCenter.aa_onlinePlayers) {
                         aaCenter.M_SendAA_Conf(p, "3050");
                     }
                 }
@@ -3133,6 +3259,9 @@ void World::Update(uint32 diff)
         for (int i = 0; i < 13; i++) {
             //战场弹窗间隔
             uint32 bg_id = bg_ids[i];
+            if (aaCenter.aa_battleground_events.find(bg_id) == aaCenter.aa_battleground_events.end()) {
+                continue;
+            }
             uint32 event_id = aaCenter.aa_battleground_events[bg_id];
             if (!event_id) {
                 continue;
@@ -3142,8 +3271,8 @@ void World::Update(uint32 diff)
             }
             AA_Battleground_Conf conf = aaCenter.aa_battleground_confs[bg_id][event_id];
             if (conf.is_open == 1 && conf.alert_jiange > 0) { //判断战场是否开启 是否需要循环提示
-                if (aa_alertTimes[bg_id] >= conf.alert_jiange * 1000 * 60) {
-                    aa_alertTimes[bg_id] = 0;
+                if (world->aa_alertTimes[bg_id] >= conf.alert_jiange * 1000 * 60) {
+                    world->aa_alertTimes[bg_id] = 0;
                     GameEventMgr::GameEventDataMap const& events = sGameEventMgr->GetEventMap();
                     if (conf.stop_time >= events.size())
                     {
@@ -3161,7 +3290,7 @@ void World::Update(uint32 diff)
                     }
 
                     if (endtime <= conf.max_time * MINUTE) { //可进场
-                        for (Player* p : players) {
+                        for (Player* p : aaCenter.aa_onlinePlayers) {
                             if (p && p->IsInWorld() && !p->InBattleground()) {
                                 aaCenter.AA_EventStart(p, conf.event_id);
                             }
@@ -3169,7 +3298,7 @@ void World::Update(uint32 diff)
                     }
                 }
 
-                aa_alertTimes[bg_id] += aa_second_2;
+                world->aa_alertTimes[bg_id] += world->aa_second_2;
             }
         }
 
@@ -3179,7 +3308,7 @@ void World::Update(uint32 diff)
                 uint32 mapid = iter.first;
                 std::map<int32, int32> v = iter.second;
                 if (v[1] > 0) {
-                    aaCenter.aa_mareavalues[mapid][1] += aa_second_2;
+                    aaCenter.aa_mareavalues[mapid][1] += world->aa_second_2;
                     aaCenter.AA_UpdateValueBools(mapid, 2, true);
                 }
             }
@@ -3187,7 +3316,7 @@ void World::Update(uint32 diff)
                 uint32 mapid = iter.first;
                 std::map<int32, int32> v = iter.second;
                 if (v[1] > 0) {
-                    aaCenter.aa_mzonevalues[mapid][1] += aa_second_2;
+                    aaCenter.aa_mzonevalues[mapid][1] += world->aa_second_2;
                     aaCenter.AA_UpdateValueBools(mapid, 1, true);
                 }
             }
@@ -3195,7 +3324,7 @@ void World::Update(uint32 diff)
                 uint32 mapid = iter.first;
                 std::map<int32, int32> v = iter.second;
                 if (v[1] > 0) {
-                    aaCenter.aa_mmapvalues[mapid][1] += aa_second_2;
+                    aaCenter.aa_mmapvalues[mapid][1] += world->aa_second_2;
                     aaCenter.AA_UpdateValueBools(mapid, 0, true);
                 }
             }
@@ -3203,15 +3332,16 @@ void World::Update(uint32 diff)
                 uint32 mapid = iter.first;
                 std::map<int32, int32> v = iter.second;
                 if (v[1] > 0) {
-                    aaCenter.aa_minstancevalues[mapid][1] += aa_second_2;
+                    aaCenter.aa_minstancevalues[mapid][1] += world->aa_second_2;
                     aaCenter.AA_UpdateValueBools(mapid, 3, true);
                 }
             }
         }
-        aa_second_2 = 0;
+
+        world->aa_second_2 = 0;
     }
-    if (aa_second_20 > 20000) {
-        aa_second_20 = 0;
+    if (world->aa_second_20 > 20000) {
+        world->aa_second_20 = 0;
         if (!aaCenter.aa_huodong_confs.empty()) {
             std::map<uint32, int32> times; times.clear();
             for (auto& itr : aaCenter.aa_huodong_confs)
@@ -3260,7 +3390,7 @@ void World::Update(uint32 diff)
             if (result != "{") {
                 result += "}";
                 aaCenter.AA_StringReplaceLast(result, ",}", "}");
-                for (Player const* player : players) {
+                for (Player const* player : aaCenter.aa_onlinePlayers) {
                     aaCenter.M_SendClientAddonData(const_cast<Player*>(player), "10011", result);
                 }
             }
@@ -3269,7 +3399,7 @@ void World::Update(uint32 diff)
         { //更新玩家信息
             aaCenter.lmcount = 0;
             aaCenter.blcount = 0;
-            for (Player const* p : players) {
+            for (Player const* p : aaCenter.aa_onlinePlayers) {
                 //更新阵营平衡光环
                 if (aaCenter.aa_world_confs[86].value2 != "" || aaCenter.aa_world_confs[87].value2 != "") {
                     if (p->GetTeamId() == TEAM_HORDE) {
@@ -3282,7 +3412,7 @@ void World::Update(uint32 diff)
             }
         }
     }
-    if (aa_minute_1 > 60000) {
+    if (world->aa_minute_1 > 60000) {
         //排行奖励
         if (aaCenter.AA_VerifyCode("a200b")) {
             if (aaCenter.aa_paihangxs.size() > 0 ||
@@ -3291,24 +3421,21 @@ void World::Update(uint32 diff)
                 time_t time1 = time(NULL);//获取系统时间，单位为秒;
                 struct tm* time = localtime(&time1);//转换成tm类型的结构体;
                 if (time->tm_hour == int(aaCenter.aa_world_confs[72].value1)) {
-                    if (isPaihang == false) {
+                    if (world->isPaihang == false) {
                         aaCenter.AA_PaihangReward();
                         aaCenter.aa_jishas.clear();
                         aaCenter.aa_renwus.clear();
+                        aaCenter.aa_hongbaos.clear();
                         CharacterDatabase.Execute("UPDATE _玩家排行数据x set 每日战场击杀 = 0, 每日完成任务 = 0");
-                        isPaihang = true;
-                        std::string msg = "|cff00FFFF[系统提示]|排行奖励已经全部发放，下次发放时间为次日" + std::to_string(aaCenter.aa_world_confs[72].value1) + "点";
+                        world->isPaihang = true;
+                        std::string msg = "|cff00FFFF[排行榜]|排行奖励已经全部发放，下次发放时间为次日" + std::to_string(aaCenter.aa_world_confs[72].value1) + "点";
                         aaCenter.AA_SendMessage(nullptr, 2, msg.c_str());
                         aaCenter.AA_SendMessage(nullptr, 2, msg.c_str());
                         aaCenter.AA_SendMessage(nullptr, 2, msg.c_str());
                     }
                 }
                 else {
-                    isPaihang = false;
-                }
-
-                if (aaCenter.AA_VerifyCode("a207b")) {
-                    aaCenter.AA_PaihangReward(true);
+                    world->isPaihang = false;
                 }
             }
         }
@@ -3318,7 +3445,7 @@ void World::Update(uint32 diff)
             time_t time1 = time(NULL);//获取系统时间，单位为秒;
             struct tm* time = localtime(&time1);//转换成tm类型的结构体;
             if (time->tm_hour == aaCenter.aa_world_confs[101].value1) {
-                if (meirijifen == false) {
+                if (world->meirijifen == false) {
                     //正确遍历:
                     {
                         std::unordered_map<uint32, AA_Account>::iterator iter;
@@ -3332,9 +3459,9 @@ void World::Update(uint32 diff)
                             conf.denglu_qiandao = 0;
                             conf.licai = 0;
                             conf.buy_time = "";
-                            conf.isUpdate = true;
                             conf.update_time = time1;
                             aaCenter.aa_accounts[iter->first] = conf;
+                            sAAData->AA_REP_Accounts.insert(iter->first);
                         }
                     }
                     //清空周期捐献数量
@@ -3350,32 +3477,28 @@ void World::Update(uint32 diff)
                             //清空周期捐献
                             for (auto itr : aaCenter.aa_character_juanxians) {
                                 aaCenter.aa_character_juanxians[itr.first].juanxian_zhou = 0;
-                                aaCenter.aa_character_juanxians[itr.first].isUpdate = true;
                                 aaCenter.aa_character_juanxians[itr.first].update_time = time1;
+                                sAAData->AA_REP_Character_Juanxians.insert(itr.first);
                             }
                         }
                         std::string juanxian_str = "";
                         aaCenter.AA_StringToStringMap(juanxian_str, mdiy_systems);
                         aaCenter.aa_system_conf.diy_system = juanxian_str;
-                        aaCenter.aa_system_conf.isUpdate = true;
                         aaCenter.aa_system_conf.update_time = time1;
+                        aaCenter.aa_system_conf.isUpdate = true;
                     }
-                    {
-                        std::unordered_map<ObjectGuid::LowType, AA_Characters>::iterator iter;
-                        for (iter = aaCenter.aa_characterss.begin(); iter != aaCenter.aa_characterss.end(); iter++)
-                        {
-                            AA_Characters conf = iter->second;
-                            conf.guid = iter->first;
-                            conf.buy_time = "";
-                            conf.huoyues = "";
-                            conf.huoyue_jindus = "";
-                            conf.huoyue_jindu_status = "";
-                            conf.isUpdate = true;
-                            conf.update_time = time1;
-                            aaCenter.aa_characterss[iter->first] = conf;
-                        }
+                    for (auto& iter : aaCenter.aa_characterss) {
+                        AA_Characters conf = iter.second;
+                        conf.guid = iter.first;
+                        conf.buy_time = "";
+                        conf.huoyues = "";
+                        conf.huoyue_jindus = "";
+                        conf.huoyue_jindu_status = "";
+                        conf.update_time = time1;
+                        aaCenter.aa_characterss[iter.first] = conf;
+                        sAAData->AA_REP_Characterss.insert(iter.first);
                     }
-                    meirijifen = true;
+                    world->meirijifen = true;
                     LoginDatabase.PExecute("UPDATE _aa_account SET 每日累充积分=0,每日首充积分=0,每日首充领取=0,签到天数=0,理财奖励领取=0,物品购买次数=\"\",更新时间={}", time1);
                     CharacterDatabase.PExecute("UPDATE _玩家角色数据 SET 物品购买次数=\"\",活跃值=\"\",活跃进度=\"\",活跃进度领取状态=\"\",update_time={}", time1);
 
@@ -3385,12 +3508,16 @@ void World::Update(uint32 diff)
                         std::map<std::string, std::string> mdiy_systems; mdiy_systems.clear();
                         aaCenter.AA_StringToStringMap(m_diy_systems, mdiy_systems);
                         bool isOk = false;
-                        for (auto itr : mdiy_systems) {
-                            std::string str = itr.first;
+                        for (auto it = mdiy_systems.begin(); it != mdiy_systems.end();)
+                        {
+                            std::string str = it->first;
                             uint32 entry = aaCenter.AA_StringInt32(str);
                             if (entry > 100000000 && entry <= 200000000) {
-                                mdiy_systems.erase(std::to_string(entry));
+                                it = mdiy_systems.erase(it);
                                 isOk = true;
+                            }
+                            else {
+                                ++it;
                             }
                         }
                         if (isOk) {
@@ -3402,43 +3529,138 @@ void World::Update(uint32 diff)
                 }
             }
             else {
-                meirijifen = false;
+                world->meirijifen = false;
             }
         }
-        aa_minute_1 = 0;
-    }
-    if (aa_minute_2 > 120000) {
-        aa_minute_2 = 0;
-    }
-    if (aa_minute_5 > 300000) {
-        {
-            std::string msg = "|cff00FFFF[系统提示]|cffFFFF00你正在使用的是AA暗黑核心，需要取消此条消息，请联系QQ643125009";
-            if (aaCenter.aa_version.aa_login_count != 999 && aaCenter.aa_version.aa_login_count != 16) {
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto player : players) {
-                    aaCenter.AA_SendMessage(player, 0, msg.c_str());
-                    aaCenter.AA_SendMessage(player, 0, msg.c_str());
-                    aaCenter.AA_SendMessage(player, 0, msg.c_str());
-                    aaCenter.AA_SendMessage(player, 1, msg.c_str());
-                    aaCenter.AA_SendMessage(player, 1, msg.c_str());
-                    aaCenter.AA_SendMessage(player, 1, msg.c_str());
+
+        //更新过期的红包
+        for (auto it = aaCenter.aa_character_hongbaos.begin(); it != aaCenter.aa_character_hongbaos.end();) {
+            AA_Character_Hongbao conf = it->second;
+            bool isOk = true;
+            if (conf.update_time > 0) {
+                time_t timep;
+                time(&timep);
+                time_t t = conf.update_time >= timep ? conf.update_time - timep : 0;
+                if (t <= world->aa_minute_1) {
+                    if (conf.id > 0 && conf.money_all - conf.money > 0 && conf.guid > 0) {
+                        uint32 money = conf.money_all - conf.money;
+                        ObjectGuid::LowType senderGuid = conf.guid;
+
+                        if (conf.type == 1) {
+                            std::string danwei = aaCenter.aa_world_confs[65].value2;
+                            aaCenter.aa_accounts[conf.account].battlecore += money;
+                            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                            // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                            MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                            std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                            MailDraft draft("红包退款到账通知", subject);
+                            draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                            CharacterDatabase.CommitTransaction(trans);
+                        }
+                        else if (conf.type == 2) {
+                            std::string danwei = aaCenter.aa_world_confs[64].value2;
+                            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                            // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                            MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                            std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                            MailDraft draft("红包退款到账通知", subject);
+                            aaCenter.aa_accounts[conf.account].jifen += money;
+                            draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                            CharacterDatabase.CommitTransaction(trans);
+                        }
+                        else if (conf.type == 3) {
+                            std::string danwei = aaCenter.aa_world_confs[63].value2;
+                            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                            // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                            MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                            std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                            MailDraft draft("红包退款到账通知", subject);
+                            aaCenter.aa_accounts[conf.account].mobi += money;
+                            draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                            CharacterDatabase.CommitTransaction(trans);
+                        }
+                        else if (conf.type == 4) {
+                            std::string danwei = aaCenter.aa_world_confs[62].value2;
+                            // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                            MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                            std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                            MailDraft draft("红包退款到账通知", subject);
+                            aaCenter.aa_accounts[conf.account].paodian += money;
+                            draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                            CharacterDatabase.CommitTransaction(trans);
+                        }
+                        else if (conf.type == 5) {
+                            std::string danwei = "铜币";
+                            // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                            MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                            std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                            MailDraft draft("红包退款到账通知", subject);
+                            draft.AddMoney(money);
+                            draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                            CharacterDatabase.CommitTransaction(trans);
+                        }
+                        else if (conf.type < 0) {
+                            int32 itemId = -conf.type;
+                            ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(itemId);
+                            if (pProto) {
+                                std::string danwei = pProto->GetName(LOCALE_zhCN);
+                                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                                // If the message is sent from console, set it as sent by the target itself, like the other Customer Support mails.
+                                MailSender sender(MAIL_NORMAL, senderGuid, MAIL_STATIONERY_GM);
+                                std::string subject = "你发出的红包未在24小时内领取完，系统已退回剩余部分红包(" + std::to_string(money) + danwei + ")";
+                                MailDraft draft("红包退款到账通知", subject);
+
+                                Item* pItem = NewItemOrBag(pProto);
+                                if (pItem->Create(sObjectMgr->GetGenerator<HighGuid::Item>().Generate(), itemId, ItemContext::NONE, nullptr))
+                                {
+                                    pItem->SaveToDB(trans);
+                                    draft.AddItem(pItem);
+                                }
+                                draft.SendMailTo(trans, MailReceiver(senderGuid), sender);
+                                CharacterDatabase.CommitTransaction(trans);
+                            }
+                        }
+                    }
+                    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(_AA_DEL_Character_Hongbao);
+                    stmt->setUInt32(0, conf.id);// = 0;//id
+                    trans->Append(stmt);
+                    CharacterDatabase.CommitTransaction(trans);
+                    if (aaCenter.aa_hongbao_guids.find(conf.id) != aaCenter.aa_hongbao_guids.end()) {
+                        aaCenter.aa_hongbao_guids.erase(conf.id);
+                    }if (aaCenter.aa_hongbao_moneys.find(conf.id) != aaCenter.aa_hongbao_moneys.end()) {
+                        aaCenter.aa_hongbao_moneys.erase(conf.id);
+                    }if (aaCenter.aa_hongbao_names.find(conf.id) != aaCenter.aa_hongbao_names.end()) {
+                        aaCenter.aa_hongbao_names.erase(conf.id);
+                    }
+                    isOk = false;
+                    it = aaCenter.aa_character_hongbaos.erase(it);
                 }
             }
+            if (isOk) {
+                ++it;
+            }
         }
-        aa_minute_5 = 0;
+
+        world->aa_minute_1 = 0;
     }
-    if (aa_minute_10 > 600000) {
-        aa_minute_10 = 0;
-        // {
-        //     thread t(AA_AAVerify);
-        //     t.detach();
-        // }
+    if (world->aa_minute_2 > 120000) {
+        world->aa_minute_2 = 0;
     }
-    if (aa_minute_60 > 3600000) {
-        aa_minute_60 = 0;
+    if (world->aa_minute_5 > 300000) {
+        world->aa_minute_5 = 0;
     }
-    if (aa_minute_180 > 10800000) {
-        aa_minute_180 = 0;
+    if (world->aa_minute_10 > 600000) {
+        world->aa_minute_10 = 0;
+    }
+    if (world->aa_minute_60 > 3600000) {
+        world->aa_minute_60 = 0;
+    }
+
+    if (world->aa_minute_180 > 10800000) {
+        world->aa_minute_180 = 0;
         {//3小时清理一次缓存
             TC_LOG_INFO("server.loading", "开始保存玩家数据...");
             ObjectAccessor::SaveAllPlayers();
@@ -3450,18 +3672,17 @@ void World::Update(uint32 diff)
         }
     }
 
-    {
-        // 更新玩家附近的生物集合,宠物除外
-        aaCenter.m_ai_creatures.clear();
-        if (!players.empty() && aaCenter.aa_world_confs[76].value1 > 0) {
-            for (Player* p : players) {
-                std::list<Creature*> list; list.clear();
-                aaCenter.BB_GetCreatureListInGrid(p, list, aaCenter.aa_world_confs[76].value1);
-                for (auto itr : list) {
-                    aaCenter.m_ai_creatures.insert(itr);
-                }
-            }
-        }
+    //aa_lock.unlock();
+}
+
+/// Update the World !
+void World::Update(uint32 diff)
+{
+    if (diff > 0) {
+        /*std::future<void> resultFromParam = */std::async(std::launch::async, AA_World_Update, this, diff);
+        //resultFromParam.wait();
+
+        //AA_World_Update(this, diff);
     }
 
     TC_METRIC_TIMER("world_update_time_total");
@@ -4273,11 +4494,15 @@ uint32 World::ShutdownCancel()
 }
 
 /// Send a server message to the user(s)
-void World::SendServerMessage(ServerMessageType messageID, std::string stringParam /*= ""*/, Player* player /*= nullptr*/)
+void World::SendServerMessage(ServerMessageType messageID, std::string_view stringParam /*= {}*/, Player const* player /*= nullptr*/)
 {
+    ServerMessagesEntry const* serverMessage = sServerMessagesStore.LookupEntry(messageID);
+    if (!serverMessage)
+        return;
+
     WorldPackets::Chat::ChatServerMessage chatServerMessage;
     chatServerMessage.MessageID = int32(messageID);
-    if (messageID <= SERVER_MSG_STRING)
+    if (strstr(serverMessage->Text[player->GetSession()->GetSessionDbcLocale()], "%s"))
         chatServerMessage.StringParam = stringParam;
 
     if (player)

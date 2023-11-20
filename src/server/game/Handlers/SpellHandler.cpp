@@ -376,7 +376,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPackets::Spells::CastSpell& cast)
     }
 
     // check known spell or raid marker spell (which not requires player to know it)
-    if (caster->GetTypeId() == TYPEID_PLAYER && !caster->ToPlayer()->HasActiveSpell(spellInfo->Id) && !spellInfo->HasEffect(SPELL_EFFECT_CHANGE_RAID_MARKER) && !spellInfo->HasAttribute(SPELL_ATTR8_RAID_MARKER))
+    if (caster->GetTypeId() == TYPEID_PLAYER && !caster->ToPlayer()->HasActiveSpell(spellInfo->Id) && !spellInfo->HasAttribute(SPELL_ATTR8_SKIP_IS_KNOWN_CHECK))
     {
         bool allow = false;
 
@@ -397,7 +397,7 @@ void WorldSession::HandleCastSpellOpcode(WorldPackets::Spells::CastSpell& cast)
     }
 
     // Check possible spell cast overrides
-    spellInfo = caster->GetCastSpellInfo(spellInfo);
+    spellInfo = caster->GetCastSpellInfo(spellInfo, triggerFlag);
 
     if (spellInfo->IsPassive())
         return;
@@ -476,7 +476,7 @@ void WorldSession::HandleCancelAuraOpcode(WorldPackets::Spells::CancelAura& canc
 
 void WorldSession::HandlePetCancelAuraOpcode(WorldPackets::Spells::PetCancelAura& packet)
 {
-    if (sSpellMgr->GetSpellInfo(packet.SpellID, DIFFICULTY_NONE))
+    if (!sSpellMgr->GetSpellInfo(packet.SpellID, DIFFICULTY_NONE))
     {
         TC_LOG_ERROR("network", "WORLD: unknown PET spell id {}", packet.SpellID);
         return;

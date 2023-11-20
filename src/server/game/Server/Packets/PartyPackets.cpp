@@ -142,7 +142,7 @@ void WorldPackets::Party::RequestPartyMemberStats::Read()
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::Party::PartyMemberPhase const& phase)
 {
-    data << uint16(phase.Flags);
+    data << uint32(phase.Flags);
     data << uint16(phase.Id);
 
     return data;
@@ -725,6 +725,60 @@ WorldPacket const* WorldPackets::Party::BroadcastSummonResponse::Write()
     _worldPacket << Target;
     _worldPacket.WriteBit(Accepted);
     _worldPacket.FlushBits();
+
+    return &_worldPacket;
+}
+
+void WorldPackets::Party::SetRestrictPingsToAssistants::Read()
+{
+    bool hasPartyIndex = _worldPacket.ReadBit();
+    RestrictPingsToAssistants = _worldPacket.ReadBit();
+    if (hasPartyIndex)
+        _worldPacket >> PartyIndex.emplace();
+}
+
+void WorldPackets::Party::SendPingUnit::Read()
+{
+    _worldPacket >> SenderGUID;
+    _worldPacket >> TargetGUID;
+    Type = _worldPacket.read<PingSubjectType, uint8>();
+    _worldPacket >> PinFrameID;
+}
+
+WorldPacket const* WorldPackets::Party::ReceivePingUnit::Write()
+{
+    _worldPacket << SenderGUID;
+    _worldPacket << TargetGUID;
+    _worldPacket << uint8(Type);
+    _worldPacket << uint32(PinFrameID);
+
+    return &_worldPacket;
+}
+
+void WorldPackets::Party::SendPingWorldPoint::Read()
+{
+    _worldPacket >> SenderGUID;
+    _worldPacket >> MapID;
+    _worldPacket >> Point;
+    Type = _worldPacket.read<PingSubjectType, uint8>();
+    _worldPacket >> PinFrameID;
+}
+
+WorldPacket const* WorldPackets::Party::ReceivePingWorldPoint::Write()
+{
+    _worldPacket << SenderGUID;
+    _worldPacket << MapID;
+    _worldPacket << Point;
+    _worldPacket << uint8(Type);
+    _worldPacket << PinFrameID;
+
+    return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::Party::CancelPingPin::Write()
+{
+    _worldPacket << SenderGUID;
+    _worldPacket << PinFrameID;
 
     return &_worldPacket;
 }

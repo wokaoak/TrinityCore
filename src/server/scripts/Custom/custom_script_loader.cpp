@@ -24,6 +24,7 @@ void AddAA_Object_Teleport();
 void AddAA_Creature_Teleport();
 void AddAA_Item_Teleport();
 void AddAA_Item_Cuiqu();
+void AddAA_Item_Zuobiao();
 void AddAA_player_Script();
 void AddAA_Kill_Script();
 void AddAA_player_Event();
@@ -36,6 +37,7 @@ void AddCustomScripts()
     AddAA_Creature_Teleport();
     AddAA_Item_Teleport();
     AddAA_Item_Cuiqu();
+    AddAA_Item_Zuobiao();
     AddAA_player_Script();
     AddAA_Kill_Script();
     AddAA_player_Event();

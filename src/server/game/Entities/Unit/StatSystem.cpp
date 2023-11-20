@@ -277,6 +277,22 @@ void Player::UpdateArmor()
             value = conf.hujiasx;
         }
     }
+
+    //战宠给主人加护甲
+    for (Unit* unit : this->m_Controlled)
+    {
+        if (unit->aa_petzhan_id > 0) // minion, actually
+        {
+            AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[unit->aa_petzhan_id];
+            if (conf.hujia > 0) { //护甲 = 资质x契合x等级x0.1
+                uint32 value2 = conf.hujia;
+                value2 *= conf.qihe;
+                value2 *= conf.level;
+                value2 *= 0.1;
+                value += value2;
+            }
+        }
+    }
     
     SetArmor(int32(value), int32(value - baseValue));
 
@@ -349,14 +365,39 @@ void Player::UpdateMaxHealth()
 
     value *= juexing;
 
-    //aawow 职业属性平衡,生命上限,倍率
+    //aawow 职业属性平衡,倍率
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
     if (conf.class1 > 0) {
         if (conf.hpbl > 0) {
             value = value * (conf.hpbl / 100.0);
         }
+    }
+
+    //战宠给主人加血量
+    std::vector<uint32> ids = aaCenter.aa_character_petzhan_owner[GetGUIDLow()];
+    for (auto& it : ids)
+    {
+        AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[it];
+        if (conf.is_heti == 1) {
+            if (conf.health > 0) { //护甲 = 资质x契合x等级x0.1
+                uint32 value2 = conf.health;
+                value2 *= conf.qihe;
+                value2 *= conf.level;
+                value2 *= 0.1;
+                value += value2;
+            }
+        }
+    }
+
+    //aawow 职业属性平衡,生命上限
+    if (conf.class1 > 0) {
         if (conf.hpsx > 0 && value > conf.hpsx) {
             value = conf.hpsx;
+        }
+        if (aaCenter.AA_VerifyCode("a210b")) {
+            if (conf.hpxx > 0 && value < conf.hpxx) {
+                value = conf.hpxx;
+            }
         }
     }
 
@@ -1051,6 +1092,25 @@ void Creature::UpdateArmor()
 {
     float baseValue = GetFlatModifierValue(UNIT_MOD_ARMOR, BASE_VALUE);
     float value = GetTotalAuraModValue(UNIT_MOD_ARMOR);
+
+    //战宠护甲
+    if (this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetArmor() * conf.jicheng;
+                value += value1;
+                if (conf.hujia > 0) {
+                    uint32 value2 = conf.hujia;
+                    value2 *= conf.chengzhang;
+                    value2 *= conf.level;
+                    value2 *= 0.1;
+                    value += value2;
+                }
+            }
+        }
+    }
+
     SetArmor(int32(baseValue), int32(value - baseValue));
 }
 
@@ -1065,6 +1125,35 @@ void Creature::UpdateMaxHealth()
         }
         if (conf.health1 > 0 && conf.health1 != 100) {
             value = value * (conf.health1 / 100.0);
+        }
+    }
+    //宠物调整_生命值
+    if (this && this->aa_pet_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Pet conf = aaCenter.aa_pets[this->aa_pet_id];
+                if (conf.health > 0) {
+                    uint32 health = player->GetMaxHealth();
+                    value += health * conf.health * 0.01;
+                }
+            }
+        }
+    }
+    //战宠生命值
+    if (this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetMaxHealth() * conf.jicheng;
+                value += value1;
+                if (conf.health > 0) {
+                    uint32 value2 = conf.health;
+                    value2 *= conf.chengzhang;
+                    value2 *= conf.level;
+                    value2 *= 0.1;
+                    value += value2;
+                }
+            }
         }
     }
 
@@ -1104,6 +1193,17 @@ void Creature::UpdateMaxPower(Powers power)
     value *= GetPctModifierValue(unitMod, BASE_PCT);
     value += GetFlatModifierValue(unitMod, TOTAL_VALUE);
     value *= GetPctModifierValue(unitMod, TOTAL_PCT);
+
+    //战宠魔法值
+    if (power == POWER_MANA && this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetMaxPower(POWER_MANA) * conf.jicheng;
+                value += value1;
+            }
+        }
+    }
 
     SetMaxPower(power, (int32)std::lroundf(value));
 }
@@ -1316,6 +1416,24 @@ void Guardian::UpdateArmor()
     value += GetFlatModifierValue(unitMod, TOTAL_VALUE) + bonus_armor;
     value *= GetPctModifierValue(unitMod, TOTAL_PCT);
 
+    //战宠护甲
+    if (this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetArmor() * conf.jicheng;
+                value += value1;
+                if (conf.hujia > 0) {
+                    uint32 value2 = conf.hujia;
+                    value2 *= conf.chengzhang;
+                    value2 *= conf.level;
+                    value2 *= 0.1;
+                    value += value2;
+                }
+            }
+        }
+    }
+
     SetArmor(int32(baseValue), int32(value - baseValue));
 }
 
@@ -1341,6 +1459,35 @@ void Guardian::UpdateMaxHealth()
     value += GetFlatModifierValue(unitMod, TOTAL_VALUE) + stamina * multiplicator;
     value *= GetPctModifierValue(unitMod, TOTAL_PCT);
 
+    //宠物调整_生命值
+    if (this && this->aa_pet_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Pet conf = aaCenter.aa_pets[this->aa_pet_id];
+                if (conf.health > 0) {
+                    uint32 health = player->GetMaxHealth();
+                    value += health * conf.health * 0.01;
+                }
+            }
+        }
+    }
+    //战宠生命值
+    if (this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetMaxHealth() * conf.jicheng;
+                value += value1;
+                if (conf.health > 0) {
+                    uint32 value2 = conf.health;
+                    value2 *= conf.chengzhang;
+                    value2 *= conf.level;
+                    value2 *= 0.1;
+                    value += value2;
+                }
+            }
+        }
+    }
     SetMaxHealth((uint32)value);
 }
 
@@ -1355,6 +1502,17 @@ void Guardian::UpdateMaxPower(Powers power)
     value *= GetPctModifierValue(unitMod, BASE_PCT);
     value += GetFlatModifierValue(unitMod, TOTAL_VALUE);
     value *= GetPctModifierValue(unitMod, TOTAL_PCT);
+
+    //战宠魔法值
+    if (power == POWER_MANA && this && this->aa_petzhan_id > 0) {
+        if (GetOwner()) {
+            if (Player* player = GetOwner()->ToPlayer()) {
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[this->aa_petzhan_id];
+                uint32 value1 = player->GetMaxPower(POWER_MANA) * conf.jicheng;
+                value += value1;
+            }
+        }
+    }
 
     SetMaxPower(power, int32(value));
 }

@@ -49,7 +49,6 @@
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
 #include "LootItemStorage.h"
-#include "AAData.h"
 #include "Configuration/Config.h"
 #include "AchievementMgr.h"
 #include "World.h"
@@ -151,6 +150,102 @@ void zudui_paihangpx(std::vector<std::pair<uint32, uint32>>& v, std::map<int32, 
     v = vec;
 }
 
+void AA_Player_Update(Player* player, uint32 diff)
+{
+    if (!player->IsInWorld()) {
+        return;
+    }
+    if (!player->GetMap()) {
+        return;
+    }
+    player->aa_updatetime += diff;
+
+    if (player->aa_updatetime < 1000) {
+        return;
+    }
+
+    int32 mapId = player->GetMap()->GetId();
+    AA_Map_Player_Conf conf = aaCenter.AA_GetAA_Map_Player_Conf(player);
+    bool isOk = false;
+    if (conf.xianzhitime > 0 && (conf.m_xianzhitime >= conf.xianzhitime * 1000 || conf.m_xianzhitime == 0)) {
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000挑战时间结束，你被传回出生地。|r");
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000挑战时间结束，你被传回出生地。|r");
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000挑战时间结束，你被传回出生地。|r");
+        isOk = true;
+    }
+    if (conf.dietime && conf.m_dietime >= conf.dietime)
+    {
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000死亡次数达到上限，你被传回出生地。|r");
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000死亡次数达到上限，你被传回出生地。|r");
+        aaCenter.AA_SendMessage(player, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000死亡次数达到上限，你被传回出生地。|r");
+        isOk = true;
+    }
+    if (conf.need > 0 && !aaCenter.M_CanNeed(player, conf.need)) {//条件需求 传送到新手区域
+        isOk = true;
+    }
+    if (isOk) {
+        player->TeleportTo(player->m_homebind.GetMapId(), player->m_homebind.GetPositionX(), player->m_homebind.GetPositionY(), player->m_homebind.GetPositionZ(), player->GetOrientation());
+        if (conf.m_mapmoshi == 0) {
+            aaCenter.aa_mmapvalues[conf.m_mapid][1] = 0;
+        }
+        else if (conf.m_mapmoshi == 1) {
+            aaCenter.aa_mzonevalues[conf.m_mapid][1] = 0;
+        }
+        else if (conf.m_mapmoshi == 2) {
+            aaCenter.aa_mareavalues[conf.m_mapid][1] = 0;
+        }
+        else if (conf.m_mapmoshi == 3) {
+            //                        aaCenter.aa_minstancevalues[conf.m_mapid][1] = 0;
+        }
+        aaCenter.AA_UpdateValueBools(conf.m_mapid, conf.m_mapmoshi, true);
+    }
+
+    //aawow 地图限制pvp状态
+    if (conf.GroupOnOff == 1) {// 是否允许组队
+        if (player->GetGroup()) {
+            player->RemoveFromGroup();
+        }
+    }
+    if (conf.FlyOnOff == 1) {// 是否允许飞行
+        player->SetCanFly(false);
+    }
+
+    //地图中禁用技能获得光环，地图刷新时
+    if (conf.jyjineng != "" && conf.jyjineng != "0") {
+        std::vector<int32> spells; spells.clear();
+        aaCenter.AA_StringToVectorInt(conf.jyjineng, spells, ",");
+        for (int32 spellid : spells) {
+            if (spellid > 0) {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellid, DIFFICULTY_NONE);
+                if (spellInfo)
+                {
+                    if (SpellMgr::IsSpellValid(spellInfo))
+                    {
+                        if (player->HasAura(spellid)) {
+                            player->RemoveAurasDueToSpell(spellInfo->Id);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //切换aura时移除所有地图中获得的光环，刷新获得该地图中的光环
+    std::vector<int32> m_spells; m_spells.clear();
+    if (conf.hdguanghuan != "" && conf.hdguanghuan != "0") {
+        aaCenter.AA_StringToVectorInt(conf.hdguanghuan, m_spells, ",");
+        for (int32 spellid : m_spells) {
+            if (spellid > 0) {
+                SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellid, DIFFICULTY_NONE);
+                if (spellInfo)
+                {
+                    if (!player->HasAura(spellid)) {
+                        player->AddAura(spellid, player);
+                    }
+                }
+            }
+        }
+    }
+}
 
 void AACenter::Update(Unit* unit, uint32 diff)
 {
@@ -158,7 +253,71 @@ void AACenter::Update(Unit* unit, uint32 diff)
         return;
     }
 
+    bool isCansee = false;
     if (Player* p = unit->ToPlayer()) {
+        AA_Player_Update(p, diff);
+        //点卡模式
+        if (aaCenter.aa_world_confs[100].value1 == 1) {
+            uint32 accountid = p->GetSession()->GetAccountId();
+            if (accountid > 0) {
+                time_t timep;
+                time(&timep); /*当前time_t类型UTC时间*/
+                aaCenter.aa_accounts[accountid].update_time = timep;
+                sAAData->AA_REP_Accounts.insert(accountid);
+                if (aaCenter.aa_accounts[accountid].dianka >= diff) {
+                    aaCenter.aa_accounts[accountid].dianka = aaCenter.aa_accounts[accountid].dianka - diff;
+                }
+                else {
+                    aaCenter.aa_accounts[accountid].dianka = 0;
+                    if (p->aa_dianka == 120000) {
+                        std::string msg = "|cff00FFFF[账号提示]|cffFF0000游戏时间已不足，你将在2分钟后被强制下线，请联系管理员充值。";
+                        aaCenter.AA_SendMessage(p, 0, msg.c_str());
+                    }
+                    else if (p->aa_dianka == 0) {
+                        p->GetSession()->KickPlayer("dianka");
+                        return;
+                    }
+                    p->aa_dianka = p->aa_dianka >= diff ? p->aa_dianka - diff : 0;
+                }
+            }
+            p->aa_die_time += diff;
+        }
+
+        if (aaCenter.aa_petzhan_confs[1].value1 == 1 && aaCenter.aa_petzhan_confs[11].value1 > 0) {
+            if (p->IsAlive()) {
+                std::vector<uint32> ids = aaCenter.aa_character_petzhan_owner[p->GetGUIDLow()];
+                if (ids.size() > 0) {
+                    //排除已经出战的战宠
+                    std::vector<uint32> minionids; minionids.clear();
+                    for (Unit* unit : p->m_Controlled)
+                    {
+                        if (unit->aa_petzhan_id > 0 && unit->IsAlive()) // minion, actually
+                            minionids.push_back(unit->aa_petzhan_id);
+                    }
+                    for (int i = 0; i < ids.size(); i++) {
+                        if (std::find(minionids.begin(), minionids.end(), ids[i]) != minionids.end()) {
+                            std::swap(ids[i], ids[ids.size() - 1]); //将要删除的元素交换到最后
+                            ids.pop_back();
+                            i--; //这里的i--与上面的作用一样
+                        }
+                    }
+                    for (int i = 0; i < ids.size(); i++) {
+                        uint32 id = ids[i];
+                        AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+                        if (conf.is_chuzhan == 0) {
+                            continue;
+                        }
+                        aaCenter.aa_petzhan_resptimes[id] += diff;
+                        if (aaCenter.aa_petzhan_resptimes[id] >= aaCenter.aa_petzhan_confs[11].value1 * 1000) {
+                            aaCenter.aa_petzhan_resptimes.erase(id);
+                            std::string gm = ".组合 *.召唤战宠 " + std::to_string(id) + "<$自身>";
+                            aaCenter.AA_DoCommand(p, gm.c_str());
+                            aaCenter.AA_SendMessage(p, 1, "|cFF00FFFF[战|r|cFF00D9FF宠|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的战宠复活了!|r");
+                        }
+                    }
+                }
+            }
+        }
         {
             //狂暴者
             p->isKuangbao = false;
@@ -167,7 +326,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                     p->isKuangbao = true;
                 }
             }
-            //排名光环
+            //捐献排名光环
             if (aaCenter.AA_VerifyCode("a303b")) {
                 ObjectGuid::LowType guidlow = p->GetGUIDLow();
                 uint32 paiming = aaCenter.aa_juanxian_players[guidlow];
@@ -194,7 +353,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         aaCenter.AA_StringToVectorInt(conf.guanghuans, spells, ",");
                         for (auto spell : spells) {
                             if (p->HasAura(spell)) {
-                                p->RemoveAura(spell);
+                                p->RemoveAurasDueToSpell(spell);
                             }
                         }
                     }
@@ -220,7 +379,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                             else {
                                 for (auto it : spells) {
                                     if (p->HasAura(it)) {
-                                        p->RemoveAura(it);
+                                        p->RemoveAurasDueToSpell(it);
                                     }
                                 }
                             }
@@ -270,7 +429,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                                 }
                                 if (spell_old > 0) {
                                     if (p->HasAura(spellid)) {
-                                        p->RemoveAura(spellid);
+                                        p->RemoveAurasDueToSpell(spellid);
                                     }
                                 }
                                 spell_old = spellid;
@@ -278,7 +437,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                             else {
                                 if (spellid > 0) {
                                     if (p->HasAura(spellid)) {
-                                        p->RemoveAura(spellid);
+                                        p->RemoveAurasDueToSpell(spellid);
                                     }
                                 }
                             }
@@ -334,7 +493,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                                 for (auto itr : spells) {
                                     if (itr > 0) {
                                         if (p->HasAura(itr)) {
-                                            p->RemoveAura(itr);
+                                            p->RemoveAurasDueToSpell(itr);
                                         }
                                     }
                                 }
@@ -345,7 +504,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
 
             }
         }
-        AA_Map_Player_Conf map_conf = aaCenter.AA_GetAA_Map_Player_Conf(p);
+
         //更新阵营平衡光环
         if (lmcount || blcount) {
             std::vector<int32> spellids1; spellids1.clear();
@@ -366,7 +525,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         }
                         for (auto spellid : spellids1) { //联盟人多，取消联盟少的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -378,19 +537,19 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         }
                         for (auto spellid : spellids2) { //联盟人少，取消联盟多的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
                     else if (blcount && lmcount == blcount) { //人数一样，取消所有buff
                         for (auto spellid : spellids1) {
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                         for (auto spellid : spellids2) { //部落人多，取消部落少的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -404,7 +563,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         }
                         for (auto spellid : spellids2) { //部落人少，取消部落多的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -416,19 +575,19 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         }
                         for (auto spellid : spellids1) { //部落人多，取消部落少的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
                     else if (blcount && lmcount == blcount) { //人数一样，取消所有buff
                         for (auto spellid : spellids1) {
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                         for (auto spellid : spellids2) { //部落人多，取消部落少的buff
                             if (p->HasAura(spellid)) {
-                                p->RemoveAura(spellid);
+                                p->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -464,6 +623,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                 aaCenter.AA_DoCommand(p, gm.c_str());
             }
         }
+
         if (p->vendorSummonTime > 0) { //取消随身商人
             p->vendorSummonTime -= diff;
             if (p->vendorSummonTime <= 0) {
@@ -518,6 +678,8 @@ void AACenter::Update(Unit* unit, uint32 diff)
         p->aa_lj_time += diff;
         p->aa_zhenshi_time += diff;
         p->aa_xixue_time += diff;
+
+        AA_Map_Player_Conf map_conf = aaCenter.AA_GetAA_Map_Player_Conf(p);
         std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["累计时间"];
         if (Map* map = p->GetMap()) {
             for (auto conf : mapeventconfs) {
@@ -539,20 +701,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
             }
         }
 
-        { //刷新副本通关显示
-            if (aaCenter.AA_VerifyCode("a101b")) {
-                if (map_conf.dietime > 0 || map_conf.xianzhitime > 0 || (map_conf.jindu_exp != "" && map_conf.jindu_exp != "0") || (map_conf.jindu_reward != "" && map_conf.jindu_reward != "0")) {
-                    if (map_conf.m_xianzhitime && map_conf.m_xianzhitime < 2 * diff) {
-                        aaCenter.M_SendMap_Jindu(p);
-                    }
-                    p->jindu_time += diff;
-                    if (p->jindu_time >= 5000) {
-                        p->jindu_time = 0;
-                        aaCenter.M_SendMap_Jindu(p);
-                    }
-                }
-            }
-        }
+
         if (!p->IsGameMaster()) {
             //防脚本
             if (aaCenter.aa_world_confs[33].value1 == 1) {
@@ -586,7 +735,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                         if (p->codetime > 120 * 1000) { //验证框出现后2分钟内不点踢出玩家
                             p->codetime = 0;
                             if (aaCenter.aa_world_confs[30].value2 == "0" || aaCenter.aa_world_confs[30].value2 == "") {
-                                p->GetSession()->KickPlayer("kick");
+                                p->GetSession()->KickPlayer("jiaoben");
                             }
                             else {
                                 if (aaCenter.aa_world_confs[30].value2 != "" && aaCenter.aa_world_confs[30].value2 != "0") {
@@ -620,9 +769,8 @@ void AACenter::Update(Unit* unit, uint32 diff)
             for (auto mapconf : mapeventconfs) {
                 bool isReward = false;
                 if (p->paodianTimes[mapconf.id] >= uint32(mapconf.value * 1000)) {
-                    aaCenter.AA_EventMapStart(p, mapconf);
+                    isReward = aaCenter.AA_EventMapStart(p, mapconf);
                     p->paodianTimes[mapconf.id] = 0;
-                    isReward = true;
                 }
                 if (isReward && p->IsInWorld()) {
                     // vip 额外触发活动
@@ -666,27 +814,10 @@ void AACenter::Update(Unit* unit, uint32 diff)
                 catch (std::exception const& e) {}
             }
         }
-        {
-            //aawow 地图限制pvp状态
-            AA_Map_Player_Conf conf = aaCenter.AA_GetAA_Map_Player_Conf(p);
-            if (conf.GroupOnOff == 1) {// 是否允许组队
-                if (p->GetGroup()) {
-                    p->RemoveFromGroup();
-                }
-            }
-            if (conf.FlyOnOff == 1) {// 是否允许飞行
-                p->SetCanFly(false);
-            }
-            if (conf.need > 0) {//条件需求 传送到新手区域
-                if (!aaCenter.M_CanNeed(p, conf.need)) {
-                    p->TeleportTo(p->m_homebind.GetMapId(), p->m_homebind.GetPositionX(), p->m_homebind.GetPositionY(), p->m_homebind.GetPositionZ(), p->GetOrientation());
-                }
-            }
-        }
     }
     else if (Creature* creature = unit->ToCreature()) {
         { //boss排行
-            if (aaCenter.AA_VerifyCode("a102b")) {
+            {
                 if (creature->aa_boss_id > 0 && !creature->aa_boss_dmg.empty()) {
                     AA_Boss_Conf conf = aaCenter.aa_boss_confs[creature->aa_boss_id];
                     if (conf.reward != "" && conf.reward != "0") {
@@ -696,10 +827,8 @@ void AACenter::Update(Unit* unit, uint32 diff)
                             aaCenter.aa_boss_time[creature->GetGUIDLow()] = 0;
                             std::vector<std::pair<ObjectGuid, uint32>> aa_boss_dmg; aa_boss_dmg.clear();
                             paihangpx(aa_boss_dmg, creature->aa_boss_dmg);
-                            std::list<Player*> list; list.clear();
-                            aaCenter.BB_GetPlayerListInGrid(creature, list, 300, true);
                             if (conf.show == 1) {
-                                aaCenter.M_SendBoss_Paihang(list, creature, aa_boss_dmg);
+                                aaCenter.M_SendBoss_Paihang(creature, aa_boss_dmg);
                             }
                             if (!creature->IsAlive()) {
                                 creature->aa_boss_dmg.clear();// 发送排行奖励
@@ -738,14 +867,34 @@ void AACenter::Update(Unit* unit, uint32 diff)
         }
 
         if (!creature->IsPet() && !creature->IsTotem() && !creature->IsVehicle()) {
-            if (aaCenter.aa_world_confs[76].value1 > 0 &&
-                std::find(aaCenter.m_ai_creatures.begin(), aaCenter.m_ai_creatures.end(), creature) == aaCenter.m_ai_creatures.end()) {
-                return;
+            const HashMapHolder<Player>::MapType& m = ObjectAccessor::GetPlayers();
+            for (HashMapHolder<Player>::MapType::const_iterator it = m.begin(); it != m.end(); ++it)
+            {
+                if (Player* player = it->second)
+                {
+                    if (!player->GetSession()) {
+                        continue;
+                    }
+                    if (!player->IsInWorld())
+                        continue;
+
+                    if (creature->CanSeeOrDetect(player, false, true)) {
+                        isCansee = true;
+                        break;
+                    }
+                }
             }
         }
     }
     if (!unit || !unit->IsInWorld() || (unit->GetTypeId() != TYPEID_PLAYER && unit->GetTypeId() != TYPEID_UNIT)) {
         return;
+    }
+    if (Creature *creature = unit->ToCreature()) {
+        if (!isCansee) {
+            if (!creature->IsPet() && !creature->IsTotem() && !creature->IsVehicle()) {
+                return;
+            }
+        }
     }
     {
         std::set<uint32> aiids = aaCenter.AA_GetAis(unit, "无条件,战斗中,范围内出现玩家,范围内出现生物,在区域中,属性值,生命值");
@@ -852,8 +1001,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
 bool AACenter::AA_DoCommand(Player* player, char const* text)
 {
     if (!player) {
-        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-        for (auto p : players) {
+        for (auto p : aaCenter.aa_onlinePlayers) {
             player = p;
             break;
         }
@@ -1269,10 +1417,9 @@ std::string AACenter::AA_GetMoneyLink(uint32 money)
     return str;
 }
 
-std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
+std::vector<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
 {
-    std::set<uint32> spells;
-    spells.clear();
+    std::vector<uint32> spells; spells.clear();
     try {
         AA_Character_Instance conf = aaCenter.aa_character_instances[guidlow];
         //附魔技能
@@ -1283,7 +1430,7 @@ std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
             for (size_t i = 0; i < fmids.size(); i++) {
                 uint32 spellid = fmids[i];
                 if (spellid == 0) { continue; }
-                spells.insert(spellid);
+                spells.push_back(spellid);
             }
         }
         //符文技能
@@ -1301,7 +1448,7 @@ std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
                     if (spellids[j] == 0) {
                         continue;
                     }
-                    spells.insert(spellids[j]);
+                    spells.push_back(spellids[j]);
                 }
             }
         }
@@ -1319,7 +1466,7 @@ std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
                     if (spellids[j] == 0) {
                         continue;
                     }
-                    spells.insert(spellids[j]);
+                    spells.push_back(spellids[j]);
                 }
             }
         }
@@ -1331,7 +1478,7 @@ std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
             for (size_t i = 0; i < zbqhids.size(); i++) {
                 uint32 spellid = zbqhids[i];
                 if (spellid == 0) { continue; }
-                spells.insert(spellid);
+                spells.push_back(spellid);
             }
         }
         //装备成长技能
@@ -1341,7 +1488,7 @@ std::set<uint32> AACenter::M_GetAllItemSpell(ObjectGuid::LowType guidlow)
             for (size_t i = 0; i < zbczids.size(); i++) {
                 uint32 spellid = zbczids[i];
                 if (spellid == 0) { continue; }
-                spells.insert(spellid);
+                spells.push_back(spellid);
             }
         }
     }
@@ -1837,6 +1984,24 @@ void AACenter::AA_StringToVector3(const std::string s, std::vector<std::string>&
     }
 }
 
+void AACenter::AA_Vector3ToString(std::string& s, const std::vector<std::string> v1, const std::vector<std::string> v2)
+{
+    if (v1.size() == 0 || v1.size() != v2.size()) {
+        s = "";
+        return;
+    }
+    size_t count = v1.size();
+    std::string str = "";
+    for (size_t i = 0; i < count; i++) {
+        std::string key = v1[i];
+        std::string value = v2[i];
+        str = str + key + " " + value;
+        str = str + ",";
+    }
+    aaCenter.AA_StringReplaceLast(str, ",", "");
+    s = str;
+}
+
 void AACenter::AA_StringToVector2(const std::string s, std::vector<int32>& v1, std::vector<int32>& v2)
 {
     std::vector<std::string> strs; strs.clear();
@@ -2094,7 +2259,15 @@ void AACenter::AA_SendNotice(Unit* me, AA_Notice notice, bool succes, AA_Message
 
     players.clear();
     if (notice.target == 3 || (me && me->GetTypeId() != TYPEID_PLAYER)) { // 全服触发
-        players = aaCenter.GetOnlinePlayers();
+        for (auto player : aaCenter.aa_onlinePlayers) {
+            if (!player->GetSession()) {
+                continue;
+            }
+            if (!player->IsInWorld()) {
+                continue;
+            }
+            players.push_back(player);
+        }
     }
     else if (me && me->IsInWorld() && notice.target == 4) {
         if (me->GetTypeId() == TYPEID_PLAYER) {
@@ -4436,7 +4609,7 @@ void AACenter::M_Need(Player* player, uint32 needid, uint32 count)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
         }
         if (conf.deplete == 0) {
             std::string itemstr = "";
@@ -4485,7 +4658,7 @@ void AACenter::M_Need(Player* player, uint32 needid, uint32 count)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_characterss[guidlow].update_time = timep;
-            aaCenter.aa_characterss[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characterss.insert(guidlow);
             std::string str = "";
             aaCenter.AA_StringMapToString(mdiy_guids, str);
             aaCenter.aa_characterss[guidlow].diy_guid = str;
@@ -4553,7 +4726,7 @@ void AACenter::M_Need(Player* player, uint32 needid, uint32 count)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
             std::string str = "";
             aaCenter.AA_StringMapToString(mdiy_accounts, str);
             aaCenter.aa_accounts[accountid].diy_account = str;
@@ -4598,22 +4771,22 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
                 aaCenter.M_Reward(player, vip_conf.reward);
             }
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
         }
         if (conf.jxds > 0) {
             aaCenter.aa_characters_junxians[guidlow].dianshu_all = conf.jxds * count + aaCenter.aa_characters_junxians[guidlow].dianshu_all;
             aaCenter.aa_characters_junxians[guidlow].update_time = timep;
-            aaCenter.aa_characters_junxians[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characters_Junxians.insert(guidlow);
         }
         if (conf.dqds > 0) {
             aaCenter.aa_characters_douqis[guidlow].dianshu_all = conf.dqds * count + aaCenter.aa_characters_douqis[guidlow].dianshu_all;
             aaCenter.aa_characters_douqis[guidlow].update_time = timep;
-            aaCenter.aa_characters_douqis[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characters_Douqis.insert(guidlow);
         }
         if (conf.dfds > 0) {
             aaCenter.aa_characters_dianfengs[guidlow].dianshu_all = conf.dfds * count + aaCenter.aa_characters_dianfengs[guidlow].dianshu_all;
             aaCenter.aa_characters_dianfengs[guidlow].update_time = timep;
-            aaCenter.aa_characters_dianfengs[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characters_Dianfengs.insert(guidlow);
         }
 
         uint32 vipxp = 0;
@@ -4660,7 +4833,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
         aaCenter.aa_accounts[accountid].battlecore += conf.battlecore * count;
         if (conf.jifen > 0 || conf.paodian > 0 || conf.mobi > 0 || conf.battlecore > 0) {
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
         }
         if (conf.items != "" && conf.items != "0") {
             std::map<int32, int32> items; items.clear();
@@ -4747,7 +4920,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_characterss[guidlow].update_time = timep;
-            aaCenter.aa_characterss[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characterss.insert(guidlow);
             std::string str = "";
             aaCenter.AA_StringMapToString(mdiy_guids, str);
             aaCenter.aa_characterss[guidlow].diy_guid = str;
@@ -4833,7 +5006,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
             std::string str = "";
             aaCenter.AA_StringMapToString(mdiy_accounts, str);
             aaCenter.aa_accounts[accountid].diy_account = str;
@@ -5287,7 +5460,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
     }
     else {
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
         aaCenter.aa_character_instances[guidlow].qh_zu = qh_zu;
         aaCenter.aa_character_instances[guidlow].cz_zu = cz_zu;
         //9、清空强化和成长等级属性
@@ -5423,7 +5596,6 @@ bool AACenter::M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, i
         uint32 zu = aaCenter.AA_StringRandom(conf.itemsets);
         if (zu > 0) {
             if (nonsuch_id > 0) {
-                aaCenter.aa_character_instance_displays[itemid].isUpdate = true;
                 aaCenter.aa_character_instance_displays[itemid].item_set = zu;
             }
             else {
@@ -5431,7 +5603,7 @@ bool AACenter::M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, i
                 time_t timep;
                 time(&timep); /*当前time_t类型UTC时间*/
                 aaCenter.aa_character_instances[guidlow].update_time = timep;
-                aaCenter.aa_character_instances[guidlow].isUpdate = true;
+                sAAData->AA_REP_Character_Instances.insert(guidlow);
                 aaCenter.aa_character_instances[guidlow].item_set = zu;
             }
         }
@@ -5559,7 +5731,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
     }
 }
 
@@ -5781,7 +5953,7 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_character_instances[guidlow].update_time = timep;
-            aaCenter.aa_character_instances[guidlow].isUpdate = true;
+            sAAData->AA_REP_Character_Instances.insert(guidlow);
             std::string fmvalues = "";
             aaCenter.AA_VectorToString(fmvalues, types, values);
             aaCenter.aa_character_instances[guidlow].fm_value_count = last_count;
@@ -5984,7 +6156,7 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_character_instances[guidlow].update_time = timep;
-            aaCenter.aa_character_instances[guidlow].isUpdate = true;
+            sAAData->AA_REP_Character_Instances.insert(guidlow);
             std::string fmvalues = "";
             aaCenter.AA_VectorIntToString(fmvalues, values, ",");
             aaCenter.aa_character_instances[guidlow].fm_spell_count = last_count;
@@ -6291,7 +6463,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
     }
     catch (std::exception const& e)
     {
@@ -6312,7 +6484,7 @@ void AACenter::M_CleanUpgradeItem(Item* pItem)
     aaCenter.aa_character_instances[guidlow].qh_reward_point = 0;
     aaCenter.aa_character_instances[guidlow].qh_reward_value = 0;
     aaCenter.aa_character_instances[guidlow].update_time = timep;
-    aaCenter.aa_character_instances[guidlow].isUpdate = true;
+    sAAData->AA_REP_Character_Instances.insert(guidlow);
 }
 
 //物品成长
@@ -6366,7 +6538,7 @@ bool AACenter::GiveCZXP(Player* player, uint32 xp, Item* pItem)
             time_t timep;
             time(&timep);
             aaCenter.aa_character_instances[guidlow].update_time = timep;
-            aaCenter.aa_character_instances[guidlow].isUpdate = true;
+            sAAData->AA_REP_Character_Instances.insert(guidlow);
         }
     }
     return true;
@@ -6484,7 +6656,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
         aaCenter.aa_character_instances[guidlow].cz_id = conf.id;
         aaCenter.aa_character_instances[guidlow].cz_level = conf.level;
         aaCenter.aa_character_instances[guidlow].cz_reward_value = conf.reward_value;
@@ -6546,9 +6718,9 @@ void AACenter::M_FuWenKaichao(Player* player, Item* pItem, uint32 count)
     time_t timep;
     time(&timep); /*当前time_t类型UTC时间*/
     c_conf.update_time = timep;
-    c_conf.isUpdate = true;
     ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
     aaCenter.aa_character_instances[guidlow] = c_conf;
+    sAAData->AA_REP_Character_Instances.insert(guidlow);
 }
 //符文拆卸,符文清理
 void AACenter::M_FuWenChaixie(Player* player, Item* pItem, uint32 index, bool clear)
@@ -6610,9 +6782,9 @@ void AACenter::M_FuWenChaixie(Player* player, Item* pItem, uint32 index, bool cl
     time_t timep;
     time(&timep); /*当前time_t类型UTC时间*/
     c_conf.update_time = timep;
-    c_conf.isUpdate = true;
     ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
     aaCenter.aa_character_instances[guidlow] = c_conf;
+    sAAData->AA_REP_Character_Instances.insert(guidlow);
 }
 //符文镶嵌
 void AACenter::M_FuWenXiangqian(Player* player, Item* pItem, std::vector<int32> fwItems, std::vector<int32> fwEntrys)
@@ -6715,9 +6887,9 @@ void AACenter::M_FuWenXiangqian(Player* player, Item* pItem, std::vector<int32> 
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         c_conf.update_time = timep;
-        c_conf.isUpdate = true;
         ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
         aaCenter.aa_character_instances[guidlow] = c_conf;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
     }
 }
 //获取符文组合技能id
@@ -6900,7 +7072,7 @@ void AACenter::AA_AuctionModifyMoney(Player* player, int32 money)
     time_t timep;
     time(&timep); /*当前time_t类型UTC时间*/
     aaCenter.aa_accounts[accountid].update_time = timep;
-    aaCenter.aa_accounts[accountid].isUpdate = true;
+    sAAData->AA_REP_Accounts.insert(accountid);
 }
 
 /*宝石相关*/
@@ -6949,7 +7121,7 @@ void AACenter::M_ChangeItemName(Player* player, Item* pItem, std::string name)
     ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
     aaCenter.aa_character_instances[guidlow].name = name;
     aaCenter.aa_character_instances[guidlow].update_time = timep;
-    aaCenter.aa_character_instances[guidlow].isUpdate = true;
+    sAAData->AA_REP_Character_Instances.insert(guidlow);
     aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00改名成功");
 }
 
@@ -7188,7 +7360,7 @@ void AACenter::M_SendMap_Jindu(Player* player)
     }
 }
 
-void AACenter::M_SendBoss_Paihang(std::list<Player*> list, Creature* creature, std::vector<std::pair<ObjectGuid, uint32>> aa_boss_dmg)
+void AACenter::M_SendBoss_Paihang(Creature* creature, std::vector<std::pair<ObjectGuid, uint32>> aa_boss_dmg)
 {
     try {
         if (!creature || !creature->IsAlive() || !creature->IsInWorld()) {
@@ -7235,8 +7407,8 @@ void AACenter::M_SendBoss_Paihang(std::list<Player*> list, Creature* creature, s
         items1 += "}";
         aaCenter.AA_StringReplaceLast(items1, ",}", "}");
 
-        for (Player* player : list) {
-            if (!player || !player->IsInWorld()) {
+        for (Player* player : aaCenter.aa_onlinePlayers) {
+            if (!creature->CanSeeOrDetect(player, false, true)) {
                 continue;
             }
             aaCenter.M_SendClientAddonData(player, "1008", items1);
@@ -7256,7 +7428,7 @@ void AACenter::M_SendBoss_Paihang(std::list<Player*> list, Creature* creature, s
     catch (std::exception const& e) {}
 }
 
-void AACenter::M_SendAA_Conf(Player* player, std::string prefix)
+void AACenter::M_SendAA_Conf(Player* player, std::string prefix, std::string msg)
 {
     if (!player || !player->IsInWorld()) {
         return;
@@ -7871,8 +8043,7 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix)
             }
             duiwus.push_back(v);
         }
-        std::vector<Player*> players = GetOnlinePlayers();
-        for (auto player : players) {
+        for (auto player : aaCenter.aa_onlinePlayers) {
             if (player->aa_jijie_guidlow == 0) {
                 continue;
             }
@@ -7961,6 +8132,33 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix)
                 j = 0;
             }
         }
+    }
+    else if (prefix == "40020") {
+        uint32 id = aaCenter.AA_StringUint32(msg);
+        if (id == 0) {
+            return;
+        }
+        AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+        std::string result = "{";//{[id]="text",[id]="text"}
+        AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+        CreatureTemplate const* ci = sObjectMgr->GetCreatureTemplate(conf_p.creature_entry);
+        std::string name = "";
+        if (ci)
+        {
+            name = ci->Name;
+        }
+        uint32 pingfen = aaCenter.AA_PetZhan_GetPingfen(conf.id);
+        result += "["; result += std::to_string(conf.id); result += "]={";
+        result += std::to_string(conf.id); result += ",";//1
+        result += std::to_string(conf.pet_id); result += ",";//2
+        result += std::to_string(conf_p.creature_entry); result += ",\"";//3
+        result += name; result += "\",\"";//3
+        result += conf_p.icon; result += "\",";//5
+        result += std::to_string(pingfen); result += ",";//6
+        result += std::to_string(conf.is_chuzhan); result += ",";//7
+        result += std::to_string(conf.is_heti); result += "}";//8
+        result += "}";
+        aaCenter.M_SendClientAddonData(player, prefix, result);
     }
 }
 
@@ -8354,7 +8552,7 @@ void AACenter::GiveJXXP(Player* player, uint32 xp)
     time_t timep;
     time(&timep);
     aaCenter.aa_characters_junxians[guidlow].update_time = timep;
-    aaCenter.aa_characters_junxians[guidlow].isUpdate = true;
+    sAAData->AA_REP_Characters_Junxians.insert(guidlow);
 }
 
 void AACenter::GiveDQXP(Player* player, uint32 xp)
@@ -8409,7 +8607,7 @@ void AACenter::GiveDQXP(Player* player, uint32 xp)
     time_t timep;
     time(&timep);
     aaCenter.aa_characters_douqis[guidlow].update_time = timep;
-    aaCenter.aa_characters_douqis[guidlow].isUpdate = true;
+    sAAData->AA_REP_Characters_Douqis.insert(guidlow);
 }
 
 void AACenter::GiveDFXP(Player* player, uint32 xp)
@@ -8464,7 +8662,7 @@ void AACenter::GiveDFXP(Player* player, uint32 xp)
     time_t timep;
     time(&timep);
     aaCenter.aa_characters_dianfengs[guidlow].update_time = timep;
-    aaCenter.aa_characters_dianfengs[guidlow].isUpdate = true;
+    sAAData->AA_REP_Characters_Dianfengs.insert(guidlow);
 }
 
 void AACenter::AddValue(Player* player, uint32 statType, int32 val, bool apply)
@@ -8702,7 +8900,7 @@ void AACenter::AddValue(Player* player, uint32 statType, int32 val, bool apply)
     }
 }
 
-void AACenter::AA_EventMapStart(Player* eventer, AA_Event_Map conf)
+bool AACenter::AA_EventMapStart(Player* eventer, AA_Event_Map conf)
 {
     if ((conf.mapid == -1 && conf.zoneid == -1 && conf.areaid == -1) ||
         (int32)eventer->GetMapId() == conf.mapid ||
@@ -8710,7 +8908,7 @@ void AACenter::AA_EventMapStart(Player* eventer, AA_Event_Map conf)
         (int32)eventer->GetAreaId() == conf.areaid) {
         if (conf.need > 0) {
             if (!aaCenter.M_CanNeed(eventer, conf.need)) {
-                return;
+                return false;
             }
         }
         if (conf.gm != "" && conf.gm != "0") {
@@ -8719,19 +8917,21 @@ void AACenter::AA_EventMapStart(Player* eventer, AA_Event_Map conf)
         if (conf.need > 0) {
             aaCenter.M_Need(eventer, conf.need);
         }
+        return true;
     }
+    return false;
 }
 
-bool AACenter::AA_EventStart(Player* eventer, uint32 eventid)
+void AA_EventStartA(Player* eventer, uint32 eventid)
 {
     AA_Event_Conf conf = aaCenter.aa_event_confs[eventid];
-    if (conf.id == 0) return false;
+    if (conf.id == 0) return;
     try {
-        if (rand() % 100 >= conf.chance) { return false; }
+        if (rand() % 100 >= conf.chance) { return; }
         std::vector<Player*> players;
         players.clear();
         if (conf.target == 3) { // 全服触发
-            players = GetOnlinePlayers();
+            players = aaCenter.aa_onlinePlayers;
         }
         else if (conf.target == 4) { // 随机一个玩家
             const HashMapHolder<Player>::MapType& m = ObjectAccessor::GetPlayers();
@@ -8747,8 +8947,8 @@ bool AACenter::AA_EventStart(Player* eventer, uint32 eventid)
             }
         }
         else {
-            if (!eventer) return false;
-            if (!eventer->IsInWorld()) return false;
+            if (!eventer) return;
+            if (!eventer->IsInWorld()) return;
             players.push_back(eventer);
             switch (conf.target) {
             case 0: // 个人
@@ -8773,7 +8973,7 @@ bool AACenter::AA_EventStart(Player* eventer, uint32 eventid)
             {
                 TeamId team = eventer->GetTeamId();
                 const HashMapHolder<Player>::MapType& m = ObjectAccessor::GetPlayers();
-                std::set<Player*> players;
+                std::vector<Player*> players;
                 players.clear();
                 for (HashMapHolder<Player>::MapType::const_iterator it = m.begin(); it != m.end(); ++it)
                 {
@@ -8781,7 +8981,7 @@ bool AACenter::AA_EventStart(Player* eventer, uint32 eventid)
                     {
                         if (!player->IsInWorld()) { continue; }
                         if (team != player->GetTeamId()) { continue; }
-                        players.insert(player);
+                        players.push_back(player);
                     }
                 }
             }
@@ -8817,10 +9017,24 @@ bool AACenter::AA_EventStart(Player* eventer, uint32 eventid)
             }
         }
 
-        return true;
+        return;
     }
     catch (std::exception const& e) {}
-    return false;
+    return;
+}
+
+void AACenter::AA_EventStart(Player* eventer, uint32 eventid)
+{
+    //if (aaCenter.aa_world_confs[76].value1 > 0) {
+    ////    std::async(std::launch::async, AA_EventStartA, eventer, eventid);
+    ////    //resultFromParam.wait();
+    ////    //thread t(AA_World_Update, this, diff);  //带参数子线程
+    ////    //t.detach();
+    ////}
+    ////else {
+    //    AA_EventStartA(eventer, eventid);
+    //}
+    AA_EventStartA(eventer, eventid);
 }
 
 void AACenter::AA_SendEvent(Player* player, std::string title, std::string text, uint32 id, ObjectGuid guid)
@@ -8965,6 +9179,31 @@ std::set<uint32> AACenter::AA_GetAis(Unit* att, std::string eventtype)
                 }
             }
         }
+        else if (creature->aa_petzhan_id > 0) {//战宠
+            {
+                //战宠技能带ai
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[creature->aa_petzhan_id];
+                if (conf.spell_pet != "" && conf.spell_pet != "0") {
+                    std::vector<int32> spells; spells.clear();
+                    aaCenter.AA_StringToVectorInt(conf.spell_pet, spells, ",");
+                    for (auto itr : spells) {
+                        if (itr > 0) {
+                            AA_PetZhan_Spell conf_s = aaCenter.aa_petzhan_spells[itr];
+                            uint32 aizu = aaCenter.AA_StringRandom(conf_s.ais);
+                            if (aizu > 0) {
+                                std::set<uint32> ais = aaCenter.aa_ai_zus[aizu];
+                                for (uint32 ai : ais) {
+                                    AA_Ai conf = aaCenter.aa_ais[ai];
+                                    if (std::find(eventtypes.begin(), eventtypes.end(), conf.event_type) != eventtypes.end()) {
+                                        aisets.insert(ai);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     else if (Player* player = attacker->ToPlayer()) {
         //称号
@@ -9013,6 +9252,33 @@ std::set<uint32> AACenter::AA_GetAis(Unit* att, std::string eventtype)
                             if (std::find(eventtypes.begin(), eventtypes.end(), conf.event_type) != eventtypes.end()) {
                                 aisets.insert(ai);
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        std::vector<uint32> allPetSpells = aaCenter.aa_allpetspells[player->GetGUID()];
+        if (allPetSpells.size() > 0) {
+            for (auto i = aaCenter.aa_petzhan_spells.begin(); i != aaCenter.aa_petzhan_spells.end(); ++i)
+            {
+                if (i->first == 0) {
+                    continue;
+                }
+                if (i->second.ais == "" || i->second.ais == "0") {
+                    continue;
+                }
+                if (std::find(allPetSpells.begin(), allPetSpells.end(), i->first) == allPetSpells.end()) {
+                    continue;
+                }
+
+                uint32 aizu = aaCenter.AA_StringRandom(i->second.ais);
+                if (aizu > 0) {
+                    std::set<uint32> ais = aaCenter.aa_ai_zus[aizu];
+                    for (uint32 ai : ais) {
+                        AA_Ai conf = aaCenter.aa_ais[ai];
+                        if (std::find(eventtypes.begin(), eventtypes.end(), conf.event_type) != eventtypes.end()) {
+                            aisets.insert(ai);
                         }
                     }
                 }
@@ -9164,14 +9430,8 @@ std::set<uint32> AACenter::AA_GetAis(Unit* att, std::string eventtype)
     return aisets;
 }
 
-void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bool isOK)
+void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bool isOK)
 {
-    if (!aaCenter.AA_VerifyCode("a5b")) {
-        return;
-    }
-    if (!attacker || !attacker->IsInWorld()) {
-        return;
-    }
     ObjectGuid guid = attacker->GetGUID();
     try {
         AA_Ai conf = aaCenter.aa_ais[aiid];
@@ -9183,22 +9443,22 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                 return;
             }
             //冷却中
-            if (m_aiTimes[guid].find(conf.id) != m_aiTimes[guid].end() && m_aiTimes[guid][conf.id] >= 1 && m_aiTimes[guid][conf.id] < conf.event_cooldown * 1000) {
+            if (aaCenter.m_aiTimes[guid].find(conf.id) != aaCenter.m_aiTimes[guid].end() && aaCenter.m_aiTimes[guid][conf.id] >= 1 && aaCenter.m_aiTimes[guid][conf.id] < conf.event_cooldown * 1000) {
                 return;
             }
             //公共冷却中
-            if (m_aiGGTimes[guid].find(conf.gg_zu) != m_aiGGTimes[guid].end() && m_aiGGTimes[guid][conf.gg_zu] >= 1 && m_aiGGTimes[guid][conf.gg_zu] < conf.gg_cooldown * 1000) {
+            if (aaCenter.m_aiGGTimes[guid].find(conf.gg_zu) != aaCenter.m_aiGGTimes[guid].end() && aaCenter.m_aiGGTimes[guid][conf.gg_zu] >= 1 && aaCenter.m_aiGGTimes[guid][conf.gg_zu] < conf.gg_cooldown * 1000) {
                 return;
             }
             //公共冷却
             bool ggOk = false;
             //第一次进入公共冷却
             if (conf.gg_zu > 0) {
-                if (m_aiGGTimes.find(guid) == m_aiGGTimes.end() || m_aiGGTimes[guid].find(conf.gg_zu) == m_aiGGTimes[guid].end())
+                if (aaCenter.m_aiGGTimes.find(guid) == aaCenter.m_aiGGTimes.end() || aaCenter.m_aiGGTimes[guid].find(conf.gg_zu) == aaCenter.m_aiGGTimes[guid].end())
                 {
                     ggOk = true;
                 }
-                else if (m_aiGGTimes[guid][conf.gg_zu] >= 1 && m_aiGGTimes[guid][conf.gg_zu] >= conf.gg_cooldown * 1000) {//再次进入公共冷却
+                else if (aaCenter.m_aiGGTimes[guid][conf.gg_zu] >= 1 && aaCenter.m_aiGGTimes[guid][conf.gg_zu] >= conf.gg_cooldown * 1000) {//再次进入公共冷却
                     ggOk = true;
                 }
             }
@@ -9209,15 +9469,15 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                 return;
             }
             if (conf.gg_zu > 0) {
-                m_aiGGTimes[guid][conf.gg_zu] = 1;
+                aaCenter.m_aiGGTimes[guid][conf.gg_zu] = 1;
             }
 
             //第一次进入冷却
-            if (m_aiTimes.find(guid) == m_aiTimes.end() || m_aiTimes[guid].find(conf.id) == m_aiTimes[guid].end()) {
-                m_aiTimes[guid][conf.id] = 1;
+            if (aaCenter.m_aiTimes.find(guid) == aaCenter.m_aiTimes.end() || aaCenter.m_aiTimes[guid].find(conf.id) == aaCenter.m_aiTimes[guid].end()) {
+                aaCenter.m_aiTimes[guid][conf.id] = 1;
             }
-            else if (m_aiTimes[guid][conf.id] >= 1 && m_aiTimes[guid][conf.id] >= conf.event_cooldown * 1000) { //再次进入冷却
-                m_aiTimes[guid][conf.id] = 1;
+            else if (aaCenter.m_aiTimes[guid][conf.id] >= 1 && aaCenter.m_aiTimes[guid][conf.id] >= conf.event_cooldown * 1000) { //再次进入冷却
+                aaCenter.m_aiTimes[guid][conf.id] = 1;
             }
             else {
                 return;
@@ -9429,6 +9689,9 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                     }
                 }
                 else if (conf.action_param2 == 3) {
+                    if (conf.action_param1 > 0 && conf.action_param5 != "" && conf.action_param5 != "0") {
+                        //335屏蔽，修改技能后施放
+                    }
                 }
                 else {
                     if (conf.action_param5 != "" && conf.action_param5 != "0") {
@@ -9448,7 +9711,7 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                 if (!unit->IsAlive()) {
                     for (auto spellid : unit->aa_auras[conf.id]) {
                         if (unit->HasAura(spellid)) {
-                            unit->RemoveAura(spellid);
+                            unit->RemoveAurasDueToSpell(spellid);
                         }
                     }
                     unit->aa_auras[conf.id].clear();
@@ -9465,7 +9728,7 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                         for (auto it = spells.begin(); it != spells.end();)
                         {
                             if (std::find(unit->aa_auras[conf.id].begin(), unit->aa_auras[conf.id].end(), *it) != unit->aa_auras[conf.id].end()) {
-                                spells.erase(it);
+                                it = spells.erase(it);
                             }
                             else {
                                 it++;
@@ -9620,6 +9883,47 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
                 }
             }
             else if (conf.action_type == "改变技能冷却") {
+                //if (!unit->IsAlive()) {
+                //    return;
+                //}
+                //if (unit->GetTypeId() == TYPEID_PLAYER) {
+                //    if (Player* p = unit->ToPlayer()) {
+                //        std::set<uint32> spellids;
+                //        spellids.clear();
+                //        if (conf.action_param1 == -1) {
+                //            SpellCooldowns const& sc = p->GetSpellCooldownMap();
+                //            for (SpellCooldowns::const_iterator itrc = sc.begin(); itrc != sc.end(); ++itrc)
+                //            {
+                //                uint32 delay = p->GetSpellCooldownDelay(itrc->first);
+                //                if (delay > 0) {
+                //                    spellids.insert(itrc->first);
+                //                }
+                //            }
+                //        }
+                //        else if (conf.action_param1 > 0) {
+                //            spellids.insert(conf.action_param1);
+                //        }
+                //        for (uint32 spellid : spellids) {
+                //            if (conf.action_param2 == 0 && conf.action_param3 == 0) {
+                //                p->RemoveSpellCooldown(spellid, true);
+                //            }
+                //            else {
+                //                if (conf.action_param2 != 0) {
+                //                    p->ModifySpellCooldown(spellid, conf.action_param2 * 1000);
+                //                }
+                //                if (conf.action_param3 != 0) {
+                //                    SpellCooldowns::iterator citr = p->GetSpellCooldownMap().find(spellid);
+                //                    if (citr != p->GetSpellCooldownMap().end())
+                //                    {
+                //                        uint32 duration = citr->second.maxduration;
+                //                        int32 val = conf.action_param3 * ((int32)duration / 100.0);
+                //                        p->ModifySpellCooldown(spellid, val);
+                //                    }
+                //                }
+                //            }
+                //        }
+                //    }
+                //}
             }
             else if (conf.action_type == "随机抢夺目标装备") {
                 if (!unit->IsAlive()) {
@@ -9660,7 +9964,8 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
             }
             else if (conf.action_type == "召唤生物") {
                 if (conf.action_param1 > 0) {
-                    unit->SummonCreature(conf.action_param1, unit->GetPositionX() + conf.action_param2, unit->GetPositionY() + conf.action_param2, unit->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN, conf.action_param3 * 1000s);
+                    Position pos = unit->GetPosition();
+                    unit->SummonCreature(conf.action_param1, pos, TEMPSUMMON_TIMED_DESPAWN, conf.action_param3 * 1s);
                 }
             }
             else if (conf.action_type == "奖励") {
@@ -9694,11 +9999,22 @@ void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value
     catch (std::exception const& e) {}
 }
 
-std::vector<Player*> AACenter::GetOnlinePlayers()
+
+void AACenter::AA_AiStart(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bool isOK)
+{
+    if (!aaCenter.AA_VerifyCode("a5b")) {
+        return;
+    }
+    if (!attacker || !attacker->IsInWorld()) {
+        return;
+    }
+    std::async(std::launch::async, AA_AiStart_Async, attacker, victim, aiid, value, isOK);
+}
+
+void AACenter::UpdateOnlinePlayers()
 {
     const HashMapHolder<Player>::MapType& m = ObjectAccessor::GetPlayers();
-    std::vector<Player*> players;
-    players.clear();
+    aaCenter.aa_onlinePlayers.clear();
     for (HashMapHolder<Player>::MapType::const_iterator it = m.begin(); it != m.end(); ++it)
     {
         if (Player* player = it->second)
@@ -9708,13 +10024,11 @@ std::vector<Player*> AACenter::GetOnlinePlayers()
             }
             if (!player->IsInWorld())
                 continue;
-            players.push_back(player);
+            aaCenter.aa_onlinePlayers.push_back(player);
         }
     }
 
-    shuffle(players.begin(), players.end(), std::default_random_engine(std::random_device()()));        //乱序序列
-
-    return players;
+    shuffle(aaCenter.aa_onlinePlayers.begin(), aaCenter.aa_onlinePlayers.end(), std::default_random_engine(std::random_device()()));        //乱序序列
 }
 
 void AACenter::AA_TelScript(Player* player, AA_Teleport_Conf conf, Item *item) {
@@ -9907,7 +10221,7 @@ bool AACenter::AA_Hecheng(Player* player)
                 time_t timep;
                 time(&timep); /*当前time_t类型UTC时间*/
                 aaCenter.aa_character_instances[guidlow].update_time = timep;
-                aaCenter.aa_character_instances[guidlow].isUpdate = true;
+                sAAData->AA_REP_Character_Instances.insert(guidlow);
                 item->SetEnchantment(EnchantmentSlot(0), enchantmentId, enchantmentDuration, enchantmentCharges);
             }
         }
@@ -9970,7 +10284,7 @@ bool AACenter::AA_Chaixie(Player* player, int32 index)
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
         aaCenter.aa_character_instances[guidlow].update_time = timep;
-        aaCenter.aa_character_instances[guidlow].isUpdate = true;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
         aaCenter.aa_character_instances[guidlow].baoshi_entry = 0;
         return true;
     }
@@ -11403,8 +11717,8 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         std::string weizhi = std::to_string(id) + " " + std::to_string(index);
                         conf.weizhi = weizhi;
                         conf.update_time = timep;
-                        conf.isUpdate = true;
                         aaCenter.aa_item_instances[guidlow] = conf;
+                        sAAData->AA_REP_Item_Instances.insert(guidlow);
                         if (std::find(aa_item_instance_owner[owner_guid].begin(), aa_item_instance_owner[owner_guid].end(), guidlow) == aa_item_instance_owner[owner_guid].end()) {
                             aa_item_instance_owner[owner_guid].push_back(guidlow);
                         }
@@ -11538,8 +11852,8 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     std::string weizhi = std::to_string(lan) + " " + std::to_string(index);
                     conf.weizhi = weizhi;
                     conf.update_time = timep;
-                    conf.isUpdate = true;
                     aaCenter.aa_item_instances[guidlow] = conf;
+                    sAAData->AA_REP_Item_Instances.insert(guidlow);
                     if (std::find(aa_item_instance_owner[owner_guid].begin(), aa_item_instance_owner[owner_guid].end(), guidlow) == aa_item_instance_owner[owner_guid].end()) {
                         aa_item_instance_owner[owner_guid].push_back(guidlow);
                     }
@@ -11749,13 +12063,11 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     conf.durability = item->m_itemData->Durability;
                     uint32 playedTime = item->m_itemData->CreatePlayedTime;
                     std::string text = item->GetText();
-
                     std::string weizhi = std::to_string(lan) + " " + std::to_string(index);
                     conf.weizhi = weizhi;
                     conf.update_time = timep;
-                    conf.isUpdate = true;
-
                     aaCenter.aa_item_instances[guidlow] = conf;
+                    sAAData->AA_REP_Item_Instances.insert(guidlow);
                     if (std::find(aa_item_instance_owner[owner_guid].begin(), aa_item_instance_owner[owner_guid].end(), guidlow) == aa_item_instance_owner[owner_guid].end()) {
                         aa_item_instance_owner[owner_guid].push_back(guidlow);
                     }
@@ -11927,7 +12239,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 aaCenter.aa_character_juanxians[guidlow].juanxian = jx;
                 aaCenter.aa_character_juanxians[guidlow].juanxian_zhou = jx_zhou;
                 aaCenter.aa_character_juanxians[guidlow].name = player->GetName();
-                aaCenter.aa_character_juanxians[guidlow].isUpdate = true;
+                sAAData->AA_REP_Character_Juanxians.insert(guidlow);
                 aaCenter.aa_character_juanxians[guidlow].update_time = timep;
                 aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00捐献成功!");
                 aaCenter.M_SendClientAddonData(player, "3044", "{1}");
@@ -12006,8 +12318,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             aaCenter.aa_jijie_msgs.push_back(msg);
 
             //发送队伍列表信息
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-            for (auto p : players) {
+            for (auto p : aaCenter.aa_onlinePlayers) {
                 aaCenter.M_SendAA_Conf(p, "3050");
             }
         }
@@ -12059,10 +12370,9 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
 
             //集结号
             //2、人数满了强行开启活动
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
             std::set<Player*> ps; ps.clear();
             std::map<ObjectGuid::LowType, std::set<Player*>> jj_players; jj_players.clear();
-            for (auto p : players)
+            for (auto p : aaCenter.aa_onlinePlayers)
             {
                 if (p->aa_jijie_guidlow == guidlow_dz) {
                     ps.insert(p);
@@ -12109,7 +12419,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
 
             //发送队伍列表信息
-            for (auto p : players) {
+            for (auto p : aaCenter.aa_onlinePlayers) {
                 aaCenter.M_SendAA_Conf(p, "3050");
             }
         }
@@ -12129,13 +12439,12 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
 
             ObjectGuid::LowType guidlow_dz = aaCenter.aa_jijie_guidlows[index];
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
             bool isOk = true;
             if (guidlow_dz == 0) {
                 isOk = false;
             }
             if (isOk) {
-                for (auto p : players)
+                for (auto p : aaCenter.aa_onlinePlayers)
                 {
                     if (p == player) {
                         continue;
@@ -12158,7 +12467,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 //如果自己是队长离开队伍，切换队长
                 if (player->GetGUIDLow() == guidlow_dz) {
                     ObjectGuid::LowType new_guidlow = 0;
-                    for (auto p : players)
+                    for (auto p : aaCenter.aa_onlinePlayers)
                     {
                         if (p->aa_jijie_guidlow == guidlow_dz) {
                             new_guidlow = p->GetGUIDLow();
@@ -12166,7 +12475,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         }
                     }
                     if (new_guidlow > 0) {
-                        for (auto p : players)
+                        for (auto p : aaCenter.aa_onlinePlayers)
                         {
                             if (p->aa_jijie_guidlow == guidlow_dz) {
                                 p->aa_jijie_guidlow = new_guidlow;
@@ -12184,7 +12493,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
 
             //发送队伍列表信息、
-            for (auto p : players) {
+            for (auto p : aaCenter.aa_onlinePlayers) {
                 aaCenter.M_SendAA_Conf(p, "3050");
             }
         }
@@ -12243,7 +12552,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     time_t timep;
                     time(&timep); /*当前time_t类型UTC时间*/
                     aaCenter.aa_character_instances[pItem->GetGUIDLow()].update_time = timep;
-                    aaCenter.aa_character_instances[pItem->GetGUIDLow()].isUpdate = true;
+                    sAAData->AA_REP_Character_Instances.insert(pItem->GetGUIDLow());
 
                     std::vector<uint32> itemids, itementrys, itemtimes;
                     itemids.clear();
@@ -12311,7 +12620,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     time_t timep;
                     time(&timep); /*当前time_t类型UTC时间*/
                     aaCenter.aa_character_instances[pItem->GetGUIDLow()].update_time = timep;
-                    aaCenter.aa_character_instances[pItem->GetGUIDLow()].isUpdate = true;
+                    sAAData->AA_REP_Character_Instances.insert(pItem->GetGUIDLow());
 
                     std::vector<uint32> itemids, itementrys, itemtimes;
                     itemids.clear();
@@ -12439,6 +12748,505 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 itementrys.push_back(entry);
             }
             aaCenter.M_GetItemTextDisplay(player, itementrys);
+        }
+        else if (prefix == "4000") { //战宠配置信息
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                std::string result = "{";
+                result += std::to_string(aaCenter.aa_petzhan_confs[1].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[2].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[3].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[4].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[5].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[6].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[7].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[8].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[9].value1); result += ",";
+                result += std::to_string(aaCenter.aa_petzhan_confs[10].value1); result += ",";
+                result += aaCenter.aa_petzhan_confs[9].value2; result += "}";
+                aaCenter.M_SendClientAddonData(player, prefix, result);
+            }
+        }
+        else if (prefix == "4001") { //战宠列表信息
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                std::vector<uint32> ids = aaCenter.aa_character_petzhan_owner[player->GetGUIDLow()];
+                if (ids.size() == 0) {
+                    aaCenter.M_SendClientAddonData(player, prefix, "{}");
+                    return;
+                }
+                std::string result = "{";//{[id]="text",[id]="text"}
+                int j = 0; size_t i = 0;
+                for (auto& it : ids)
+                {
+                    i++; j++;
+                    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[it];
+                    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+                    CreatureTemplate const* ci = sObjectMgr->GetCreatureTemplate(conf_p.creature_entry);
+                    std::string name = "";
+                    if (ci)
+                    {
+                        name = ci->Name;
+                    }
+                    uint32 pingfen = aaCenter.AA_PetZhan_GetPingfen(conf.id);
+                    result += "["; result += std::to_string(conf.id); result += "]={";
+                    result += std::to_string(conf.id); result += ",";//1
+                    result += std::to_string(conf.pet_id); result += ",";//2
+                    result += std::to_string(conf_p.creature_entry); result += ",\"";//3
+                    result += name; result += "\",\"";//3
+                    result += conf_p.icon; result += "\",";//5
+                    result += std::to_string(pingfen); result += ",";//6
+                    result += std::to_string(conf.is_chuzhan); result += ",";//7
+                    result += std::to_string(conf.is_heti); result += "},";//8
+                    if (j > 10 || i == ids.size()) {
+                        result += "}";
+                        aaCenter.AA_StringReplaceLast(result, ",}", "}");
+                        aaCenter.M_SendClientAddonData(player, prefix, result);
+                        result = "{";
+                        j = 0;
+                    }
+                }
+            }
+        }
+        else if (prefix == "40020") { //战宠列表信息-单条
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (msgs.size() < 1) { return; }
+                aaCenter.M_SendAA_Conf(player, prefix, msgs[0]);
+            }
+        }
+        else if (prefix == "40021") { //战宠基础信息
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+                uint32 level_id = aaCenter.aa_petzhan_level_zus[conf.pet_level_zu][conf.level];
+                AA_PetZhan_Level conf_level = aaCenter.aa_petzhan_levels[level_id];
+                uint32 pingfen = aaCenter.AA_PetZhan_GetPingfen(conf.id);
+                uint32 level_max = 0;
+                for (auto itr : aaCenter.aa_petzhan_level_zus[conf.pet_level_zu]) {
+                    if (itr.first > level_max) {
+                        level_max = itr.first;
+                    }
+                }
+                std::string result = "{";//{[id]="text",[id]="text"}
+                result += std::to_string(conf.id); result += ",";
+                result += std::to_string(conf.pet_id); result += ",";
+                result += std::to_string(pingfen); result += ",";
+                result += std::to_string(conf.level); result += ",";
+                result += std::to_string(conf.exp); result += ",";
+                result += std::to_string(conf_level.exp); result += ",";
+                result += std::to_string(conf.chengzhang); result += ",";
+                result += std::to_string(conf.qihe); result += ",";
+                result += std::to_string(conf.jicheng); result += ",";
+                result += std::to_string(conf.health); result += ",";
+                result += std::to_string(conf.shanghai); result += ",";
+                result += std::to_string(conf.fashu); result += ",";
+                result += std::to_string(conf.zhiliao); result += ",";
+                result += std::to_string(conf.hujia); result += ",";
+                result += std::to_string(level_max); result += "}";
+                aaCenter.M_SendClientAddonData(player, prefix, result);
+            }
+        }
+        else if (prefix == "40022") { //战宠属性
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+                AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+                std::string spell_petStr = "";
+                std::string spell_need_petStr = "";
+                if (conf_p.spell_need_pet != "" && conf_p.spell_need_pet != "0") {
+                    std::vector<int32> zus; zus.clear();
+                    std::vector<int32> needs; needs.clear();
+                    aaCenter.AA_StringToVector2(conf_p.spell_need_pet, zus, needs);
+                    aaCenter.AA_VectorIntToString(spell_need_petStr, needs, ",");
+                }
+                std::string spell_pet_textStr = "";
+                if (conf.spell_pet != "" && conf.spell_pet != "0") {
+                    std::vector<int32> ids; ids.clear();
+                    aaCenter.AA_StringToVectorInt(conf.spell_pet, ids, ",");
+                    for (auto id : ids) {
+                        if (id > 0) {
+                            AA_PetZhan_Spell conf_spell = aaCenter.aa_petzhan_spells[id];
+                            if (conf_spell.text != "" && conf_spell.text != "0") {
+                                spell_pet_textStr += conf_spell.text; spell_pet_textStr += "&&";
+                            }
+                            else {
+                                spell_pet_textStr += "无"; spell_pet_textStr += "&&";
+                            }
+                            spell_petStr += std::to_string(conf_spell.spellid); spell_petStr += ",";
+                        }
+                        else {
+                            spell_petStr += "0"; spell_petStr += ",";
+                            spell_pet_textStr += "无"; spell_pet_textStr += "&&";
+                        }
+                    }
+                    if (spell_petStr != "") {
+                        aaCenter.AA_StringReplaceLast(spell_petStr, ",", "");
+                    }
+                    if (spell_pet_textStr != "") {
+                        aaCenter.AA_StringReplaceLast(spell_pet_textStr, "&&", "");
+                    }
+                }
+                std::string result = "{";//{[id]="text",[id]="text"}
+                result += std::to_string(id); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetPetHealth(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetPetShanghai(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetPetFashu(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetPetZhiliao(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetPetHujia(player, id)); result += ",\"";
+                result += spell_petStr; result += "\",\"";
+                result += spell_need_petStr; result += "\",\"";
+                result += spell_pet_textStr; result += "\"}";
+                aaCenter.M_SendClientAddonData(player, prefix, result);
+            }
+        }
+        else if (prefix == "40023") { //主人加成
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+                AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+                std::string spell_ownerStr = "";
+                std::string spell_need_ownerStr = "";
+                if (conf_p.spell_need_owner != "" && conf_p.spell_need_owner != "0") {
+                    std::vector<int32> zus; zus.clear();
+                    std::vector<int32> needs; needs.clear();
+                    aaCenter.AA_StringToVector2(conf_p.spell_need_owner, zus, needs);
+                    aaCenter.AA_VectorIntToString(spell_need_ownerStr, needs, ",");
+                }
+                std::string spell_owner_textStr = "";
+                if (conf.spell_owner != "" && conf.spell_owner != "0") {
+                    std::vector<int32> ids; ids.clear();
+                    aaCenter.AA_StringToVectorInt(conf.spell_owner, ids, ",");
+                    for (auto id : ids) {
+                        if (id > 0) {
+                            AA_PetZhan_Spell conf_spell = aaCenter.aa_petzhan_spells[id];
+                            if (conf_spell.text != "" && conf_spell.text != "0") {
+                                spell_owner_textStr += conf_spell.text; spell_owner_textStr += "&&";
+                            }
+                            else {
+                                spell_owner_textStr += "无"; spell_owner_textStr += "&&";
+                            }
+                            spell_ownerStr += std::to_string(conf_spell.spellid); spell_ownerStr += ",";
+                        }
+                        else {
+                            spell_ownerStr += "0"; spell_ownerStr += ",";
+                            spell_owner_textStr += "无"; spell_owner_textStr += "&&";
+                        }
+                    }
+                    if (spell_ownerStr != "") {
+                        aaCenter.AA_StringReplaceLast(spell_ownerStr, ",", "");
+                    }
+                    if (spell_owner_textStr != "") {
+                        aaCenter.AA_StringReplaceLast(spell_owner_textStr, "&&", "");
+                    }
+                }
+                std::string result = "{";//{[id]="text",[id]="text"}
+                result += std::to_string(id); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetOwnerHealth(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetOwnerShanghai(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetOwnerFashu(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetOwnerZhiliao(player, id)); result += ",";
+                result += std::to_string(aaCenter.AA_PetZhan_GetOwnerHujia(player, id)); result += ",\"";
+                result += spell_ownerStr; result += "\",\"";
+                result += spell_need_ownerStr; result += "\",\"";
+                result += spell_owner_textStr; result += "\"}";
+                aaCenter.M_SendClientAddonData(player, prefix, result);
+            }
+        }
+        else if (prefix == "40031") { //召唤战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    if (aaCenter.aa_character_petzhans[id].is_heti == 1) {
+                        std::string gm = ".组合 *.解体战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                    if (aaCenter.aa_character_petzhans[id].is_chuzhan == 0) {
+                        std::string gm = ".组合 *.召唤战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                }
+            }
+        }
+        else if (prefix == "40032") { //解散战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    if (aaCenter.aa_character_petzhans[id].is_chuzhan == 1) {
+                        std::string gm = ".组合 *.解散战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                }
+            }
+        }
+        else if (prefix == "40033") { //合体战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    if (aaCenter.aa_character_petzhans[id].is_chuzhan == 1) {
+                        std::string gm = ".组合 *.解散战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                    if (aaCenter.aa_character_petzhans[id].is_heti == 0) {
+                        std::string gm = ".组合 *.合体战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                }
+            }
+        }
+        else if (prefix == "40034") { //解体战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    if (aaCenter.aa_character_petzhans[id].is_heti == 1) {
+                        std::string gm = ".组合 *.解体战宠 " + std::to_string(id) + "<$自身>";
+                        aaCenter.AA_DoCommand(player, gm.c_str());
+                    }
+                }
+            }
+        }
+        else if (prefix == "40035") { //喂养战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+                    if (conf.pet_level_zu > 0) {
+                        uint32 level_id_n = aaCenter.aa_petzhan_level_zus[conf.pet_level_zu][conf.level+1];
+                        AA_PetZhan_Level conf_l = aaCenter.aa_petzhan_levels[level_id_n];
+                        if (level_id_n == 0) {
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[战|r|cFF00D9FF宠|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战宠已经达到最大等级!|r");
+                            return;
+                        }
+                    }
+                    uint32 need = aaCenter.aa_petzhan_confs[9].value1;
+                    if (need > 0) {
+                        if (aaCenter.M_CanNeed(player, need)) {
+                            aaCenter.M_Need(player, need);
+                        }
+                        else {
+                            return;
+                        }
+                    }
+
+                    std::string gm = ".组合 *.喂养战宠 " + std::to_string(id) + "<$自身>";
+                    aaCenter.AA_DoCommand(player, gm.c_str());
+                }
+            }
+        }
+        else if (prefix == "40036") { //重生战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (player->IsInCombat()) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[战|r|cFF00D9FF宠|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战斗中无法使用!|r");
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    uint32 need = aaCenter.aa_petzhan_confs[10].value1;
+                    if (need > 0) {
+                        if (aaCenter.M_CanNeed(player, need)) {
+                            aaCenter.M_Need(player, need);
+                        }
+                        else {
+                            return;
+                        }
+                    }
+                    std::string gm = ".组合 *.重生战宠 " + std::to_string(id) + "<$自身>";
+                    aaCenter.AA_DoCommand(player, gm.c_str());
+                }
+            }
+        }
+        else if (prefix == "40037") { //丢弃战宠
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 1) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                if (id == 0) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    std::string gm = ".组合 *.丢弃战宠 " + std::to_string(id) + "<$自身>";
+                    aaCenter.AA_DoCommand(player, gm.c_str());
+                }
+            }
+        }
+        else if (prefix == "40038") { //激活战宠技能
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 2) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                uint32 index = aaCenter.AA_StringUint32(msgs[1]);
+                if (id == 0 || index > 7) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    aaCenter.AA_PetZhan_AddSpellPet(player, id, index, true);
+                }
+            }
+        }
+        else if (prefix == "40039") { //激活主人技能
+            if (aaCenter.aa_petzhan_confs[1].value1 == 1) {
+                if (!player->IsAlive() || !player->IsInWorld()) {
+                    return;
+                }
+                if (msgs.size() < 2) { return; }
+                uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+                uint32 index = aaCenter.AA_StringUint32(msgs[1]);
+                if (id == 0 || index > 7) {
+                    return;
+                }
+                if (aaCenter.aa_character_petzhans.find(id) != aaCenter.aa_character_petzhans.end()) {
+                    aaCenter.AA_PetZhan_AddSpellOwner(player, id, index, true);
+                }
+            }
+        }
+        else if (prefix == "4100") { //发红包、面包屑
+            if (!player->IsAlive() || !player->IsInWorld()) {
+                return;
+            }
+            if (msgs.size() < 4) { return; }
+            std::string count = msgs[0];
+            std::string money = msgs[1];
+            std::string type = msgs[2];
+            std::string text = msgs[3];
+            //语法格式:.发红包(fhb) 参数1（领取方式 1拼手气红包 2普通红包） 参数2（红包类型 1战场分数 2积分 3魔币 4泡点 5金币 负数表示物品） 参数3（红包总数量） 参数4（金额） 参数5（是否消耗0消耗 1不消耗） 参数6（红包描述内容）
+            std::string can2 = "";
+            if (aaCenter.aa_world_confs[103].value2 != "" && aaCenter.aa_world_confs[103].value2 != "0") {
+                int32 itemId = aaCenter.AA_StringInt32(aaCenter.aa_world_confs[103].value2);
+                can2 = std::to_string(-itemId);
+            }
+            else {
+                can2 = std::to_string(aaCenter.aa_world_confs[103].value1);
+            }
+            std::string msg = ".组合 *.发红包 " + type + " " + can2 + " " + count + " " + money + " 0 " + text + "<$自身>";
+            aaCenter.AA_DoCommand(player, msg.c_str());
+        }
+        else if (prefix == "4101") { //抢红包
+            if (!player->IsInWorld()) {
+                return;
+            }
+            if (msgs.size() < 1) { return; }
+            uint32 id = aaCenter.AA_StringUint32(msgs[0]);
+            if (id == 0) {
+                return;
+            }
+            if (aaCenter.aa_character_hongbaos.size() == 0) {
+                return;
+            }
+            if (aaCenter.aa_character_hongbaos.find(id) == aaCenter.aa_character_hongbaos.end()) {
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[红|r|cFF00D9FF包|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000红包不存在。");
+                return;
+            }
+            std::string msg = ".组合 *.抢红包 " + std::to_string(id) + "<$自身>";
+            aaCenter.AA_DoCommand(player, msg.c_str());
+        }
+        else if (prefix == "4102") { //获取红包基础信息
+            //最大数量
+            uint32 count = aaCenter.aa_character_hongbaos.size();
+            //最大页数
+            uint32 ye = count / 8;
+            if (ye * 8 < count) {
+                ye = ye + 1;
+            }
+            std::string result = "{";
+            if (aaCenter.aa_world_confs[103].value2 != "" && aaCenter.aa_world_confs[103].value2 != "0") {
+                result += "-"; result += aaCenter.aa_world_confs[103].value2; result += ",";
+            }
+            else {
+                result += std::to_string(aaCenter.aa_world_confs[103].value1); result += ",";
+            }
+            result += std::to_string(count); result += ",";
+            result += std::to_string(ye); result += "}";
+            aaCenter.M_SendClientAddonData(player, "4102", result);
+        }
+        else if (prefix == "4103") { //分页获取红包列表
+            if (msgs.size() < 1) { return; }
+            //需要获取页数
+            uint32 ye_index = aaCenter.AA_StringUint32(msgs[0]);
+            //AA_Character_Hongbao conf = aaCenter.aa_character_hongbaos[];
+            //最大数量
+            uint32 count = aaCenter.aa_character_hongbaos.size();
+            //最大页数
+            uint32 ye = count / 8;
+            if (ye * 8 < count) {
+                ye = ye + 1;
+            }
+            uint32 count_min = ye_index * 8;
+            uint32 count_max = ye_index * 8 + (ye_index + 1) * 8 - 1;
+            if ((ye_index + 1) * 8 > count) {
+                count_max = count;
+            }
+            std::vector<uint32> ids; ids.clear();
+            int32 i = -1;
+            for (auto itr : aaCenter.aa_character_hongbaos) {
+                if (itr.first == 0) {
+                    continue;
+                }
+                i = i + 1;
+                if (i < count_min) {
+                    continue;
+                }
+                if (i > count_max) {
+                    continue;
+                }
+                ids.push_back(itr.first);
+            }
+            aaCenter.AA_SendHongbaoAddon(player, ids);
         }
     }
     catch (std::exception const& e) {}
@@ -12944,7 +13752,104 @@ void AACenter::LoadAAData_Characters()
             } while (result->NextRow());
         }
     }
-
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _物品记忆传送...");
+        uint32 oldMSTime = getMSTime();
+        aa_item_zuobiaos.clear();
+        QueryResult result = CharacterDatabase.Query("SELECT * FROM _物品记忆传送 ORDER BY weizhi");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_Item_Zuobiao conf;
+                int i = 0;
+                conf.guid = fields[i++].GetUInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.index = fields[i++].GetUInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.itemEntry = fields[i++].GetUInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.map_name = fields[i++].GetString();//` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+                conf.area_name = fields[i++].GetString();//` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '',
+                conf.map = fields[i++].GetInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.zone = fields[i++].GetInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.area = fields[i++].GetInt32();//` int(10) unsigned NOT NULL DEFAULT '0',
+                conf.x = fields[i++].GetFloat();//` float NOT NULL DEFAULT '0',
+                conf.y = fields[i++].GetFloat();//` float NOT NULL DEFAULT '0',
+                conf.z = fields[i++].GetFloat();//` float NOT NULL DEFAULT '0' COMMENT '品质id',
+                conf.o = fields[i++].GetFloat();//` float NOT NULL DEFAULT '0',
+                conf.nanduid = fields[i++].GetUInt32();//` int(11) unsigned NOT NULL DEFAULT '0',
+                conf.update_time = fields[i++].GetUInt32();//` int(11) unsigned NOT NULL DEFAULT '0',
+                aa_item_zuobiaos[conf.guid][conf.index] = conf;
+            } while (result->NextRow());
+        }
+        TC_LOG_INFO("server.loading", ">> 成功加载 _物品记忆传送 用时 {} 毫秒", GetMSTimeDiffToNow(oldMSTime));
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _玩家红包数据...");
+        uint32 oldMSTime = getMSTime();
+        aa_character_hongbaos.clear();
+        aaCenter.aa_hongbao_guids.clear();
+        aaCenter.aa_hongbao_moneys.clear();
+        aaCenter.aa_hongbao_names.clear();
+        QueryResult result = CharacterDatabase.Query("SELECT * FROM _玩家红包数据 ORDER BY id");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_Character_Hongbao conf;
+                int i = 0;
+                conf.id = fields[i++].GetUInt32();//id
+                conf.account = fields[i++].GetUInt32();//account
+                conf.guid = fields[i++].GetUInt32();//guid
+                conf.name = fields[i++].GetString();//玩家姓名
+                conf.fangshi = fields[i++].GetUInt32();//发放方式
+                conf.type = fields[i++].GetInt32();//红包类型
+                conf.money_all = fields[i++].GetUInt32();//红包金额
+                conf.money = fields[i++].GetUInt32();//红包剩余金额
+                conf.count_all = fields[i++].GetUInt32();//红包总数量
+                conf.count = fields[i++].GetUInt32();//红包剩余数量
+                conf.text = fields[i++].GetString();//红包描述
+                conf.lq_count = fields[i++].GetString();//红包领取数量
+                conf.lq_guids = fields[i++].GetString();//红包领取玩家
+                conf.update_time = fields[i++].GetUInt32();
+                aa_character_hongbaos[conf.id] = conf;
+                aaCenter.AA_Hongbao_Sort(conf.id);
+            } while (result->NextRow());
+        }
+        TC_LOG_INFO("server.loading", ">> 成功加载 _玩家红包数据 用时 {} 毫秒", GetMSTimeDiffToNow(oldMSTime));
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _玩家战宠数据...");
+        uint32 oldMSTime = getMSTime();
+        aa_character_petzhans.clear();
+        aa_character_petzhan_owner.clear();
+        QueryResult result = CharacterDatabase.Query("SELECT * FROM _玩家战宠数据 ORDER BY id");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_Character_PetZhan conf;
+                int i = 0;
+                conf.id = fields[i++].GetUInt32();//id
+                conf.owner_guid = fields[i++].GetUInt32();//owner_guid
+                conf.pet_id = fields[i++].GetUInt32();//宠物id
+                conf.level = fields[i++].GetUInt32();//宠物等级
+                conf.exp = fields[i++].GetUInt32();//宠物经验
+                conf.pet_level_zu = fields[i++].GetUInt32();//等级组
+                conf.chengzhang = fields[i++].GetFloat();//成长
+                conf.qihe = fields[i++].GetFloat();//契合
+                conf.jicheng = fields[i++].GetFloat();//继承
+                conf.health = fields[i++].GetUInt32();//生命
+                conf.shanghai = fields[i++].GetUInt32();//伤害
+                conf.fashu = fields[i++].GetUInt32();//法术
+                conf.zhiliao = fields[i++].GetUInt32();//治疗
+                conf.hujia = fields[i++].GetUInt32();//护甲
+                conf.spell_pet = fields[i++].GetString();//宠物技能
+                conf.spell_owner = fields[i++].GetString();//主人技能
+                conf.is_chuzhan = fields[i++].GetUInt32();//已出战
+                conf.is_heti = fields[i++].GetUInt32();//已合体
+                conf.update_time = fields[i++].GetUInt32();
+                aa_character_petzhans[conf.id] = conf;
+                aa_character_petzhan_owner[conf.owner_guid].push_back(conf.id);
+            } while (result->NextRow());
+        }
+        TC_LOG_INFO("server.loading", ">> 成功加载 _玩家战宠数据 用时 {} 毫秒", GetMSTimeDiffToNow(oldMSTime));
+    }
     {
         TC_LOG_INFO("server.loading", "正在加载 _系统数据...");
         uint32 oldMSTime = getMSTime();
@@ -12964,12 +13869,14 @@ void AACenter::LoadAAData_Characters()
         uint32 oldMSTime = getMSTime();
         aaCenter.aa_jishas.clear();
         aaCenter.aa_renwus.clear();
+        aaCenter.aa_hongbaos.clear();
         QueryResult result = CharacterDatabase.Query("SELECT * FROM _玩家排行数据x");
         if (result) {
             do {
                 Field* fields = result->Fetch();
                 aaCenter.aa_jishas[fields[0].GetUInt32()] = fields[1].GetUInt32();
                 aaCenter.aa_renwus[fields[0].GetUInt32()] = fields[2].GetUInt32();
+                aaCenter.aa_hongbaos[fields[0].GetUInt32()] = fields[3].GetUInt32();
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _玩家排行数据x 用时 {} 毫秒", (unsigned long)aaCenter.aa_jishas.size(), GetMSTimeDiffToNow(oldMSTime));
         }
@@ -13197,6 +14104,147 @@ void AACenter::LoadAAData_Characters()
 
 void AACenter::LoadAAData_World()
 {
+    if (aaCenter.AA_VerifyCode("a111b")) {
+        TC_LOG_INFO("server.loading", "正在加载 _物品_记忆传送...");
+        uint32 oldMSTime = getMSTime();
+        aa_item_zuobiao_confs.clear();
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _物品_记忆传送");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_Item_Zuobiao_Conf conf;
+                conf.entry = fields[1].GetUInt32();
+                conf.maps = fields[2].GetString();
+                conf.zones = fields[3].GetString();
+                conf.areas = fields[4].GetString();
+                conf.count = fields[5].GetUInt32();
+                aa_item_zuobiao_confs[conf.entry] = conf;
+            } while (result->NextRow());
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_记忆传送 用时 {} 毫秒", (unsigned long)aa_item_zuobiao_confs.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _宠物_配置...");
+
+        uint32 oldMSTime = getMSTime();
+
+        aa_petzhan_confs.clear();                              // need for reload case
+
+        //                                               0      1       2     3
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _宠物_配置 ORDER BY id");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+
+                AA_PetZhan_Conf conf;
+
+                conf.id = fields[1].GetUInt32();
+                conf.value1 = fields[2].GetInt32();
+                conf.value2 = fields[3].GetString();
+
+                aa_petzhan_confs[conf.id] = conf;
+
+            } while (result->NextRow());
+
+
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _宠物_配置 用时 {} 毫秒", (unsigned long)aa_petzhan_confs.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _宠物...");
+        uint32 oldMSTime = getMSTime();
+        aa_petzhans.clear();
+        aa_petzhan_conf_zus.clear();
+        aa_petzhan_entry_cs.clear();
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _宠物");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_PetZhan conf;
+                uint32 i = 1;
+                conf.id = fields[i++].GetUInt32();//id
+                conf.zu = fields[i++].GetUInt32();//组
+                conf.chance = fields[i++].GetUInt32();// 随机几率` int(10) unsigned NOT NULL DEFAULT '100' COMMENT '公式：当前几率除以一个组的几率之和',
+                conf.creature_entry = fields[i++].GetUInt32();//生物entry
+                conf.icon = fields[i++].GetString();//宠物头像路径
+                conf.scale = fields[i++].GetFloat();//模型大小
+                conf.wuqi = fields[i++].GetUInt32();//是否同步显示主人武器
+                conf.level_zu = fields[i++].GetUInt32();//_宠物_等级_组
+                conf.cz_min = fields[i++].GetFloat();//成长最小值
+                conf.cz_max = fields[i++].GetFloat();//成长最大值
+                conf.qihe_min = fields[i++].GetFloat();//契合最小值
+                conf.qihe_max = fields[i++].GetFloat();//契合最大值
+                conf.jicheng_min = fields[i++].GetFloat();//继承最小值
+                conf.jicheng_max = fields[i++].GetFloat();//继承最大值
+                conf.health_min = fields[i++].GetUInt32();//生命资质最小值
+                conf.health_max = fields[i++].GetUInt32();//生命资质最大值
+                conf.shanghai_min = fields[i++].GetUInt32();//伤害资质最小值
+                conf.shanghai_max = fields[i++].GetUInt32();//伤害资质最大值
+                conf.fashu_min = fields[i++].GetUInt32();//法术资质最小值
+                conf.fashu_max = fields[i++].GetUInt32();//法术资质最大值
+                conf.zhiliao_min = fields[i++].GetUInt32();//治疗资质最小值
+                conf.zhiliao_max = fields[i++].GetUInt32();//治疗资质最大值
+                conf.hujia_min = fields[i++].GetUInt32();//护甲资质最小值
+                conf.hujia_max = fields[i++].GetUInt32();//护甲资质最大值
+                conf.spell_need_pet = fields[i++].GetString();//宠物技能组和激活需求
+                conf.spell_need_owner = fields[i++].GetString();//主人技能组和激活需求
+                conf.notice = fields[i++].GetUInt32();//公告
+                aa_petzhans[conf.id] = conf;
+                aa_petzhan_conf_zus[conf.zu].push_back(conf.id);
+                if (conf.creature_entry > 0) {
+                    aa_petzhan_entry_cs.insert(conf.creature_entry);
+                }
+            } while (result->NextRow());
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _宠物 用时 {} 毫秒", (unsigned long)aa_petzhans.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _宠物_等级...");
+        uint32 oldMSTime = getMSTime();
+        aa_petzhan_levels.clear();
+        aa_petzhan_level_zus.clear();
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _宠物_等级");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_PetZhan_Level conf;
+                uint32 i = 1;
+                conf.id = fields[i++].GetUInt32();//id
+                conf.zu = fields[i++].GetUInt32();//组
+                conf.level = fields[i++].GetUInt32();//等级
+                conf.exp = fields[i++].GetUInt32();//升级经验
+                conf.spell_pet_chance = fields[i++].GetFloat();
+                conf.spell_owner_chance = fields[i++].GetFloat();
+                conf.gm = fields[i++].GetString();//GM命令
+                aa_petzhan_levels[conf.id] = conf;
+                aa_petzhan_level_zus[conf.zu][conf.level] = conf.id;
+            } while (result->NextRow());
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _宠物_等级 用时 {} 毫秒", (unsigned long)aa_petzhan_levels.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
+    {
+        TC_LOG_INFO("server.loading", "正在加载 _宠物_技能...");
+        uint32 oldMSTime = getMSTime();
+        aa_petzhan_spells.clear();
+        aa_petzhan_spell_zus.clear();
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _宠物_技能");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_PetZhan_Spell conf;
+                uint32 i = 1;
+                conf.text = fields[i++].GetString();
+                conf.id = fields[i++].GetUInt32();
+                conf.zu = fields[i++].GetUInt32();
+                conf.spellid = fields[i++].GetUInt32();
+                conf.chance = fields[i++].GetUInt32();
+                conf.ais = fields[i++].GetString();
+                aa_petzhan_spells[conf.id] = conf;
+                aa_petzhan_spell_zus[conf.zu].push_back(conf.id);
+            } while (result->NextRow());
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _宠物_技能 用时 {} 毫秒", (unsigned long)aa_petzhan_spells.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
     {
         TC_LOG_INFO("server.loading", "正在加载 _物品_鉴定_未鉴定时显示...");
         uint32 oldMSTime = getMSTime();
@@ -13377,7 +14425,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义_任务 用时 {} 毫秒", (unsigned long)aa_quests.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a404b")) {
         TC_LOG_INFO("server.loading", "正在加载 _一命模式...");
         uint32 oldMSTime = getMSTime();
         aa_yiming_confs.clear();
@@ -13574,7 +14622,7 @@ void AACenter::LoadAAData_World()
     {
         TC_LOG_INFO("server.loading", "正在加载 __系统_自动组队...");
         uint32 oldMSTime = getMSTime();
-        aa_item_set_confs.clear();
+        aa_xitong_groups.clear();
         QueryResult result = WorldDatabase.Query("SELECT * FROM __系统_自动组队 ORDER BY id");
         if (result) {
             do {
@@ -13587,6 +14635,9 @@ void AACenter::LoadAAData_World()
                 conf.iszhenying = fields[5].GetUInt32();
                 conf.isgonghui = fields[5].GetUInt32();
                 aa_xitong_groups[conf.id] = conf;
+                if (conf.game_event == 0) {
+                    aa_xitong_group_zones.insert(conf.zoneid);
+                }
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 __系统_自动组队 用时 {} 毫秒", (unsigned long)aa_xitong_groups.size(), GetMSTimeDiffToNow(oldMSTime));
         }
@@ -14606,11 +15657,10 @@ void AACenter::LoadAAData_World()
                 conf.zu = fields[i++].GetUInt32();
                 conf.chance = fields[i++].GetFloat();
                 conf.name = fields[i++].GetString();
-                conf.agility = fields[i++].GetFloat();
-                conf.strength = fields[i++].GetFloat();
-                conf.intellect = fields[i++].GetFloat();
-                conf.spirit = fields[i++].GetFloat();
-                conf.stamina = fields[i++].GetFloat();
+                conf.health = fields[i++].GetFloat();
+                conf.shanghai = fields[i++].GetFloat();
+                conf.fashu = fields[i++].GetFloat();
+                conf.zhiliao = fields[i++].GetFloat();
                 conf.pet_moxing = fields[i++].GetString();
                 conf.pet_moxing1 = fields[i++].GetString();
                 conf.pet_moxing2 = fields[i++].GetString();
@@ -14620,6 +15670,19 @@ void AACenter::LoadAAData_World()
                 conf.pet_auras = fields[i++].GetString();
                 conf.player_spells = fields[i++].GetString();
                 conf.player_auras = fields[i++].GetString();
+                if (aaCenter.AA_VerifyCode("a408b")) {
+                    conf.ptshsx = fields[i++].GetUInt32();// 0;//100' COMMENT '普通伤害上限',
+                    conf.ptshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVP普通伤害倍率 公式为:PVP普通伤害 乘以 ptshbl',
+                    conf.cptshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVE普通伤害倍率 公式为:PVE普通伤害 乘以 cptshbl',
+                    conf.jnshsx = fields[i++].GetUInt32();// 0;//100' COMMENT '技能伤害上限',
+                    conf.jnshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVP技能伤害倍率 公式为:PVP技能伤害 乘以 jnshbl',
+                    conf.cjnshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVE技能伤害倍率 公式为:PVE技能伤害 乘以 cjnshbl',
+                    conf.zlshsx = fields[i++].GetUInt32();// 0;//100' COMMENT '治疗伤害上限',
+                    conf.zlshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVP治疗伤害倍率 公式为:PVP治疗伤害 乘以 zlshbl',
+                    conf.czlshbl = fields[i++].GetFloat();// 0;//100' COMMENT 'PVE治疗伤害倍率 公式为:PVE治疗伤害 乘以 czlshbl',
+                    conf.jianshangpvp = fields[i++].GetFloat();// 0;
+                    conf.jianshangpve = fields[i++].GetFloat();// 0;
+                }
                 aa_pets[conf.id] = conf;
                 aa_pet_zus[conf.zu].push_back(conf.id);
             } while (result->NextRow());
@@ -15167,6 +16230,7 @@ void AACenter::LoadAAData_World()
         aa_map_player_conf_yewai_zones.clear();
         aa_map_player_conf_yewai_maps.clear();
         aa_map_player_conf_yewai_all_id = 0;
+        aa_map_player_conf_hdguanghuans.clear();
         QueryResult result = WorldDatabase.Query("SELECT * FROM _属性调整_地图 ORDER BY id");
         if (result) {
             do
@@ -15216,6 +16280,17 @@ void AACenter::LoadAAData_World()
                 if (conf.area == -1 && conf.zone == -1 && conf.map == -1) {
                     aaCenter.aa_map_player_conf_alls[conf.nanduid] = conf.id;
                     aa_map_player_conf_yewai_all_id = conf.id;
+                }
+                if (conf.hdguanghuan != "" && conf.hdguanghuan != "0") {
+                    std::vector<int32> m_spells; m_spells.clear();
+                    aaCenter.AA_StringToVectorInt(conf.hdguanghuan, m_spells, ",");
+                    for (size_t i = 0; i < m_spells.size(); i++)
+                    {
+                        if (m_spells[i] == 0) {
+                            continue;
+                        }
+                        aa_map_player_conf_hdguanghuans.insert(m_spells[i]);
+                    }
                 }
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _属性调整_地图 用时 {} 毫秒", (unsigned long)aa_map_player_confs.size(), GetMSTimeDiffToNow(oldMSTime));
@@ -15494,74 +16569,76 @@ void AACenter::LoadAAData_World()
             do {
                 Field* fields = result->Fetch();
                 AA_Player_Stats_Conf conf;
-                conf.id = fields[1].GetUInt32();
-                conf.class1 = fields[2].GetUInt8();
-                conf.map = fields[3].GetInt32();
-                conf.zone = fields[4].GetInt32();
-                conf.area = fields[5].GetInt32();
-                conf.liliang = fields[6].GetUInt32();
-                conf.liliangbl = fields[7].GetUInt32();
-                conf.minjie = fields[8].GetUInt32();
-                conf.minjiebl = fields[9].GetUInt32();
-                conf.zhili = fields[10].GetUInt32();
-                conf.zhilibl = fields[11].GetUInt32();
-                conf.jingshen = fields[12].GetUInt32();
-                conf.jingshenbl = fields[13].GetUInt32();
-                conf.naili = fields[14].GetUInt32();
-                conf.nailibl = fields[15].GetUInt32();
-                conf.faqiang = fields[16].GetUInt32();
-                conf.faqiangbl = fields[17].GetUInt32();
-                conf.gongqiang = fields[18].GetUInt32();
-                conf.gongqiangbl = fields[19].GetUInt32();
-                conf.zhiliao = fields[20].GetUInt32();
-                conf.zhiliaobl = fields[21].GetUInt32();
-                conf.shensheng = fields[22].GetUInt32();
-                conf.shenshengbl = fields[23].GetUInt32();
-                conf.huoyan = fields[24].GetUInt32();
-                conf.huoyanbl = fields[25].GetUInt32();
-                conf.ziran = fields[26].GetUInt32();
-                conf.ziranbl = fields[27].GetUInt32();
-                conf.bingshuang = fields[28].GetUInt32();
-                conf.bingshuangbl = fields[29].GetUInt32();
-                conf.anying = fields[30].GetUInt32();
-                conf.anyingbl = fields[31].GetUInt32();
-                conf.aoshu = fields[32].GetUInt32();
-                conf.aoshubl = fields[33].GetUInt32();
-                conf.blocksx = fields[34].GetUInt32();
-                conf.parrysx = fields[35].GetUInt32();
-                conf.dodgesx = fields[36].GetUInt32();
-                conf.bjsx = fields[37].GetUInt32();
-                conf.renxingsx = fields[38].GetUInt32();
-                conf.renxingbl = fields[39].GetUInt32();
-                conf.hujiasx = fields[40].GetUInt32();
-                conf.hujiabl = fields[41].GetUInt32();
-                conf.jzsx = fields[42].GetUInt32();
-                conf.jzbl = fields[43].GetUInt32();
-                conf.hpsx = fields[44].GetUInt32();
-                conf.hpbl = fields[45].GetUInt32();
-                conf.jssx = fields[46].GetUInt32();
-                conf.jsbl = fields[47].GetUInt32();
-                conf.ptshsx = fields[48].GetUInt32();
-                conf.ptshbl = fields[49].GetUInt32();
-                conf.cptshbl = fields[50].GetUInt32();
-                conf.jnshsx = fields[51].GetUInt32();
-                conf.jnshbl = fields[52].GetUInt32();
-                conf.cjnshbl = fields[53].GetUInt32();
-                conf.zlshsx = fields[54].GetUInt32();
-                conf.zlshbl = fields[55].GetUInt32();
-                conf.czlshbl = fields[56].GetUInt32();
-                conf.jianshangpvp = fields[57].GetInt32();
-                conf.jianshangpve = fields[58].GetInt32();
-                conf.lltofq = fields[59].GetFloat();// 力量转法强，
-                conf.mjtofq = fields[60].GetFloat();// 敏捷转法强，
-                conf.nltofq = fields[61].GetFloat();// 耐力转法强，
-                conf.zltofq = fields[62].GetFloat();// 智力转法强，
-                conf.jstofq = fields[63].GetFloat();// 精神转法强，
-                conf.lltogq = fields[64].GetFloat();// 力量转攻强，
-                conf.mjtogq = fields[65].GetFloat();// 敏捷转攻强，
-                conf.nltogq = fields[66].GetFloat();// 耐力转攻强，
-                conf.zltogq = fields[67].GetFloat();// 智力转攻强，
-                conf.jstogq = fields[68].GetFloat();// 精神转攻强，
+                int32 i = 1;
+                conf.id = fields[i++].GetUInt32();
+                conf.class1 = fields[i++].GetUInt8();
+                conf.map = fields[i++].GetInt32();
+                conf.zone = fields[i++].GetInt32();
+                conf.area = fields[i++].GetInt32();
+                conf.liliang = fields[i++].GetUInt32();
+                conf.liliangbl = fields[i++].GetFloat();
+                conf.minjie = fields[i++].GetUInt32();
+                conf.minjiebl = fields[i++].GetFloat();
+                conf.zhili = fields[i++].GetUInt32();
+                conf.zhilibl = fields[i++].GetFloat();
+                conf.jingshen = fields[i++].GetUInt32();
+                conf.jingshenbl = fields[i++].GetFloat();
+                conf.naili = fields[i++].GetUInt32();
+                conf.nailibl = fields[i++].GetFloat();
+                conf.faqiang = fields[i++].GetUInt32();
+                conf.faqiangbl = fields[i++].GetFloat();
+                conf.gongqiang = fields[i++].GetUInt32();
+                conf.gongqiangbl = fields[i++].GetFloat();
+                conf.zhiliao = fields[i++].GetUInt32();
+                conf.zhiliaobl = fields[i++].GetFloat();
+                conf.shensheng = fields[i++].GetUInt32();
+                conf.shenshengbl = fields[i++].GetFloat();
+                conf.huoyan = fields[i++].GetUInt32();
+                conf.huoyanbl = fields[i++].GetFloat();
+                conf.ziran = fields[i++].GetUInt32();
+                conf.ziranbl = fields[i++].GetFloat();
+                conf.bingshuang = fields[i++].GetUInt32();
+                conf.bingshuangbl = fields[i++].GetFloat();
+                conf.anying = fields[i++].GetUInt32();
+                conf.anyingbl = fields[i++].GetFloat();
+                conf.aoshu = fields[i++].GetUInt32();
+                conf.aoshubl = fields[i++].GetFloat();
+                conf.blocksx = fields[i++].GetFloat();
+                conf.parrysx = fields[i++].GetFloat();
+                conf.dodgesx = fields[i++].GetFloat();
+                conf.bjsx = fields[i++].GetUInt32();
+                conf.renxingsx = fields[i++].GetUInt32();
+                conf.renxingbl = fields[i++].GetFloat();
+                conf.hujiasx = fields[i++].GetUInt32();
+                conf.hujiabl = fields[i++].GetFloat();
+                conf.jzsx = fields[i++].GetUInt32();
+                conf.jzbl = fields[i++].GetFloat();
+                conf.hpxx = fields[i++].GetUInt32();
+                conf.hpsx = fields[i++].GetUInt32();
+                conf.hpbl = fields[i++].GetFloat();
+                conf.jssx = fields[i++].GetUInt32();
+                conf.jsbl = fields[i++].GetFloat();
+                conf.ptshsx = fields[i++].GetUInt32();
+                conf.ptshbl = fields[i++].GetFloat();
+                conf.cptshbl = fields[i++].GetFloat();
+                conf.jnshsx = fields[i++].GetUInt32();
+                conf.jnshbl = fields[i++].GetFloat();
+                conf.cjnshbl = fields[i++].GetFloat();
+                conf.zlshsx = fields[i++].GetUInt32();
+                conf.zlshbl = fields[i++].GetFloat();
+                conf.czlshbl = fields[i++].GetFloat();
+                conf.jianshangpvp = fields[i++].GetInt32();
+                conf.jianshangpve = fields[i++].GetInt32();
+                conf.lltofq = fields[i++].GetFloat();// 力量转法强，
+                conf.mjtofq = fields[i++].GetFloat();// 敏捷转法强，
+                conf.nltofq = fields[i++].GetFloat();// 耐力转法强，
+                conf.zltofq = fields[i++].GetFloat();// 智力转法强，
+                conf.jstofq = fields[i++].GetFloat();// 精神转法强，
+                conf.lltogq = fields[i++].GetFloat();// 力量转攻强，
+                conf.mjtogq = fields[i++].GetFloat();// 敏捷转攻强，
+                conf.nltogq = fields[i++].GetFloat();// 耐力转攻强，
+                conf.zltogq = fields[i++].GetFloat();// 智力转攻强，
+                conf.jstogq = fields[i++].GetFloat();// 精神转攻强，
                 aa_player_stats_confs[conf.id] = conf;
                 if (conf.area != -1) {
                     aa_player_stats_conf_areas[conf.area][conf.class1] = conf.id;
@@ -16236,13 +17313,15 @@ AA_Object AACenter::AA_GetGameObjectConf(GameObject* gameObject, GameObjectTempl
         std::string rank = "全部类型";
         uint32 confid = 0;
         AA_Object_Id idconf;
-        if (map->IsDungeon()) {
-            uint32 instanceid = gameObject->GetInstanceId();
-            uint32 nanduid = aaCenter.aa_minstancevalues[instanceid][3];
-            idconf = aaCenter.aa_object_ids[goinfo->entry][nanduid];
-        }
-        else {
-            idconf = aaCenter.aa_object_ids[goinfo->entry][0];
+        if (aaCenter.aa_object_ids.find(goinfo->entry) != aaCenter.aa_object_ids.end()) {
+            if (map->Instanceable()) {
+                uint32 instanceid = map->GetInstanceId();
+                uint32 nanduid = aaCenter.aa_minstancevalues[instanceid][3];
+                idconf = aaCenter.aa_object_ids[goinfo->entry][nanduid];
+            }
+            else {
+                idconf = aaCenter.aa_object_ids[goinfo->entry][0];
+            }
         }
         if (idconf.entry > 0 && idconf.zus != "" && idconf.zus != "0") {
             uint32 zu = aaCenter.AA_StringRandom(idconf.zus);
@@ -16286,8 +17365,9 @@ AA_Object AACenter::AA_GetGameObjectConf(GameObject* gameObject, GameObjectTempl
             }
         }
         if (conf.id == 0) {
-            if (map->IsDungeon()) {
-                uint32 nanduid = 0;
+            if (map->Instanceable()) {
+                uint32 instanceid = map->GetInstanceId();
+                uint32 nanduid = aaCenter.aa_minstancevalues[instanceid][3];
                 if (confid == 0)
                 {
                     confid = aaCenter.aa_creature_map_areas[areaid][rank][nanduid];
@@ -16340,6 +17420,22 @@ AA_Object AACenter::AA_GetGameObjectConf(GameObject* gameObject, GameObjectTempl
                 if (confid == 0)
                 {
                     confid = aaCenter.aa_creature_map_yewai_alls[rank];
+                }
+                if (confid == 0)
+                {
+                    confid = aaCenter.aa_creature_map_yewai_areas[areaid]["所有类型"];
+                }
+                if (confid == 0)
+                {
+                    confid = aaCenter.aa_creature_map_yewai_zones[zoneid]["所有类型"];
+                }
+                if (confid == 0)
+                {
+                    confid = aaCenter.aa_creature_map_yewai_maps[mapid]["所有类型"];
+                }
+                if (confid == 0)
+                {
+                    confid = aaCenter.aa_creature_map_yewai_alls["所有类型"];
                 }
                 if (confid > 0) {
                     m_conf = aaCenter.aa_creature_maps[confid];
@@ -17012,6 +18108,7 @@ AA_Paihang AACenter::AA_GetPaihangs()
     aa_paihang.aa_leichong.clear();
     aa_paihang.aa_jinrileichong.clear();
     aa_paihang.aa_renwu.clear();
+    aa_paihang.aa_hongbao.clear();
     aa_paihang.aa_level_item_ItemLevel.clear();
     aa_paihang.aa_level_item_Quality.clear();
     aa_paihang.aa_level_item_jd.clear();
@@ -17046,6 +18143,7 @@ AA_Paihang AACenter::AA_GetPaihangs()
     std::map<ObjectGuid, uint32> aa_leichong;
     std::map<ObjectGuid, uint32> aa_jinrileichong;
     std::map<ObjectGuid, uint32> aa_renwu;
+    std::map<ObjectGuid, uint32> aa_hongbao;
     std::map<ObjectGuid, uint32> aa_level_item_ItemLevel;
     std::map<ObjectGuid, uint32> aa_level_item_Quality;
     std::map<ObjectGuid, uint32> aa_level_item_jd;
@@ -17074,6 +18172,7 @@ AA_Paihang AACenter::AA_GetPaihangs()
         aa_leichong[p->GetGUID()] = a_conf.jifen_all;
         aa_jinrileichong[p->GetGUID()] = a_conf.jifen_day;
         aa_renwu[p->GetGUID()] = aa_renwus[p->GetGUIDLow()];
+        aa_hongbao[p->GetGUID()] = aa_hongbaos[p->GetGUIDLow()];
         aa_level_item_ItemLevel[p->GetGUID()] = aaCenter.GetAll_level_item_ItemLevel(p);
         aa_level_item_Quality[p->GetGUID()] = aaCenter.GetAll_level_item_Quality(p);
         aa_level_item_jd[p->GetGUID()] = aaCenter.GetAll_level_item_jd(p);
@@ -17129,6 +18228,7 @@ AA_Paihang AACenter::AA_GetPaihangs()
     paihangpx(aa_paihang.aa_leichong, aa_leichong);
     paihangpx(aa_paihang.aa_jinrileichong, aa_jinrileichong);
     paihangpx(aa_paihang.aa_renwu, aa_renwu);
+    paihangpx(aa_paihang.aa_hongbao, aa_hongbao);
     paihangpx(aa_paihang.aa_level_item_ItemLevel, aa_level_item_ItemLevel);
     paihangpx(aa_paihang.aa_level_item_Quality, aa_level_item_Quality);
     paihangpx(aa_paihang.aa_level_item_jd, aa_level_item_jd);
@@ -17653,6 +18753,48 @@ std::string AACenter::AA_GetPaihangInfo(std::string& message, AA_Paihang conf)
         }
     }
 
+    if (message.find("<$红包排行姓名@") != std::string::npos) {
+        std::string prestr = "<$红包排行姓名@";
+        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
+        std::string fulstr = prestr + nums + ">";
+        if (nums != "") {
+            int num = atoi(nums.c_str());
+            if (num > 0 && (int)conf.aa_hongbao.size() >= num) {
+                std::pair<ObjectGuid, uint32> m = conf.aa_hongbao[num - 1];
+                if (Player* p = ObjectAccessor::FindPlayer(m.first)) {
+                    if (p && p->IsInWorld()) {
+                        std::string name = p->GetName();
+                        aaCenter.AA_StringReplace(message, fulstr, name);
+                    }
+                }
+            }
+            else {
+                aaCenter.AA_StringReplace(message, fulstr, "无");
+            }
+        }
+        else {
+            aaCenter.AA_StringReplace(message, fulstr, "无");
+        }
+    }
+    if (message.find("<$红包排行数量@") != std::string::npos) {
+        std::string prestr = "<$红包排行数量@";
+        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
+        std::string fulstr = prestr + nums + ">";
+        if (nums != "") {
+            int num = atoi(nums.c_str());
+            if (num > 0 && (int)conf.aa_hongbao.size() >= num) {
+                std::pair<ObjectGuid, uint32> m = conf.aa_hongbao[num - 1];
+                aaCenter.AA_StringReplace(message, fulstr, std::to_string(m.second));
+            }
+            else {
+                aaCenter.AA_StringReplace(message, fulstr, "无");
+            }
+        }
+        else {
+            aaCenter.AA_StringReplace(message, fulstr, "无");
+        }
+    }
+
     if (message.find("<$物品等级排行姓名@") != std::string::npos) {
         std::string prestr = "<$物品等级排行姓名@";
         std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
@@ -18134,8 +19276,7 @@ void AACenter::AA_PaihangReward(bool isAura)
                 }
             }
         }
-        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-        for (auto p : players) {
+        for (auto p : aaCenter.aa_onlinePlayers) {
             for (auto itr : spell_all) {
                 if (itr > 0) {
                     if (p->HasAura(itr)) {
@@ -18607,6 +19748,46 @@ void AACenter::AA_PaihangReward(bool isAura)
         //获取配置
         AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["任务数量"];
         if (px_conf.id != i + 1) {
+            continue;
+        }
+        if (isAura) {
+            if (px_conf.auras != "" && px_conf.auras != "0") {
+                std::vector<int32> spells; spells.clear();
+                aaCenter.AA_StringToVectorInt(px_conf.auras, spells, ",");
+                for (auto itr : spells) {
+                    if (itr > 0) {
+                        if (!player->HasAura(itr)) {
+                            player->AddAura(itr, player);
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+        if (px_conf.reward == 0) {
+            continue;
+        }
+        aaCenter.M_Reward(player, px_conf.reward, 1);
+        if (px_conf.notice == 0) {
+            continue;
+        }
+        AA_Message aa_message;
+        AA_Notice notice = aaCenter.aa_notices[px_conf.notice];
+        aaCenter.AA_SendNotice(player, notice, true, aa_message);
+    }
+    for (size_t i = 0; i < p_conf.aa_hongbao.size(); i++) {
+        //获取玩家，和数值
+        std::pair<ObjectGuid, uint32> p = p_conf.aa_hongbao[i];
+        Player* player = ObjectAccessor::FindPlayer(p.first);
+        if (!player || !player->IsInWorld()) {
+            continue;
+        }
+        if (p.second <= 0) {
+            continue;
+        }
+        //获取配置
+        AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["红包数量"];
+        if (px_conf.paiming != i + 1) {
             continue;
         }
         if (isAura) {
@@ -19240,7 +20421,6 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_pmapvalues[mapid][guidlow], str);
@@ -19252,13 +20432,13 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_player_map_values[mapid][guidlow] = conf;
+            sAAData->AA_REP_Player_Map_Values[guidlow].insert(mapid);
         }
         else {
             AA_Map_Map_Value conf = aaCenter.aa_map_map_values[mapid];
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_mmapvalues[mapid], str);
@@ -19270,6 +20450,7 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_map_map_values[mapid] = conf;
+            sAAData->AA_REP_Map_Map_Values.insert(mapid);
         }
     }
     else if (moshi == 1) {
@@ -19278,7 +20459,6 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_pzonevalues[mapid][guidlow], str);
@@ -19290,13 +20470,13 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_player_zone_values[mapid][guidlow] = conf;
+            sAAData->AA_REP_Player_Zone_Values[guidlow].insert(mapid);
         }
         else {
             AA_Map_Zone_Value conf = aaCenter.aa_map_zone_values[mapid];
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_mzonevalues[mapid], str);
@@ -19307,6 +20487,8 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 aaCenter.AA_MapToString(aaCenter.aa_mzonebools[mapid], str);
                 conf.valueb = str;
             }
+            aaCenter.aa_map_zone_values[mapid] = conf;
+            sAAData->AA_REP_Map_Zone_Values.insert(mapid);
         }
     }
     else if (moshi == 2) {
@@ -19315,7 +20497,6 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_pareavalues[mapid][guidlow], str);
@@ -19327,13 +20508,13 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_player_area_values[mapid][guidlow] = conf;
+            sAAData->AA_REP_Player_Area_Values[guidlow].insert(mapid);
         }
         else {
             AA_Map_Area_Value conf = aaCenter.aa_map_area_values[mapid];
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_mareavalues[mapid], str);
@@ -19344,6 +20525,8 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 aaCenter.AA_MapToString(aaCenter.aa_mareabools[mapid], str);
                 conf.valueb = str;
             }
+            aaCenter.aa_map_area_values[mapid] = conf;
+            sAAData->AA_REP_Map_Area_Values.insert(mapid);
         }
     }
     else if (moshi == 3) {
@@ -19352,7 +20535,6 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_pinstancevalues[mapid][guidlow], str);
@@ -19364,13 +20546,13 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_player_instance_values[mapid][guidlow] = conf;
+            sAAData->AA_REP_Player_Instance_Values[guidlow].insert(mapid);
         }
         else {
             AA_Map_Instance_Value conf = aaCenter.aa_map_instance_values[mapid];
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             conf.update_time = timep;
-            conf.isUpdate = true;
             if (isValue) {
                 std::string str = "";
                 aaCenter.AA_MapToString(aaCenter.aa_minstancevalues[mapid], str);
@@ -19382,6 +20564,7 @@ void AACenter::AA_UpdateValueBools(int32 mapid, uint32 moshi, bool isValue, Obje
                 conf.valueb = str;
             }
             aaCenter.aa_map_instance_values[mapid] = conf;
+            sAAData->AA_REP_Map_Instance_Values.insert(mapid);
         }
     }
 }
@@ -19448,7 +20631,7 @@ bool AACenter::AA_Item_Shuangjia_Chaixie(Player* player, int32 lan, int32 index,
                         player->ApplyEnchantment(pItem, false);
                         aaCenter.aa_item_instances[guid].weizhi = "";
                         aaCenter.aa_item_instances[guid].update_time = timep;
-                        aaCenter.aa_item_instances[guid].isUpdate = true;
+                        sAAData->AA_REP_Item_Instances.insert(guid);
                         for (auto it = aa_item_instance_owner[guidlow].begin(); it != aa_item_instance_owner[guidlow].end();)
                         {
                             if ((*it) == guid) {
@@ -19628,8 +20811,7 @@ void AACenter::AA_Biwu_Update(uint32 diff)
                     if (aaCenter.aa_biwu_isnotice != time) {
                         aaCenter.aa_biwu_isnotice = time;
                         std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00比武大会将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-                        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                        for (auto player : players) {
+                        for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
                     }
@@ -19640,8 +20822,7 @@ void AACenter::AA_Biwu_Update(uint32 diff)
                 aaCenter.aa_biwu_winners.clear();
 
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     if (p->GetAreaId() != conf.area) {
                         continue;
                     }
@@ -20146,8 +21327,7 @@ void AACenter::AA_Shouling_Update(uint32 diff)
         if (aaCenter.aa_shouling_isnotice != time) {
             aaCenter.aa_shouling_isnotice = time;
             std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-            for (auto player : players) {
+            for (auto player : aaCenter.aa_onlinePlayers) {
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
         }
@@ -20168,8 +21348,7 @@ void AACenter::AA_Shouling_Update(uint32 diff)
                     if (aaCenter.aa_shouling_isnotice != time) {
                         aaCenter.aa_shouling_isnotice = time;
                         std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-                        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                        for (auto player : players) {
+                        for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
                     }
@@ -20180,8 +21359,7 @@ void AACenter::AA_Shouling_Update(uint32 diff)
             if (aaCenter.aa_shouling_start_time == 0) {
                 aa_shouling_isstart = true;
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     if (p->GetZoneId() != conf.area) {
                         continue;
                     }
@@ -20337,8 +21515,7 @@ void AACenter::AA_Shouling_End()
         return;
     }
 
-    std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-    for (auto player : players) {
+    for (auto player : aaCenter.aa_onlinePlayers) {
         if (player->aa_shouling_model > 0) {
             std::string gm = ".组合 *.变身 " + std::to_string(player->aa_shouling_model) + " 1<$自身>";
             aaCenter.AA_DoCommand(player, gm.c_str());
@@ -20576,8 +21753,7 @@ void AACenter::AA_Ziyuan_Update(uint32 diff)
         if (aaCenter.aa_ziyuan_isnotice != time) {
             aaCenter.aa_ziyuan_isnotice = time;
             std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00抢占资源将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-            for (auto player : players) {
+            for (auto player : aaCenter.aa_onlinePlayers) {
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
         }
@@ -20598,8 +21774,7 @@ void AACenter::AA_Ziyuan_Update(uint32 diff)
                     if (aaCenter.aa_ziyuan_isnotice != time) {
                         aaCenter.aa_ziyuan_isnotice = time;
                         std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00活动将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-                        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                        for (auto player : players) {
+                        for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
                     }
@@ -20610,8 +21785,7 @@ void AACenter::AA_Ziyuan_Update(uint32 diff)
             if (aaCenter.aa_ziyuan_start_time == 0) {
                 aaCenter.aa_ziyuan_isstart = true;
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     if (p->GetZoneId() != conf.area) {
                         continue;
                     }
@@ -20632,8 +21806,7 @@ void AACenter::AA_Ziyuan_Update(uint32 diff)
 
     Map* map = nullptr;
     if (aaCenter.aa_ziyuan_isstart) {
-        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-        for (auto p : players) {
+        for (auto p : aaCenter.aa_onlinePlayers) {
             //
             if (map == nullptr && p->GetZoneId() == conf.area) {
                 map = p->GetMap();
@@ -21051,8 +22224,7 @@ void AACenter::AA_Gongcheng_Update(uint32 diff)
         if (aaCenter.aa_gongcheng_isnotice != time) {
             aaCenter.aa_gongcheng_isnotice = time;
             std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00活动将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-            std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-            for (auto player : players) {
+            for (auto player : aaCenter.aa_onlinePlayers) {
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
         }
@@ -21073,8 +22245,7 @@ void AACenter::AA_Gongcheng_Update(uint32 diff)
                     if (aaCenter.aa_gongcheng_isnotice != time) {
                         aaCenter.aa_gongcheng_isnotice = time;
                         std::string msg = "|cff00FFFF[" + conf.name + "]|cffFFFF00活动将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
-                        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                        for (auto player : players) {
+                        for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
                     }
@@ -21085,8 +22256,7 @@ void AACenter::AA_Gongcheng_Update(uint32 diff)
             if (aaCenter.aa_gongcheng_start_time == 0) {
                 aaCenter.aa_gongcheng_isstart = true;
                 //获取地图所有人
-                std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-                for (auto p : players) {
+                for (auto p : aaCenter.aa_onlinePlayers) {
                     if (p->GetZoneId() != conf.area) {
                         continue;
                     }
@@ -21108,8 +22278,7 @@ void AACenter::AA_Gongcheng_Update(uint32 diff)
     Map* map = nullptr;
     if (aaCenter.aa_gongcheng_isstart)
     {
-        std::vector<Player*> players = aaCenter.GetOnlinePlayers();
-        for (auto p : players) {
+        for (auto p : aaCenter.aa_onlinePlayers) {
             if (map == nullptr && p->GetZoneId() == conf.area) {
                 map = p->GetMap();
             }
@@ -21477,7 +22646,7 @@ void AACenter::AA_Buy_Time_SetBuyCount(Player* player, uint32 entry, uint32 buyc
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
         }
     }
     if (aaCenter.aa_buy_times[entry].buy_c > 0) {
@@ -21492,7 +22661,7 @@ void AACenter::AA_Buy_Time_SetBuyCount(Player* player, uint32 entry, uint32 buyc
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_characterss[guidlow].update_time = timep;
-            aaCenter.aa_characterss[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characterss.insert(guidlow);
         }
     }
     if (aaCenter.aa_buy_times[entry].yongjiu_a > 0) {
@@ -21507,7 +22676,7 @@ void AACenter::AA_Buy_Time_SetBuyCount(Player* player, uint32 entry, uint32 buyc
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_accounts[accountid].update_time = timep;
-            aaCenter.aa_accounts[accountid].isUpdate = true;
+            sAAData->AA_REP_Accounts.insert(accountid);
         }
     }
     if (aaCenter.aa_buy_times[entry].yongjiu_c > 0) {
@@ -21522,9 +22691,647 @@ void AACenter::AA_Buy_Time_SetBuyCount(Player* player, uint32 entry, uint32 buyc
             time_t timep;
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_characterss[guidlow].update_time = timep;
-            aaCenter.aa_characterss[guidlow].isUpdate = true;
+            sAAData->AA_REP_Characterss.insert(guidlow);
         }
     }
+}
+
+
+/*宠物相关*/
+bool AACenter::AA_UpdatePetWuqi(Player* player, Unit* unit)
+{
+    if (Item* mhWeapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_MAINHAND))
+    {
+        if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+        {
+            unit->SetVirtualItem(0, mhWeaponProto->GetId(), 0, 0);
+        }
+    }
+    if (Item* mhWeapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_OFFHAND))
+    {
+        if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+        {
+            unit->SetVirtualItem(1, mhWeaponProto->GetId(), 0, 0);
+        }
+    }
+    if (Item* mhWeapon = player->GetItemByPos(INVENTORY_SLOT_BAG_0, EQUIPMENT_SLOT_RANGED))
+    {
+        if (ItemTemplate const* mhWeaponProto = mhWeapon->GetTemplate())
+        {
+            unit->SetVirtualItem(2, mhWeaponProto->GetId(), 0, 0);
+        }
+    }
+    return true;
+}
+uint32 AACenter::AA_PetZhan_GetSpellIndexPet(uint32 rid)
+{
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[rid];
+    uint32 spell_index = 0;
+    //初始化技能
+    if (conf.spell_pet != "" && conf.spell_pet != "0") {
+        std::vector<int32> spells; spells.clear();
+        aaCenter.AA_StringToVectorInt(conf.spell_pet, spells, ",");
+        for (auto itr : spells) {
+            if (itr > 0) {
+                spell_index += 1;
+            }
+        }
+    }
+    return spell_index;
+}
+uint32 AACenter::AA_PetZhan_GetSpellIndexOwner(uint32 rid)
+{
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[rid];
+    uint32 spell_index = 0;
+    //初始化技能
+    if (conf.spell_owner != "" && conf.spell_owner != "0") {
+        std::vector<int32> spells; spells.clear();
+        aaCenter.AA_StringToVectorInt(conf.spell_owner, spells, ",");
+        for (auto itr : spells) {
+            if (itr > 0) {
+                spell_index += 1;
+            }
+        }
+    }
+    return spell_index;
+}
+
+//战宠初始化，战宠的资质
+bool AACenter::AA_PetZhan_Init(Player* player, uint32 rid)
+{
+    uint32 id = aaCenter.aa_character_petzhans[rid].pet_id;
+    AA_PetZhan conf = aaCenter.aa_petzhans[id];
+    {
+        float chengzhang = 0;
+        if (conf.cz_min >= conf.cz_max) {
+            chengzhang = conf.cz_min;
+        }
+        else { chengzhang = conf.cz_min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (conf.cz_max - conf.cz_min))); }
+        char* chCode;
+        chCode = new(std::nothrow)char[20];
+        sprintf(chCode, "%.3f", chengzhang);  // .3 是控制输出精度的，三位小数
+        string strCode(chCode);
+        delete[]chCode;
+        float num = std::stof(strCode);
+        aaCenter.aa_character_petzhans[rid].chengzhang = num;//成长
+    }
+    {
+        float qihe = 0;
+        if (conf.qihe_min >= conf.qihe_max) {
+            qihe = conf.qihe_min;
+        }
+        else { qihe = conf.qihe_min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (conf.qihe_max - conf.qihe_min))); }
+        char* chCode;
+        chCode = new(std::nothrow)char[20];
+        sprintf(chCode, "%.3f", qihe);  // .3 是控制输出精度的，三位小数
+        string strCode(chCode);
+        delete[]chCode;
+        float num = std::stof(strCode);
+        aaCenter.aa_character_petzhans[rid].qihe = num;//成长
+    }
+    {
+        float jicheng = 0;
+        if (conf.jicheng_min >= conf.jicheng_max) {
+            jicheng = conf.jicheng_min;
+        }
+        else { jicheng = conf.jicheng_min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (conf.jicheng_max - conf.jicheng_min))); }
+        char* chCode;
+        chCode = new(std::nothrow)char[20];
+        sprintf(chCode, "%.3f", jicheng);  // .3 是控制输出精度的，三位小数
+        string strCode(chCode);
+        delete[]chCode;
+        float num = std::stof(strCode);
+        aaCenter.aa_character_petzhans[rid].jicheng = num;//继承
+    }
+
+    {
+        uint32 val = 0;
+        if (conf.health_min >= conf.health_max) {
+            val = conf.health_min;
+        }
+        else { val = (rand() % (conf.health_max - conf.health_min + 1)) + conf.health_min; }
+        aaCenter.aa_character_petzhans[rid].health = val;//生命
+    }
+    {
+        uint32 val = 0;
+        if (conf.shanghai_min >= conf.shanghai_max) {
+            val = conf.shanghai_min;
+        }
+        else { val = (rand() % (conf.shanghai_max - conf.shanghai_min + 1)) + conf.shanghai_min; }
+        aaCenter.aa_character_petzhans[rid].shanghai = val;//伤害
+    }
+    {
+        uint32 val = 0;
+        if (conf.fashu_min >= conf.fashu_max) {
+            val = conf.fashu_min;
+        }
+        else { val = (rand() % (conf.fashu_max - conf.fashu_min + 1)) + conf.fashu_min; }
+        aaCenter.aa_character_petzhans[rid].fashu = val;//法术
+    }
+    {
+        uint32 val = 0;
+        if (conf.zhiliao_min >= conf.zhiliao_max) {
+            val = conf.zhiliao_min;
+        }
+        else { val = (rand() % (conf.zhiliao_max - conf.zhiliao_min + 1)) + conf.zhiliao_min; }
+        aaCenter.aa_character_petzhans[rid].zhiliao = val;//治疗
+    }
+    {
+        uint32 val = 0;
+        if (conf.hujia_min >= conf.hujia_max) {
+            val = conf.hujia_min;
+        }
+        else { val = (rand() % (conf.hujia_max - conf.hujia_min + 1)) + conf.hujia_min; }
+        aaCenter.aa_character_petzhans[rid].hujia = val;//护甲
+    }
+    //初始化等级经验
+    aaCenter.aa_character_petzhans[rid].level = 1;
+    aaCenter.aa_character_petzhans[rid].exp = 0;
+    //初始化技能
+    if (conf.spell_need_pet != "" && conf.spell_need_pet != "0") {
+        std::vector<int32> zus; zus.clear();
+        std::vector<int32> needs; needs.clear();
+        aaCenter.AA_StringToVector2(conf.spell_need_pet, zus, needs);
+        std::vector<int32> spells; spells.clear();
+        for (size_t i = 0; i < zus.size(); i++)
+        {
+            spells.push_back(0);
+        }
+        std::string spellstr = "";
+        aaCenter.AA_VectorIntToString(spellstr, spells, ",");
+        aaCenter.aa_character_petzhans[rid].spell_pet = spellstr;
+    }
+    if (conf.spell_need_owner != "" && conf.spell_need_owner != "0") {
+        std::vector<int32> zus; zus.clear();
+        std::vector<int32> needs; needs.clear();
+        aaCenter.AA_StringToVector2(conf.spell_need_owner, zus, needs);
+        std::vector<int32> spells; spells.clear();
+        for (size_t i = 0; i < zus.size(); i++)
+        {
+            spells.push_back(0);
+        }
+        std::string spellstr = "";
+        aaCenter.AA_VectorIntToString(spellstr, spells, ",");
+        aaCenter.aa_character_petzhans[rid].spell_owner = spellstr;
+    }
+
+    //出生一级技能
+    if (conf.level_zu > 0) {
+        uint32 level_id = aaCenter.aa_petzhan_level_zus[conf.level_zu][1];
+        AA_PetZhan_Level conf_level = aaCenter.aa_petzhan_levels[level_id];
+        if (conf_level.spell_pet_chance) {
+            float rand = frand(0.00, 100.00);
+            if (rand < conf_level.spell_pet_chance) {
+                aaCenter.AA_PetZhan_AddSpellPet(player, rid, 0);
+            }
+        }
+        if (conf_level.spell_owner_chance) {
+            float rand = frand(0.00, 100.00);
+            if (rand < conf_level.spell_owner_chance) {
+                aaCenter.AA_PetZhan_AddSpellOwner(player, rid, 0);
+            }
+        }
+    }
+
+    time_t timep;
+    std::time(&timep); /*当前time_t类型UTC时间*/
+    aaCenter.aa_character_petzhans[rid].update_time = timep;
+
+    sAAData->AA_REP_Character_ZhanPets.insert(rid);
+    return true;
+}
+
+bool AACenter::AA_PetZhan_Reset(Player* player, uint32 rid)
+{
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[rid];
+    if (conf.is_chuzhan == 1 || conf.is_heti == 1) {
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[战|r|cFF00D9FF宠|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000出战或合体的战宠，无法重生|r");
+        return false;
+    }
+
+    return AA_PetZhan_Init(player, rid);
+}
+
+bool AACenter::AA_PetZhan_GiveExp(Player* player, uint32 rid, uint32 xp)
+{
+    uint32 id = aaCenter.aa_character_petzhans[rid].pet_id;
+    AA_PetZhan conf = aaCenter.aa_petzhans[id];
+    //剩余军衔经验
+    aaCenter.aa_character_petzhans[rid].exp += xp;
+    AA_PetZhan_Level conf_level;
+    AA_PetZhan_Level conf_level_n;
+    //当前军衔等级
+    uint32 level = aaCenter.aa_character_petzhans[rid].level;
+    bool isLevel = false;
+    do {
+        //下级军衔信息
+        uint32 level_id = aaCenter.aa_petzhan_level_zus[conf.level_zu][level];
+        conf_level = aaCenter.aa_petzhan_levels[level_id];
+        level++;
+        uint32 level_id_n = aaCenter.aa_petzhan_level_zus[conf.level_zu][level];
+        conf_level_n = aaCenter.aa_petzhan_levels[level_id_n];
+        //剩余军衔经验 > 下级军衔经验
+        if (aaCenter.aa_character_petzhans[rid].exp >= conf_level.exp && conf_level_n.level > 0) {
+            //当前军衔等级+1，触发升级
+            aaCenter.aa_character_petzhans[rid].level = level;
+            if (conf.notice > 0) {
+                AA_Message aa_message;
+                AA_Notice notice = aaCenter.aa_notices[conf.notice];
+                aaCenter.AA_SendNotice(player, notice, true, aa_message);
+            }
+            isLevel = true;
+            //剩余军衔经验,减去下级军衔经验
+            aaCenter.aa_character_petzhans[rid].exp -= conf_level.exp;
+            //触发升级奖励
+            if (conf_level.gm != "" && conf_level.gm != "0") {
+                aaCenter.AA_DoCommand(player, conf_level.gm.c_str());
+            }
+            //升级奖励宠物技能
+            {
+                std::vector<int32> spells; spells.clear();
+                aaCenter.AA_StringToVectorInt(aaCenter.aa_character_petzhans[rid].spell_pet, spells, ",");
+                //如果技能数量没满，可以获得技能
+                int32 spell_index = aaCenter.AA_PetZhan_GetSpellIndexPet(rid);
+                if (spells.size() > spell_index) {
+                    if (conf_level.spell_pet_chance > 0) {
+                        float rand = frand(0.00, 100.00);
+                        if (rand < conf_level.spell_pet_chance) {
+                            aaCenter.AA_PetZhan_AddSpellPet(player, rid, spell_index);
+                        }
+                    }
+                }
+            }
+            //升级奖励主人技能
+            {
+                std::vector<int32> spells; spells.clear();
+                aaCenter.AA_StringToVectorInt(aaCenter.aa_character_petzhans[rid].spell_owner, spells, ",");
+                //如果技能数量没满，可以获得技能
+                int32 spell_index = aaCenter.AA_PetZhan_GetSpellIndexOwner(rid);
+                if (spells.size() > spell_index) {
+                    if (conf_level.spell_owner_chance > 0) {
+                        float rand = frand(0.00, 100.00);
+                        if (rand < conf_level.spell_owner_chance) {
+                            aaCenter.AA_PetZhan_AddSpellOwner(player, rid, spell_index);
+                        }
+                    }
+                }
+            }
+        }
+    } while (conf_level_n.level > 0);
+
+    std::map<int32, int32> spells; spells.clear();
+    aaCenter.AA_StringToMap(aaCenter.aa_character_petzhans[rid].spell_pet, spells);
+    sAAData->AA_REP_Character_ZhanPets.insert(rid);
+    return true;
+}
+
+bool AACenter::AA_PetZhan_AddSpellPet(Player* player, uint32 rid, uint32 index, bool isNeed)
+{
+    std::vector<int32> spell_pets; spell_pets.clear();
+    aaCenter.AA_StringToVectorInt(aaCenter.aa_character_petzhans[rid].spell_pet, spell_pets, ",");
+    if (spell_pets.size() <= index) {
+        return false;
+    }
+    if (spell_pets[index] > 0) {
+        return false;
+    }
+    if (index > 0 && index - 1 < spell_pets.size()) {
+        if (spell_pets[index - 1] == 0) {
+            return false;
+        }
+    }
+    uint32 id = aaCenter.aa_character_petzhans[rid].pet_id;
+    AA_PetZhan conf = aaCenter.aa_petzhans[id];
+    if (conf.spell_need_pet != "" && conf.spell_need_pet != "0") {
+        std::vector<int32> zus; zus.clear();
+        std::vector<int32> needs; needs.clear();
+        aaCenter.AA_StringToVector2(conf.spell_need_pet, zus, needs);
+        if (zus.size() > index) {
+            uint32 zu = zus[index];
+            if (zu > 0) {
+                AA_PetZhan_Spell conf;
+                uint32 needid = needs[index];
+                if (isNeed) {
+                    if (needid > 0) {
+                        if (aaCenter.M_CanNeed(player, needid)) {
+                            aaCenter.M_Need(player, needid);
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                }
+                std::vector<uint32> ids = aaCenter.aa_petzhan_spell_zus[zu];
+                for (int i = 0; i < ids.size(); i++) {
+                    if (std::find(spell_pets.begin(), spell_pets.end(), ids[i]) != spell_pets.end()) {
+                        std::swap(ids[i], ids[ids.size() - 1]); //将要删除的元素交换到最后
+                        ids.pop_back();
+                        i--; //这里的i--与上面的作用一样
+                    }
+                }
+                //获取总chance，分母
+                int count = ids.size();
+                if (count > 0) {
+                    uint32 chanceMax = 0;
+                    for (int i = 0; i < count; i++) {
+                        uint32 id = ids[i];
+                        AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                        chanceMax += conf.chance;
+                    }
+                    //获取随机chance，分子
+                    if (chanceMax == 0) { // 数据库的chance都为0
+                        chanceMax = 1;
+                    }
+                    uint32 chanceVal = rand() % chanceMax;
+                    //获取Index
+                    uint32 max = 0;
+                    uint32 min = 0;
+                    int index = 0;
+                    for (int i = 0; i < count; i++) {
+                        uint32 id = ids[i];
+                        AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                        max = conf.chance + max;
+                        min = 0;
+                        if (i == 0) {
+                            min = 0;
+                        }
+                        else {
+                            uint32 id = ids[i - 1];
+                            AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                            min = conf.chance + min;
+                        }
+                        if (min <= chanceVal && chanceVal < max) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    uint32 id = ids[index];
+                    conf = aaCenter.aa_petzhan_spells[id];
+                }
+                if (conf.id > 0) {
+                    spell_pets[index] = conf.id;
+                    std::string spellstr = "";
+                    aaCenter.AA_VectorIntToString(spellstr, spell_pets, ",");
+                    aaCenter.aa_character_petzhans[rid].spell_pet = spellstr;
+                }
+            }
+        }
+    }
+    sAAData->AA_REP_Character_ZhanPets.insert(rid);
+    return false;
+}
+
+bool AACenter::AA_PetZhan_AddSpellOwner(Player* player, uint32 rid, uint32 index, bool isNeed)
+{
+    std::vector<int32> spell_owners; spell_owners.clear();
+    aaCenter.AA_StringToVectorInt(aaCenter.aa_character_petzhans[rid].spell_owner, spell_owners, ",");
+    if (spell_owners.size() <= index) {
+        return false;
+    }
+    if (spell_owners[index] > 0) {
+        return false;
+    }
+    if (index > 0 && index - 1 < spell_owners.size()) {
+        if (spell_owners[index - 1] == 0) {
+            return false;
+        }
+    }
+    uint32 id = aaCenter.aa_character_petzhans[rid].pet_id;
+    AA_PetZhan conf = aaCenter.aa_petzhans[id];
+    if (conf.spell_need_owner != "" && conf.spell_need_owner != "0") {
+        std::vector<int32> zus; zus.clear();
+        std::vector<int32> needs; needs.clear();
+        aaCenter.AA_StringToVector2(conf.spell_need_owner, zus, needs);
+        if (zus.size() > index) {
+            uint32 zu = zus[index];
+            if (zu > 0) {
+                AA_PetZhan_Spell conf;
+                uint32 needid = needs[index];
+                if (isNeed) {
+                    if (needid > 0) {
+                        if (aaCenter.M_CanNeed(player, needid)) {
+                            aaCenter.M_Need(player, needid);
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                }
+                std::vector<uint32> ids = aaCenter.aa_petzhan_spell_zus[zu];
+                for (int i = 0; i < ids.size(); i++) {
+                    if (std::find(spell_owners.begin(), spell_owners.end(), ids[i]) != spell_owners.end()) {
+                        std::swap(ids[i], ids[ids.size() - 1]); //将要删除的元素交换到最后
+                        ids.pop_back();
+                        i--; //这里的i--与上面的作用一样
+                    }
+                }
+                //获取总chance，分母
+                int count = ids.size();
+                if (count > 0) {
+                    uint32 chanceMax = 0;
+                    for (int i = 0; i < count; i++) {
+                        uint32 id = ids[i];
+                        AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                        chanceMax += conf.chance;
+                    }
+                    //获取随机chance，分子
+                    if (chanceMax == 0) { // 数据库的chance都为0
+                        chanceMax = 1;
+                    }
+                    uint32 chanceVal = rand() % chanceMax;
+                    //获取Index
+                    uint32 max = 0;
+                    uint32 min = 0;
+                    int index = 0;
+                    for (int i = 0; i < count; i++) {
+                        uint32 id = ids[i];
+                        AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                        max = conf.chance + max;
+                        min = 0;
+                        if (i == 0) {
+                            min = 0;
+                        }
+                        else {
+                            uint32 id = ids[i - 1];
+                            AA_PetZhan_Spell conf = aaCenter.aa_petzhan_spells[id];
+                            min = conf.chance + min;
+                        }
+                        if (min <= chanceVal && chanceVal < max) {
+                            index = i;
+                            break;
+                        }
+                    }
+                    uint32 id = ids[index];
+                    conf = aaCenter.aa_petzhan_spells[id];
+                }
+                if (conf.id > 0) {
+                    spell_owners[index] = conf.id;
+                    std::string spellstr = "";
+                    aaCenter.AA_VectorIntToString(spellstr, spell_owners, ",");
+                    aaCenter.aa_character_petzhans[rid].spell_owner = spellstr;
+                }
+            }
+        }
+    }
+    sAAData->AA_REP_Character_ZhanPets.insert(rid);
+    return false;
+}
+
+uint32 AACenter::AA_PetZhan_GetPingfen(uint32 id)
+{
+    //评分:宠物资质之和x等级x(成长+契合+继承)x0.1
+    uint32 value = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    value += conf.health;
+    value += conf.shanghai;
+    value += conf.fashu;
+    value += conf.zhiliao;
+    value += conf.hujia;
+    value *= conf.level;
+    value *= (conf.chengzhang + conf.qihe + conf.jicheng);
+    value *= 0.1;
+    return value;
+}
+
+uint32 AACenter::AA_PetZhan_GetPetHealth(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    uint32 value1 = player->GetMaxHealth() * conf.jicheng;
+    damage_tmp += value1;
+    if (conf.health > 0) {
+        uint32 value2 = conf.health;
+        value2 *= conf.chengzhang;
+        value2 *= conf.level;
+        value2 *= 0.1;
+        damage_tmp += value2;
+    }
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetPetShanghai(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    float minDamage = 0;
+    float maxDamage = 0;
+    float minDamager = 0;
+    float maxDamager = 0;
+    player->CalculateMinMaxDamage(BASE_ATTACK, false, true, minDamage, maxDamage);
+    player->CalculateMinMaxDamage(RANGED_ATTACK, false, true, minDamager, maxDamager);
+    float v1 = maxDamage > minDamage ? maxDamage : minDamage;
+    float v2 = maxDamager > minDamager ? maxDamager : minDamager;
+    uint32 value1 = v1 > v2 ? v1 : v2;
+    value1 *= conf.jicheng;
+    damage_tmp += value1;
+    if (conf.shanghai > 0) {
+        uint32 value2 = conf.shanghai;
+        value2 *= conf.chengzhang;
+        value2 *= conf.level;
+        value2 *= 0.1;
+        damage_tmp += value2;
+    }
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetPetFashu(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    uint32 value1 = player->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NORMAL) * conf.jicheng;
+    damage_tmp += value1;
+    if (conf.fashu > 0) {
+        uint32 value2 = conf.fashu;
+        value2 *= conf.chengzhang;
+        value2 *= conf.level;
+        value2 *= 0.1;
+        damage_tmp += value2;
+    }
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetPetZhiliao(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    int32 value1 = player->m_activePlayerData->ModHealingDonePos * conf.jicheng;
+    damage_tmp += value1;
+    if (conf.zhiliao > 0) {
+        uint32 value2 = conf.zhiliao;
+        value2 *= conf.chengzhang;
+        value2 *= conf.level;
+        value2 *= 0.1;
+        damage_tmp += value2;
+    }
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetPetHujia(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    Creature* minion = nullptr;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    uint32 value1 = player->GetArmor() * conf.jicheng;
+    damage_tmp += value1;
+    if (conf.hujia > 0) {
+        uint32 value2 = conf.hujia;
+        value2 *= conf.chengzhang;
+        value2 *= conf.level;
+        value2 *= 0.1;
+        damage_tmp += value2;
+    }
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetOwnerHealth(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+    damage_tmp += conf.health;
+    damage_tmp *= conf.qihe;
+    damage_tmp *= conf.level;
+    damage_tmp *= 0.1;
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetOwnerShanghai(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+    damage_tmp += conf.shanghai;
+    damage_tmp *= conf.qihe;
+    damage_tmp *= conf.level;
+    damage_tmp *= 0.1;
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetOwnerFashu(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+    damage_tmp += conf.fashu;
+    damage_tmp *= conf.qihe;
+    damage_tmp *= conf.level;
+    damage_tmp *= 0.1;
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetOwnerZhiliao(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+    damage_tmp += conf.zhiliao;
+    damage_tmp *= conf.qihe;
+    damage_tmp *= conf.level;
+    damage_tmp *= 0.1;
+    return damage_tmp;
+}
+uint32 AACenter::AA_PetZhan_GetOwnerHujia(Player* player, uint32 id)
+{
+    uint32 damage_tmp = 0;
+    AA_Character_PetZhan conf = aaCenter.aa_character_petzhans[id];
+    AA_PetZhan conf_p = aaCenter.aa_petzhans[conf.pet_id];
+    damage_tmp += conf.hujia;
+    damage_tmp *= conf.qihe;
+    damage_tmp *= conf.level;
+    damage_tmp *= 0.01;
+    return damage_tmp;
 }
 
 //活跃度
@@ -21650,7 +23457,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             if (conf.id > 0) {
                 if (isHeal) {
                     if (conf.zhiliao > 0) {
-                        int32 value = player->GetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS);
+                        int32 value = player->m_activePlayerData->ModHealingDonePos;
                         damage_tmp += value * conf.zhiliao * 0.01;
                     }
                 }
@@ -21662,8 +23469,8 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 }
                 else {
                     if (conf.shanghai > 0) {
-                        uint32 ap = player->CalculateDamage(BASE_ATTACK, false, true, 1);
-                        uint32 rap = player->CalculateDamage(RANGED_ATTACK, false, true, 1);
+                        uint32 ap = player->CalculateDamage(BASE_ATTACK, false, true);
+                        uint32 rap = player->CalculateDamage(RANGED_ATTACK, false, true);
                         int32 value = ap > rap ? ap : rap;
                         damage_tmp += value * conf.shanghai * 0.01;
                     }
@@ -21678,7 +23485,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             // 宠物属性 = 继承x人物属性 + 资质x成长x等级除以10
             if (conf.id > 0) {
                 if (isHeal) {
-                    uint32 value1 = player->GetUInt32Value(PLAYER_FIELD_MOD_HEALING_DONE_POS) * conf.jicheng;
+                    uint32 value1 = player->m_activePlayerData->ModHealingDonePos * conf.jicheng;
                     damage_tmp += value1;
                     if (conf.zhiliao > 0) {
                         uint32 value2 = conf.zhiliao;
@@ -21700,8 +23507,8 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     }
                 }
                 else {
-                    uint32 ap = player->CalculateDamage(BASE_ATTACK, false, true, 1);
-                    uint32 rap = player->CalculateDamage(RANGED_ATTACK, false, true, 1);
+                    uint32 ap = player->CalculateDamage(BASE_ATTACK, false, true);
+                    uint32 rap = player->CalculateDamage(RANGED_ATTACK, false, true);
                     uint32 value1 = ap > rap ? ap : rap;
                     value1 *= conf.jicheng;
                     damage_tmp += value1;
@@ -22452,4 +24259,158 @@ bool AACenter::AA_IsSpell_Mofa(SpellInfo const* spellInfo)
         return true;
     }
     return false;
+}
+
+void AACenter::AA_Hongbao_Sort(uint32 id)
+{
+    AA_Character_Hongbao conf = aaCenter.aa_character_hongbaos[id];
+    std::vector<std::string> guidMoneys; guidMoneys.clear();
+    std::vector<std::string> moneys; moneys.clear();
+    std::vector<std::string> guidNames; guidNames.clear();
+    std::vector<std::string> names; names.clear();
+    aaCenter.AA_StringToVector3(conf.lq_count, guidMoneys, moneys);
+    aaCenter.AA_StringToVector3(conf.lq_guids, guidNames, names);
+
+    std::map<uint32, uint32> money_map; money_map.clear();
+    std::map<uint32, std::string> name_map; name_map.clear();
+    for (size_t i = 0; i < guidMoneys.size(); i++)
+    {
+        std::string guidlow = guidMoneys[i];
+        if (guidlow == "" || guidlow == "0") {
+            continue;
+        }
+        std::string money = moneys[i];
+        std::string name = names[i];
+        money_map[aaCenter.AA_StringInt32(guidlow)] = aaCenter.AA_StringInt32(money);
+        name_map[aaCenter.AA_StringInt32(guidlow)] = name;
+    }
+    //将mp当中所有的键值对构造成一个vec
+    std::vector<pair<ObjectGuid::LowType, uint32>> vec(money_map.begin(), money_map.end());
+    //利用sort函数对vec内的元素进行排序操作
+    std::sort(vec.begin(), vec.end(), cmpbiwu);
+
+    std::vector<std::string> guidMoneys1; guidMoneys1.clear();
+    std::vector<std::string> moneys1; moneys1.clear();
+    std::vector<std::string> guidNames1; guidNames1.clear();
+    std::vector<std::string> names1; names1.clear();
+
+    aaCenter.aa_hongbao_guids[id].clear();
+    aaCenter.aa_hongbao_moneys[id].clear();
+    aaCenter.aa_hongbao_names[id].clear();
+    for (auto it : vec) {
+        aaCenter.aa_hongbao_guids[id].push_back(it.first);
+        aaCenter.aa_hongbao_moneys[id].push_back(it.second);
+        aaCenter.aa_hongbao_names[id].push_back(name_map[it.first]);
+    }
+}
+
+void AACenter::AA_SendHongbaoAddon(Player* player, std::vector<uint32> ids)
+{
+    {
+        //分页获取红包列表
+        //红包id
+        //发送者姓名
+        //描述
+        //我抢到的金额 = 是否领取
+        //已领取个数
+        //总个数
+        //当前金额
+        //总金额
+        std::string result = "{";//{[id]="text",[id]="text"}
+        std::string result1 = "{";//{[id]="text",[id]="text"}
+        for (auto id : ids) {
+            AA_Character_Hongbao conf = aaCenter.aa_character_hongbaos[id];
+            //我抢到的金额
+            uint32 money_m = 0;
+            std::vector<ObjectGuid::LowType> guids = aaCenter.aa_hongbao_guids[id];
+            if (std::find(guids.begin(), guids.end(), player->GetGUIDLow()) != guids.end())
+            {
+                for (size_t i = 0; i < guids.size(); i++)
+                {
+                    if (guids[i] == player->GetGUIDLow()) {
+                        money_m = aaCenter.aa_hongbao_moneys[id][i];
+                        break;
+                    }
+                }
+            }
+
+            result += "["; result += std::to_string(id); result += "]={";
+            result += std::to_string(conf.id); result += ",";
+            result += std::to_string(conf.fangshi); result += ",";
+            result += std::to_string(conf.type); result += ",\"";
+            result += conf.name; result += "\",\"";
+            result += conf.text; result += "\",";
+            result += std::to_string(money_m); result += ",";
+            result += std::to_string(conf.count); result += ",";
+            result += std::to_string(conf.count_all); result += ",";
+            result += std::to_string(conf.money); result += ",";
+            result += std::to_string(conf.money_all); result += "},";
+
+            //分页获取领取详情表
+            //红包id
+            //名字
+            //积分
+            std::string countstr = "";
+            for (size_t i = 0; i < 5; i++)
+            {
+                if (aaCenter.aa_hongbao_names[id].size() <= i) {
+                    break;
+                }
+                if (aaCenter.aa_hongbao_moneys[id].size() <= i) {
+                    break;
+                }
+                countstr += "["; countstr += std::to_string(i); countstr += "]={";
+                countstr += std::to_string(conf.type); countstr += ",\"";
+                countstr += aaCenter.aa_hongbao_names[id][i]; countstr += "\",";
+                countstr += std::to_string(aaCenter.aa_hongbao_moneys[id][i]); countstr += "},";
+            }
+            aaCenter.AA_StringReplaceLast(countstr, "},", "}");
+            result1 += "["; result1 += std::to_string(id); result1 += "]={";
+            result1 += countstr; result1 += "},";
+        }
+        result += "}";
+        aaCenter.AA_StringReplaceLast(result, ",}", "}");
+        aaCenter.M_SendClientAddonData(player, "41031", result);
+
+        result1 += "}";
+        aaCenter.AA_StringReplaceLast(result1, ",}", "}");
+        aaCenter.M_SendClientAddonData(player, "41032", result1);
+    }
+}
+
+void AACenter::AA_Update_YimingAura(Player* player)
+{
+    //一命模式 模式等级光环
+    uint32 guidlow = player->GetGUIDLow();
+    uint32 level = aaCenter.aa_characterss[guidlow].yiming;
+    AA_Yiming_Conf conf = aaCenter.aa_yiming_confs[level];
+    for (auto vipconf : aaCenter.aa_yiming_confs) {
+        if (vipconf.first == 0) {
+            continue;
+        }
+        if (vipconf.second.guanghuans != "" && vipconf.second.guanghuans != "0") {
+            std::vector<int32> spellids; spellids.clear();
+            aaCenter.AA_StringToVectorInt(vipconf.second.guanghuans, spellids, ",");
+            for (size_t i = 0; i < spellids.size(); i++) {
+                int32 spellid = spellids[i];
+                if (spellid == 0) {
+                    continue;
+                }
+                if (player->HasAura(spellid)) {
+                    player->RemoveAurasDueToSpell(spellid);
+                }
+            }
+        }
+    }
+    if (conf.guanghuans != "" && conf.guanghuans != "0") {
+        std::vector<int32> spellids; spellids.clear();
+        aaCenter.AA_StringToVectorInt(conf.guanghuans, spellids, ",");
+        for (size_t i = 0; i < spellids.size(); i++) {
+            int32 spellid = spellids[i];
+            if (spellid == 0) {
+                continue;
+            }
+            player->AddAura(spellid, player);
+        }
+    }
 }
