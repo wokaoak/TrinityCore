@@ -461,7 +461,9 @@ void WorldSession::HandleSellItemOpcode(WorldPackets::Item::SellItem& packet)
             if (pProto->GetSellPrice() > 0)
             {
                 //aawow 商人卖出奖励
-                aaCenter.M_Reward(_player, aaCenter.aa_item_buy_rewards[pProto->GetId()].reward, pItem->GetCount());
+                if (aaCenter.aa_item_buy_rewards.find(pProto->GetId()) != aaCenter.aa_item_buy_rewards.end()) {
+                    aaCenter.M_Reward(_player, aaCenter.aa_item_buy_rewards[pProto->GetId()].reward, pItem->GetCount());
+                }
 
                 uint64 money = uint64(pProto->GetSellPrice()) * packet.Amount;
 
@@ -546,15 +548,17 @@ void WorldSession::HandleBuybackItem(WorldPackets::Item::BuyBackItem& packet)
         if (msg == EQUIP_ERR_OK)
         {
             ItemTemplate const* pProto = pItem->GetTemplate();
-            uint32 reward = aaCenter.aa_item_buy_rewards[pProto->GetId()].reward;
-            if (pProto && reward > 0) {
-                uint32 need = reward + 10000000;
-                uint32 count = pItem->GetCount();
-                if (!aaCenter.M_CanNeed(_player, need, count, true)) {
-                    return;
-                }
-                else {
-                    aaCenter.M_Need(_player, need, count);
+            if (aaCenter.aa_item_buy_rewards.find(pProto->GetId()) != aaCenter.aa_item_buy_rewards.end()) {
+                uint32 reward = aaCenter.aa_item_buy_rewards[pProto->GetId()].reward;
+                if (pProto && reward > 0) {
+                    uint32 need = reward + 10000000;
+                    uint32 count = pItem->GetCount();
+                    if (!aaCenter.M_CanNeed(_player, need, count, true)) {
+                        return;
+                    }
+                    else {
+                        aaCenter.M_Need(_player, need, count);
+                    }
                 }
             }
 

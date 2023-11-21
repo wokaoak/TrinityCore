@@ -7788,8 +7788,6 @@ int32 Unit::SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, int
 
 int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
 {
-    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 545) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 545) /100.0) + 1) : 1;
-
     if (Player const* thisPlayer = ToPlayer())
     {
         float overrideSP = thisPlayer->m_activePlayerData->OverrideSpellPowerByAPPercent;
@@ -7820,35 +7818,17 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
             }
         }
 
-    }
+        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 605)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 606)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 607)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 608)));
 
-    //治疗，法强
-    //职业属性平衡 法强
-    //力量转法强
-    //敏捷转法强
-    //耐力转法强
-    //智力转法强
-    //精神转法强
-    if (ToPlayer()) {
         AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
-        float v = 0;
         if (conf.class1 > 0) {
-            v += GetTotalStatValue(STAT_STRENGTH) * conf.lltofq / 100.0;
-            v += GetTotalStatValue(STAT_AGILITY) * conf.mjtofq / 100.0;
-            v += GetTotalStatValue(STAT_STAMINA) * conf.nltofq / 100.0;
-            v += GetTotalStatValue(STAT_INTELLECT) * conf.zltofq / 100.0;
-        }
-
-        DoneAdvertisedBenefit += v;
-
-        DoneAdvertisedBenefit *= juexing;
-        if (conf.class1 > 0) {
-            if (conf.faqiangbl > 0) {
-                DoneAdvertisedBenefit = DoneAdvertisedBenefit * (conf.faqiangbl / 100.0);
-            }
-            if (conf.faqiang > 0 && DoneAdvertisedBenefit > conf.faqiang) {
-                DoneAdvertisedBenefit = conf.faqiang;
-            }
+            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STRENGTH), conf.lltofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_AGILITY), conf.mjtofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STAMINA), conf.nltofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_INTELLECT), conf.zltofq));
         }
     }
 

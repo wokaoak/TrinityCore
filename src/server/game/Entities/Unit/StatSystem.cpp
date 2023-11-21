@@ -147,6 +147,20 @@ bool Player::UpdateStats(Stats stat)
     return true;
 }
 
+void AA_UpdateFaqiang(Player* player, int32& DoneAdvertisedBenefit)
+{
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
+
+    DoneAdvertisedBenefit += int32(CalculatePct(DoneAdvertisedBenefit, aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 545)));
+
+    if (conf.faqiangbl > 0) {
+        DoneAdvertisedBenefit = DoneAdvertisedBenefit * conf.faqiangbl * 0.01;
+    }
+    if (conf.faqiang > 0 && DoneAdvertisedBenefit > conf.faqiang) {
+        DoneAdvertisedBenefit = conf.faqiang;
+    }
+}
+
 void Player::ApplySpellPowerBonus(int32 amount, bool apply)
 {
     if (HasAuraType(SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT))
@@ -154,8 +168,20 @@ void Player::ApplySpellPowerBonus(int32 amount, bool apply)
 
     apply = _ModifyUInt32(apply, m_baseSpellPower, amount);
 
+    int32 heal = amount;
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
+    if (conf.class1 > 0) {
+        if (conf.zhiliaobl > 0) {
+            heal = heal * (conf.zhiliaobl / 100.0);
+        }
+        if (conf.zhiliao > 0 && heal > conf.zhiliao) {
+            heal = conf.zhiliao;
+        }
+    }
+
     // For speed just update for client
-    ApplyModUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), amount, apply);
+    ApplyModUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), heal, apply);
+    AA_UpdateFaqiang(this, amount);
     for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
         ApplyModDamageDonePos(SpellSchools(i), amount, apply);
 
@@ -171,20 +197,33 @@ void Player::UpdateSpellDamageAndHealingBonus()
     // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
     // This information for client side use only
     // Get healing bonus for all schools
-    SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ALL));
+    int32 heal = SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ALL);
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
+    if (conf.class1 > 0) {
+        if (conf.zhiliaobl > 0) {
+            heal = heal * (conf.zhiliaobl / 100.0);
+        }
+        if (conf.zhiliao > 0 && heal > conf.zhiliao) {
+            heal = conf.zhiliao;
+        }
+    }
+    SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), heal);
     // Get damage bonus for all schools
     Unit::AuraEffectList const& modDamageAuras = GetAuraEffectsByType(SPELL_AURA_MOD_DAMAGE_DONE);
     for (uint16 i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
     {
-        SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDoneNeg, i),
-            std::accumulate(modDamageAuras.begin(), modDamageAuras.end(), 0, [i](int32 negativeMod, AuraEffect const* aurEff)
-        {
-            if (aurEff->GetAmount() < 0 && aurEff->GetMiscValue() & (1 << i))
-                negativeMod += aurEff->GetAmount();
-            return negativeMod;
-        }));
-        SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDonePos, i),
-            SpellBaseDamageBonusDone(SpellSchoolMask(1 << i)) - m_activePlayerData->ModDamageDoneNeg[i]);
+        int32 amount = std::accumulate(modDamageAuras.begin(), modDamageAuras.end(), 0, [i](int32 negativeMod, AuraEffect const* aurEff)
+            {
+                if (aurEff->GetAmount() < 0 && aurEff->GetMiscValue() & (1 << i))
+                    negativeMod += aurEff->GetAmount();
+                return negativeMod;
+            });
+        AA_UpdateFaqiang(this, amount);
+        SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDoneNeg, i), amount);
+
+        amount = SpellBaseDamageBonusDone(SpellSchoolMask(1 << i)) - m_activePlayerData->ModDamageDoneNeg[i];
+        AA_UpdateFaqiang(this, amount);
+        SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDonePos, i), amount);
     }
 
     if (HasAuraType(SPELL_AURA_OVERRIDE_ATTACK_POWER_BY_SP_PCT))
@@ -430,24 +469,7 @@ void Player::UpdateMaxPower(Powers power)
 
 void Player::UpdateAttackPowerAndDamage(bool ranged)
 {
-    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 538) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 538) / 100.0) + 1) : 1;
-    //职业属性平衡 力量转攻强
-    //力量转攻强
-    //敏捷转攻强
-    //耐力转攻强
-    //智力转攻强
-    //精神转攻强
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
-    float v = 0;
-    float v2 = GetStat(STAT_AGILITY) * conf.mjtogq / 100.0;
-    float v3 = GetStat(STAT_STRENGTH) * conf.lltogq / 100.0;
-    if (conf.class1 > 0) {
-        v += GetStat(STAT_STAMINA) * conf.nltogq / 100.0;
-        v += GetStat(STAT_INTELLECT) * conf.zltogq / 100.0;
-    }
-
     float val2 = 0.0f;
-    float val3 = 0.0f;
     float level = float(GetLevel());
 
     ChrClassesEntry const* entry = sChrClassesStore.AssertEntry(GetClass());
@@ -465,10 +487,10 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
             if (form && form->Flags & 0x20)
                 agilityValue += std::max(GetStat(STAT_AGILITY) * entry->AttackPowerPerStrength, 0.0f);
 
-            val3 = strengthValue + agilityValue;
+            val2 = strengthValue + agilityValue;
         }
         else
-            val3 = (level + std::max(GetStat(STAT_AGILITY), 0.0f)) * entry->RangedAttackPowerPerAgility;
+            val2 = (level + std::max(GetStat(STAT_AGILITY), 0.0f)) * entry->RangedAttackPowerPerAgility;
     }
     else
     {
@@ -476,27 +498,50 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
         for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
             minSpellPower = std::min(minSpellPower, m_activePlayerData->ModDamageDonePos[i]);
 
-        val3 = CalculatePct(float(minSpellPower), *m_activePlayerData->OverrideAPBySpellPowerPercent);
+        val2 = CalculatePct(float(minSpellPower), *m_activePlayerData->OverrideAPBySpellPowerPercent);
     }
 
-    float value = 0;
-    value += v2 > 0 ? (v2 + v) : (val2 + v);
-    value += v3 > 0 ? (v3 + v) : (val3 + v);
-    value *= juexing;
+    val2 += CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 600));
+    val2 += CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 601));
+    val2 += CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 602));
+    val2 += CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 603));
+
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
+    if (conf.class1 > 0) {
+        val2 += CalculatePct(GetStat(STAT_STAMINA), conf.nltogq);
+        val2 += CalculatePct(GetStat(STAT_STRENGTH), conf.lltogq);
+        val2 += CalculatePct(GetStat(STAT_AGILITY), conf.mjtogq);
+        val2 += CalculatePct(GetStat(STAT_INTELLECT), conf.zltogq);
+    }
+
+    val2 += CalculatePct(val2, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
+
     if (conf.class1 > 0) {
         if (conf.gongqiangbl > 0) {
-            value = value * (conf.gongqiangbl / 100.0);
+            val2 = val2 * conf.gongqiangbl * 0.01;
         }
-        if (conf.gongqiang > 0 && value > conf.gongqiang) {
-            value = conf.gongqiang;
+        if (conf.gongqiang > 0 && val2 > conf.gongqiang) {
+            val2 = conf.gongqiang;
         }
     }
 
-    SetStatFlatModifier(unitMod, BASE_VALUE, value);
+    SetStatFlatModifier(unitMod, BASE_VALUE, val2);
 
     float base_attPower = GetFlatModifierValue(unitMod, BASE_VALUE) * GetPctModifierValue(unitMod, BASE_PCT);
     float attPowerMod = GetFlatModifierValue(unitMod, TOTAL_VALUE);
     float attPowerMultiplier = GetPctModifierValue(unitMod, TOTAL_PCT) - 1.0f;
+
+    attPowerMod += CalculatePct(attPowerMod, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
+
+    if (conf.class1 > 0) {
+        if (conf.gongqiangbl > 0) {
+            attPowerMod = attPowerMod * conf.gongqiangbl * 0.01;
+        }
+        if (conf.gongqiang > 0 && (base_attPower + attPowerMod) > conf.gongqiang) {
+            base_attPower = conf.gongqiang;
+            attPowerMod = 0;
+        }
+    }
 
     if (ranged)
     {

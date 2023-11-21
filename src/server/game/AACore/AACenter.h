@@ -971,8 +971,8 @@ struct AA_Item_Nonsuch {
     uint32 jp_type = 0;
     uint32 jp_value1 = 0;
     uint32 jp_value2 = 0;
-    uint32 jp_percent1 = 0;
-    uint32 jp_percent2 = 0;
+    int32 jp_percent1 = 0;
+    int32 jp_percent2 = 0;
     std::string fmval_statzu = "";
     uint32 fmval_count1 = 0;
     uint32 fmval_count2 = 0;
@@ -1223,30 +1223,6 @@ struct AA_Event_Playtime
 {
     uint32 time = 0;
     std::string gm = "";
-};
-
-struct AA_Battleground_Conf
-{
-    uint32 id = 0;
-    std::string name = "";
-    uint32 player_count = 0;
-    uint32 is_open = 0;
-    uint32 type = 0;
-    uint32 is_randomzy = 0;
-    uint32 join_need = 0;
-    uint32 alert_jiange = 0;
-    uint32 event_id = 0;
-    uint32 stop_time = 0;
-    uint32 max_time = 0;
-    uint32 Reqkillcount = 0;
-    uint32 ReqkillCreature_lm = 0;
-    uint32 ReqkillCreature_bl = 0;
-    uint32 reward_damage = 0;
-    uint32 reward_healing = 0;
-    uint32 kill_reward = 0;
-    uint32 die_reward = 0;
-    uint32 win_reward = 0;
-    uint32 lose_reward = 0;
 };
 
 struct AA_Notice
@@ -2181,7 +2157,6 @@ public:
     std::unordered_map<uint32, AA_Spell_Conf> aa_spell_confs;
     std::unordered_map<std::string, AA_Chat> aa_chats;
     std::unordered_map<uint32, AA_Liansha> aa_lianshas;
-    std::set<std::string> aa_battleground_ips;
     std::unordered_map<uint32, AA_Zhuanzhi_Spell> aa_zhuanzhi_spells;
     std::unordered_map<uint32, AA_Chengzhang_Item> aa_chengzhang_items;
     std::unordered_map<uint32, AA_Cuiqu_Item> aa_cuiqu_items;
@@ -2297,10 +2272,6 @@ public:
     std::unordered_map<uint32, AA_Event_Conf> aa_event_confs;
     std::unordered_map<uint32, std::unordered_map<uint32, uint32>> aa_event_stats;
     std::unordered_map<uint32, AA_Caiji_Zuobiao> aa_event_senders;
-
-    // 百团大战
-    std::unordered_map<uint32, std::unordered_map<uint32, AA_Battleground_Conf> > aa_battleground_confs;
-    std::unordered_map<uint32, uint32> aa_battleground_events;
 
     std::unordered_map<ObjectGuid, ObjectGuid> aa_vendor_guid;
     std::unordered_map<uint32, AA_Item_Bag> aa_item_bags;
@@ -2455,10 +2426,6 @@ public:
 
     /*objectmgr*/
     void AA_SendNotice(Unit* player, AA_Notice notice, bool succes, AA_Message aa_message);
-
-    /*account*/
-    //获取同ip下的战场是否有账号
-    bool AA_HasBattlegroundIp(Player* player);
 
     /*Ai*/
     std::unordered_map<ObjectGuid, std::unordered_map<uint32, uint32>> m_aiTimes; //<玩家guid, <aiid, 冷却时间> >

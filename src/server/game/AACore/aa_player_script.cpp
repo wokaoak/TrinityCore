@@ -201,7 +201,7 @@ public:
                                 continue;
                             }
                             if(player->HasAura(spellid)) {
-                                player->RemoveAura(spellid);
+                                player->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -244,7 +244,7 @@ public:
                                 continue;
                             }
                             if(player->HasAura(spellid)) {
-                                player->RemoveAura(spellid);
+                                player->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -276,7 +276,7 @@ public:
                                 continue;
                             }
                             if(player->HasAura(spellid)) {
-                                player->RemoveAura(spellid);
+                                player->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }
@@ -308,7 +308,7 @@ public:
                                 continue;
                             }
                             if(player->HasAura(spellid)) {
-                                player->RemoveAura(spellid);
+                                player->RemoveAurasDueToSpell(spellid);
                             }
                         }
                     }

@@ -188,7 +188,7 @@ private:
                         isOk = std::find(areaIds.begin(), areaIds.end(), killed->GetAreaId()) != areaIds.end();
                     }
                     if (!isOk) { //不在限制地图
-                        killed->RemoveAura(aaCenter.aa_world_confs[83].value1);
+                        killed->RemoveAurasDueToSpell(aaCenter.aa_world_confs[83].value1);
                         if (aaCenter.aa_world_confs[84].value2 != "") {
                             aaCenter.AA_DoCommand(p, aaCenter.aa_world_confs[84].value2.c_str());
                         }

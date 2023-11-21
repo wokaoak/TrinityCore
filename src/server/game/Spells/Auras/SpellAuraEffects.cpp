@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -664,6 +664,29 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
         amount = GetSpellEffectInfo().CalcValue(caster, &m_baseAmount, GetBase()->GetOwner()->ToUnit(), nullptr, GetBase()->GetCastItemId(), GetBase()->GetCastItemLevel());
     else if (caster && caster->GetTypeId() == TYPEID_PLAYER)
         amount = int32(caster->ToPlayer()->m_activePlayerData->Mastery * GetSpellEffectInfo().BonusCoefficient);
+
+    //_属性调整_技能，护盾百分比
+    if (aaCenter.aa_aura_confs.find(m_spellInfo->Id) != aaCenter.aa_aura_confs.end() && caster) {
+        AA_Aura_Conf conf = aaCenter.aa_aura_confs[m_spellInfo->Id];
+        if (conf.hudun_gq) {
+            float ap = caster->m_unitData->AttackPower + caster->m_unitData->AttackPowerModPos + caster->m_unitData->AttackPowerModNeg;
+            float ap_ranged = caster->m_unitData->RangedAttackPower + caster->m_unitData->RangedAttackPowerModPos + caster->m_unitData->RangedAttackPowerModNeg;
+            float value = ap > ap_ranged ? ap : ap_ranged;
+            amount += value * conf.hudun_gq * 0.01;
+        }
+        if (conf.hudun_fq) {
+            amount += caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_NORMAL) * conf.hudun_fq * 0.01;
+        }
+        if (conf.hudun_hp) {
+            amount += caster->GetHealth() * conf.hudun_hp * 0.01;
+        }
+        if (conf.hudun_hplost) {
+            amount += (caster->GetMaxHealth() - caster->GetHealth()) * conf.hudun_hplost * 0.01;
+        }
+        if (conf.hudun_hpmax) {
+            amount += caster->GetMaxHealth() * conf.hudun_hpmax * 0.01;
+        }
+    }
 
     // custom amount calculations go here
     switch (GetAuraType())

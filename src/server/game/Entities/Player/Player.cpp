@@ -2299,7 +2299,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
     //aawow vip经验倍数
     ObjectGuid::LowType guidlow = GetGUIDLow();
     uint32 accountid = GetSession()->GetAccountId();
-    float beilv = 0;
+    float beilv = 1;
     if (guidlow > 0) {
         AA_Account conf = aaCenter.aa_accounts[accountid];
         AA_Vip_Conf vipconf = aaCenter.aa_vip_confs[conf.vip];
@@ -2308,11 +2308,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
 
     //觉醒属性，通过杀死怪物和完成任务经验提高
     if (aaCenter.AA_FindMapValueUint32(this->aa_fm_values, 400) > 0) {
-        beilv += aaCenter.AA_FindMapValueUint32(this->aa_fm_values, 400);
-    }
-
-    if (beilv > 0) {
-        beilv = 1.0 + beilv * 0.01;
+        beilv += (float)(aaCenter.AA_FindMapValueUint32(this->aa_fm_values, 400)) * 0.01;
     }
 
     //一命模式 经验倍率
@@ -2323,6 +2319,10 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
         if (conf.level > 0) {
             beilv += conf.exp;
         }
+    }
+
+    if (beilv <= 0) {
+        beilv = 1.0;
     }
 
     AA_Creature_Exp econf = aaCenter.aa_creature_exps[centry];
@@ -2455,21 +2455,16 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
     else
         bonus_xp = victim ? _restMgr->GetRestBonusFor(REST_TYPE_XP, xp) : 0; // XP resting bonus
 
-    //aawow vip经验倍数
-    if (beilv > 0) {
-        xp = xp * beilv;
-    }
-
     WorldPackets::Character::LogXPGain packet;
     packet.Victim = victim ? victim->GetGUID() : ObjectGuid::Empty;
-    packet.Original = xp + bonus_xp;
+    packet.Original = xp * beilv + bonus_xp * beilv;
     packet.Reason = victim ? LOG_XP_REASON_KILL : LOG_XP_REASON_NO_KILL;
-    packet.Amount = xp;
+    packet.Amount = xp * beilv;
     packet.GroupBonus = group_rate;
     SendDirectMessage(packet.Write());
 
     uint32 nextLvlXP = GetXPForNextLevel();
-    uint32 newXP = GetXP() + xp + bonus_xp;
+    uint32 newXP = GetXP() + xp * beilv + bonus_xp * beilv;
 
     while (newXP >= nextLvlXP && !IsMaxLevel())
     {
@@ -7814,6 +7809,16 @@ void Player::UpdateArea(uint32 newArea)
 
             CombatStopWithPets();
         }
+        else {
+            if (GetFaction() == FACTION_FRIENDLY) {
+                if (!IsGameMaster() && !GetMap()->IsBattlegroundOrArena()) {
+                    SetFactionForRace(GetRace());
+                }
+                if (HasUnitFlag2(UNIT_FLAG2_ALLOW_CHEAT_SPELLS)) {
+                    RemoveUnitFlag2(UNIT_FLAG2_ALLOW_CHEAT_SPELLS);
+                }
+            }
+        }
     }
 
     sScriptMgr->OnPlayerUpdateArea(this, m_areaUpdateId, newArea);
@@ -9776,21 +9781,6 @@ void Player::_RemoveAllItemMods()
 void Player::_ApplyAllItemMods()
 {
     TC_LOG_DEBUG("entities.player.items", "_ApplyAllItemMods start.");
-    for (uint8 i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
-    {
-        if (m_items[i])
-        {
-            AA_ApplyItem(m_items[i], true);
-        }
-    }
-
-    for (uint8 i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
-    {
-        if (m_items[i])
-        {
-            AA_ApplyItem(m_items[i], true);
-        }
-    }
 
     for (uint8 i = 0; i < INVENTORY_SLOT_BAG_END; ++i)
     {
@@ -9823,6 +9813,7 @@ void Player::_ApplyAllItemMods()
             if (m_items[i]->IsBroken() || !CanUseAttackType(Player::GetAttackBySlot(i, m_items[i]->GetTemplate()->GetInventoryType())))
                 continue;
 
+            AA_ApplyItem(m_items[i], true);
             ApplyItemEquipSpell(m_items[i], true);
             ApplyArtifactPowers(m_items[i], true);
             ApplyEnchantment(m_items[i], true);
@@ -12372,8 +12363,10 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading, ObjectGuid::Lo
                         }
                     }
 
-                    if (!aaCenter.M_CanNeed(player, aaCenter.aa_item_use_needs[pProto->GetId()].need, 1, true, guidlow)) {
-                        return EQUIP_ERR_CANT_EQUIP_EVER;
+                    if (aaCenter.aa_item_use_needs.find(pProto->GetId()) != aaCenter.aa_item_use_needs.end()) {
+                        if (!aaCenter.M_CanNeed(player, aaCenter.aa_item_use_needs[pProto->GetId()].need, 1, true, guidlow)) {
+                            return EQUIP_ERR_CANT_EQUIP_EVER;
+                        }
                     }
                 }
             }
@@ -12417,9 +12410,11 @@ InventoryResult Player::CanUseItem(Item* pItem, bool not_loading, ObjectGuid::Lo
                     }
                 }
 
-                if (pProto && aaCenter.aa_item_use_needs[pProto->GetId()].need > 0) {
-                    Player* player = const_cast<Player*>(this);
-                    aaCenter.M_Need(player, aaCenter.aa_item_use_needs[pProto->GetId()].need);
+                if (aaCenter.aa_item_use_needs.find(pProto->GetId()) != aaCenter.aa_item_use_needs.end()) {
+                    if (pProto && aaCenter.aa_item_use_needs[pProto->GetId()].need > 0) {
+                        Player* player = const_cast<Player*>(this);
+                        aaCenter.M_Need(player, aaCenter.aa_item_use_needs[pProto->GetId()].need);
+                    }
                 }
             }
 

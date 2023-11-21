@@ -156,17 +156,6 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
             }
         }
     }
-    //百团战场开始，赋予当前战场事件
-    for (auto itr : aaCenter.aa_battleground_confs) {
-        AA_Battleground_Conf conf;
-        std::unordered_map<uint32, AA_Battleground_Conf> map = itr.second;
-        for (auto itr : map) {
-            conf = itr.second;
-            if (conf.stop_time == event_id && conf.is_open == 1) {
-                aaCenter.aa_battleground_events[conf.id] = conf.stop_time;
-            }
-        }
-    }
     //比武大会开始准备
     {
         AA_Biwu_Conf conf = aaCenter.aa_biwu_confs[event_id];
@@ -175,6 +164,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
             if (GameObject* gob = aaCenter.AA_Biwu_SpawnGob(conf.guid, true)) {
                 aaCenter.aa_biwu_start_time = conf.wait_time * 1000;
                 //清空当前比武前十名
+                aaCenter.aa_biwu_score.clear();
                 aaCenter.aa_biwu_paiming.clear();
                 for (int i = 0; i < 10; i++) {
                     std::string gm = ".变量 系统 比武排名" + std::to_string(i + 1) + " =0";
@@ -317,18 +307,6 @@ void GameEventMgr::StopEvent(uint16 event_id, bool overwrite)
         if (itr.second.game_event > 0 && itr.second.game_event == event_id) {
             if (aaCenter.aa_xitong_group_zones.find(itr.second.zoneid) != aaCenter.aa_xitong_group_zones.end()) {
                 aaCenter.aa_xitong_group_zones.erase(itr.second.zoneid);
-            }
-        }
-    }
-
-    //百团战场结束，赋予当前战场事件
-    for (auto itr : aaCenter.aa_battleground_confs) {
-        AA_Battleground_Conf conf;
-        std::unordered_map<uint32, AA_Battleground_Conf> map = itr.second;
-        for (auto itr : map) {
-            conf = itr.second;
-            if (conf.is_open == 1 && conf.stop_time == event_id) {
-                aaCenter.aa_battleground_events[conf.id] = 0;
             }
         }
     }

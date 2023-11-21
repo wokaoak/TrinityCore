@@ -2722,6 +2722,36 @@ void World::SetInitialWorldSettings()
         else {
             TC_LOG_INFO("server.loading", ">> 『 收集系统 』 → 验证失败  〔3.0k    满额赠送   定制用户：苦茶〕");
         }
+        if (aaCenter.AA_VerifyCode("a107b")) {
+            TC_LOG_INFO("server.loading", ">> 『 物品租债 』 → 验证通过  〔0.5k    定制功能   定制用户：蚂蚁〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 物品租债 』 → 验证失败  〔0.5k    定制功能   定制用户：蚂蚁〕");
+        }
+        if (aaCenter.AA_VerifyCode("a108b")) {
+            TC_LOG_INFO("server.loading", ">> 『 怪物切割 』 → 验证通过  〔1k    定制功能   定制用户：AH〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 怪物切割 』 → 验证失败  〔1k    定制功能   定制用户：AH〕");
+        }
+        if (aaCenter.AA_VerifyCode("a109b")) {
+            TC_LOG_INFO("server.loading", ">> 『 护盾光环 』 → 验证通过  〔1k    定制功能   定制用户：AH〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 护盾光环 』 → 验证失败  〔1k    定制功能   定制用户：AH〕");
+        }
+        if (aaCenter.AA_VerifyCode("a110b")) {
+            TC_LOG_INFO("server.loading", ">> 『 鉴定制造 』 → 验证通过  〔1.5k    定制功能   定制用户：AH〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 鉴定制造 』 → 验证失败  〔1.5k    定制功能   定制用户：AH〕");
+        }
+        if (aaCenter.AA_VerifyCode("a111b")) {
+            TC_LOG_INFO("server.loading", ">> 『 记忆传送 』 → 验证通过  〔1.0k    定制功能   定制用户：蚂蚁〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 记忆传送 』 → 验证失败  〔1.0k    定制功能   定制用户：蚂蚁〕");
+        }
         if (aaCenter.AA_VerifyCode("a200b")) {
             TC_LOG_INFO("server.loading", ">> 『 排名奖励 』 → 验证通过  〔1.5k    满额赠送   定制用户：AA〕");
         }
@@ -2859,6 +2889,12 @@ void World::SetInitialWorldSettings()
         }
         else {
             TC_LOG_INFO("server.loading", ">> 『 红包系统 』 → 验证失败  〔1.5k    定制功能   定制用户：AA〕");
+        }
+        if (aaCenter.AA_VerifyCode("a408b")) {
+            TC_LOG_INFO("server.loading", ">> 『 宠物调整 』 → 验证通过  〔0.6k    定制功能   定制用户：刀剑如梦〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 宠物调整 』 → 验证失败  〔0.6k    定制功能   定制用户：刀剑如梦〕");
         }
         TC_LOG_INFO("server.loading", ">> 其他众多脑洞功能，都可以通过功能之间的相互搭配来自由创作，比如：『 国战玩法 』，『 罪魂之塔 』，『 公会战系统 』，『 阵营战系统 』，『 跑酷玩法 』，『 温泉泡点 』，『 空中比赛 』");
 
@@ -3255,53 +3291,6 @@ void AA_World_Update(World* world, uint32 diff)
                 }
             }
         }
-        uint32 bg_ids[13] = { 1,2,3,4,5,6,7,8,9,10,11,30,32 };
-        for (int i = 0; i < 13; i++) {
-            //战场弹窗间隔
-            uint32 bg_id = bg_ids[i];
-            if (aaCenter.aa_battleground_events.find(bg_id) == aaCenter.aa_battleground_events.end()) {
-                continue;
-            }
-            uint32 event_id = aaCenter.aa_battleground_events[bg_id];
-            if (!event_id) {
-                continue;
-            }
-            if (!sGameEventMgr->IsActiveEvent(event_id)) {
-                continue;
-            }
-            AA_Battleground_Conf conf = aaCenter.aa_battleground_confs[bg_id][event_id];
-            if (conf.is_open == 1 && conf.alert_jiange > 0) { //判断战场是否开启 是否需要循环提示
-                if (world->aa_alertTimes[bg_id] >= conf.alert_jiange * 1000 * 60) {
-                    world->aa_alertTimes[bg_id] = 0;
-                    GameEventMgr::GameEventDataMap const& events = sGameEventMgr->GetEventMap();
-                    if (conf.stop_time >= events.size())
-                    {
-                        continue;
-                    }
-                    GameEventData const& eventData = events[conf.stop_time];
-                    //time_t currenttime = sWorld->GetGameTime();
-                    time_t currenttime = GameTime::GetGameTime();
-                    uint32 endtime = 0; //已经持续时间
-                    if (currenttime - eventData.start <= eventData.occurence * MINUTE) {
-                        endtime = currenttime - eventData.start;
-                    }
-                    else {
-                        endtime = (currenttime - eventData.start) % (eventData.occurence * MINUTE);
-                    }
-
-                    if (endtime <= conf.max_time * MINUTE) { //可进场
-                        for (Player* p : aaCenter.aa_onlinePlayers) {
-                            if (p && p->IsInWorld() && !p->InBattleground()) {
-                                aaCenter.AA_EventStart(p, conf.event_id);
-                            }
-                        }
-                    }
-                }
-
-                world->aa_alertTimes[bg_id] += world->aa_second_2;
-            }
-        }
-
         {
             // 更新地图进度时间
             for (auto iter : aaCenter.aa_mareavalues) {
@@ -4529,7 +4518,6 @@ void World::UpdateSessions(uint32 diff)
 
     //同ip限制登录
     std::map<std::string, uint32> address_counts; address_counts.clear();
-    aaCenter.aa_battleground_ips.clear();
 
     ///- Then send an update signal to remaining ones
     for (SessionMap::iterator itr = m_sessions.begin(), next; itr != m_sessions.end(); itr = next)
@@ -4570,10 +4558,6 @@ void World::UpdateSessions(uint32 diff)
                     delete pSession;
                 }
             }
-        }
-        //同ip限制进入战场
-        if (aaCenter.aa_world_confs[55].value1 == 1 && pSession) {
-            aaCenter.aa_battleground_ips.insert(ip);
         }
     }
 }

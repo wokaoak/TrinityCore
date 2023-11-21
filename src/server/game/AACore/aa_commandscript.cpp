@@ -99,6 +99,7 @@ public:
             { "拾取" ,AA_shiqu, LANG_AA_shiqu, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "sq" ,AA_shiqu, LANG_AA_shiqu, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "奖励" ,AA_jiangli, LANG_AA_jiangli, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
+            { "jl" ,AA_jiangli, LANG_AA_jiangli, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "需求" ,AA_xuqiu, LANG_AA_xuqiu, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "xq" ,AA_xuqiu, LANG_AA_xuqiu, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "会员等级" ,AA_huiyuandengji, LANG_AA_huiyuandengji, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
@@ -110,7 +111,7 @@ public:
             { "泡点" ,AA_paodian, LANG_AA_paodian, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "pd" ,AA_paodian, LANG_AA_paodian, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "战场积分" ,AA_zhanchangjifen, LANG_AA_zhanchangjifen, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
-            { "dzjf" ,AA_zhanchangjifen, LANG_AA_zhanchangjifen, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
+            { "zcjf" ,AA_zhanchangjifen, LANG_AA_zhanchangjifen, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "巅峰等级" ,AA_dianfengdengji, LANG_AA_dianfengdengji, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "dfdj" ,AA_dianfengdengji, LANG_AA_dianfengdengji, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
             { "斗气等级" ,AA_douqidengji, LANG_AA_douqidengji, rbac::RBAC_ROLE_GAMEMASTER, Console::Yes},
@@ -795,6 +796,11 @@ public:
 
         if (aaCenter.aa_world_confs[102].value2 != "" && aaCenter.aa_world_confs[102].value2 != "0") {
             int32 level_jr = aaCenter.AA_StringInt32(aaCenter.aa_world_confs[102].value2);
+
+            if (level_jr < 55 && player->GetClass() == CLASS_DEATH_KNIGHT) {
+                level_jr = 55;
+            }
+
             if (level_jr > 0 && player->GetLevel() > level_jr) {
                 std::string str = "|cff00FFFF[一命模式]|cffFF0000你已经超过" + std::to_string(level_jr) + "级，无法加入一命模式";
                 aaCenter.AA_SendMessage(player, 1, str.c_str());
@@ -1468,7 +1474,7 @@ public:
         for (auto id : allids) {
             AA_AuraId_Conf conf = aaCenter.aa_auraid_confs[id];
             if (conf.auraid > 0) {
-                target->RemoveAura(conf.auraid);
+                target->RemoveAurasDueToSpell(conf.auraid);
             }
         }
         return true;
@@ -2757,7 +2763,7 @@ public:
         Position pos;
         pos.Relocate(x, y, z, o);
         TempSummon* summon = player->GetMap()->SummonCreature(conf.creature_entry, pos, properties, time * 1s, player, 0, 0, ObjectGuid::Empty, nullptr, rid);
-        
+
         if (!summon)
             return 1;
 
@@ -4093,7 +4099,7 @@ public:
         if (!player || !player->IsInWorld()) {
             return false;
         }
-        if (player->HasAura(15007)) { player->RemoveAura(15007); }
+        if (player->HasAura(15007)) { player->RemoveAurasDueToSpell(15007); }
         aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00解除虚弱成功!");
         return true;
     }
@@ -4800,7 +4806,7 @@ public:
         if (!*args)
         {
             if (target) {
-                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组 time） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
+                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
             }
             return false;
         }
@@ -4817,7 +4823,7 @@ public:
         if (!s_zu || !s_time)
         {
             if (target) {
-                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组 time） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
+                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
             }
             return false;
         }
@@ -5706,7 +5712,7 @@ public:
             aaCenter.AA_DoCommand(nullptr, gm.c_str());
         }
         Player* target = handler->getSelectedPlayerOrSelf();
-        
+
         if (target) {
             std::string msg = "|cff00FFFF[系统提示]|cffFFFF00特色数据库已全部重新加载。";
             sWorld->SendServerMessage(SERVER_MSG_STRING, msg.c_str(), target);
@@ -5934,7 +5940,7 @@ public:
         if (entry == 0) {
             return false;
         }
-        
+
         player->GetSession()->SendListInventory(vendor->GetGUID(), entry);
 
         aaCenter.aa_vendor_guid[player->GetGUID()] = pet->GetGUID();

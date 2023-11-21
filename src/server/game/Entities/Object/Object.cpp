@@ -1569,6 +1569,12 @@ bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool implicitDetect, bo
         if (p1 && p2) {
             if (p1->aa_biwu_teamid > 0 && p2->aa_biwu_teamid > 0) {
                 if (p1->aa_biwu_teamid == p2->aa_biwu_teamid) {
+                    if (!p1->HasAuraType(SPELL_AURA_MOD_STEALTH_DETECT) && p2->HasAuraType(SPELL_AURA_MOD_STEALTH)) {
+                        return false;
+                    }
+                    if (!p1->HasAuraType(SPELL_AURA_MOD_INVISIBILITY_DETECT) && p2->HasAuraType(SPELL_AURA_MOD_INVISIBILITY)) {
+                        return false;
+                    }
                     return true;
                 }
             }

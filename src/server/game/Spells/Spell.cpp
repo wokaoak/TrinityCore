@@ -67,6 +67,7 @@
 #include "WorldSession.h"
 #include <numeric>
 #include <sstream>
+#include "Log.h"
 
 extern NonDefaultConstructible<SpellEffectHandlerFn> SpellEffectHandlers[TOTAL_SPELL_EFFECTS];
 
@@ -5499,12 +5500,14 @@ void Spell::TakeCastItem()
     }
 
     //物品使用奖励
-    if (m_CastItem && m_CastItem->GetEntry() && aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].reward > 0) {
-        aaCenter.M_Reward(m_caster->ToPlayer(), aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].reward);
-    }
-    if (aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm != "" && aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm != "0")
-    {
-        aaCenter.AA_DoCommand(m_caster->ToPlayer(), aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm.c_str());
+    if (aaCenter.aa_item_use_rewards.find(m_CastItem->GetEntry()) != aaCenter.aa_item_use_rewards.end()) {
+        if (m_CastItem && m_CastItem->GetEntry() && aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].reward > 0) {
+            aaCenter.M_Reward(m_caster->ToPlayer(), aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].reward);
+        }
+        if (aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm != "" && aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm != "0")
+        {
+            aaCenter.AA_DoCommand(m_caster->ToPlayer(), aaCenter.aa_item_use_rewards[m_CastItem->GetEntry()].gm.c_str());
+        }
     }
     
     if (expendable && withoutCharges)

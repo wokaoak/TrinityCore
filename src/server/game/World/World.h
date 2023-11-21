@@ -557,7 +557,6 @@ class TC_GAME_API World
 {
     public:
         uint32 aa_second_1 = 0, aa_second_2 = 0, aa_second_20 = 0, aa_minute_1 = 0, aa_minute_2 = 0, aa_minute_5 = 0, aa_minute_10 = 0, aa_minute_60 = 0, aa_minute_180 = 0, aa_jiarenTime = 0;
-        std::map<uint32, uint32> aa_alertTimes;
         uint32 aa_LastResurrectTime = 0;
         std::map<uint32, bool> aa_yishis;
 
