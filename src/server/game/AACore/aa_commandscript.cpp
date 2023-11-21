@@ -471,7 +471,7 @@ public:
                 money_lingqu = money_lingqu + money;
                 moneys.push_back(money);
             }
-            shuffle(moneys.begin(), moneys.end(), default_random_engine(random_device()()));
+            shuffle(moneys.begin(), moneys.end(), std::default_random_engine(std::random_device()()));
         }
         else if (conf_c.fangshi == 2) {
             uint32 money = conf_c.money_all / conf_c.count_all;
@@ -2408,9 +2408,9 @@ public:
                         if (jianding > 0) {
                             ObjectGuid::LowType guidlow = player->GetGUIDLow();
                             aaCenter.M_NonsuchItem(player, pItem, jianding, -3);
-                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->ItemId].cishu;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->ItemId].need_value;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->ItemId].need_spell;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
                         }
                         if (qianghua > 0) {
                             aaCenter.M_UpgradeItem(player, pItem, qianghua);

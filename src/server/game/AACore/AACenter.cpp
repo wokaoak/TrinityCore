@@ -22770,7 +22770,7 @@ bool AACenter::AA_PetZhan_Init(Player* player, uint32 rid)
         char* chCode;
         chCode = new(std::nothrow)char[20];
         sprintf(chCode, "%.3f", chengzhang);  // .3 是控制输出精度的，三位小数
-        string strCode(chCode);
+        std::string strCode(chCode);
         delete[]chCode;
         float num = std::stof(strCode);
         aaCenter.aa_character_petzhans[rid].chengzhang = num;//成长
@@ -22784,7 +22784,7 @@ bool AACenter::AA_PetZhan_Init(Player* player, uint32 rid)
         char* chCode;
         chCode = new(std::nothrow)char[20];
         sprintf(chCode, "%.3f", qihe);  // .3 是控制输出精度的，三位小数
-        string strCode(chCode);
+        std::string strCode(chCode);
         delete[]chCode;
         float num = std::stof(strCode);
         aaCenter.aa_character_petzhans[rid].qihe = num;//成长
@@ -22798,7 +22798,7 @@ bool AACenter::AA_PetZhan_Init(Player* player, uint32 rid)
         char* chCode;
         chCode = new(std::nothrow)char[20];
         sprintf(chCode, "%.3f", jicheng);  // .3 是控制输出精度的，三位小数
-        string strCode(chCode);
+        std::string strCode(chCode);
         delete[]chCode;
         float num = std::stof(strCode);
         aaCenter.aa_character_petzhans[rid].jicheng = num;//继承
@@ -24285,7 +24285,7 @@ void AACenter::AA_Hongbao_Sort(uint32 id)
         name_map[aaCenter.AA_StringInt32(guidlow)] = name;
     }
     //将mp当中所有的键值对构造成一个vec
-    std::vector<pair<ObjectGuid::LowType, uint32>> vec(money_map.begin(), money_map.end());
+    std::vector<std::pair<ObjectGuid::LowType, uint32>> vec(money_map.begin(), money_map.end());
     //利用sort函数对vec内的元素进行排序操作
     std::sort(vec.begin(), vec.end(), cmpbiwu);
 

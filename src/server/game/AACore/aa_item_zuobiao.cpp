@@ -15,8 +15,6 @@
 #include <CharacterDatabase.h>
 #include "World.h"
 
-using namespace std;
-
 class aa_item_zuobiao: public ItemScript
 {
 private:
