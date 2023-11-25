@@ -1789,6 +1789,21 @@ void World::SetInitialWorldSettings()
 
     LoginDatabase.PExecute("UPDATE realmlist SET icon = {}, timezone = {} WHERE id = '{}'", server_type, realm_zone, realm.Id.Realm);      // One-time query
 
+    aaCenter.aa_version.uuid = sAAVerify->AA_GetUUID();
+    std::string loginr = sAAVerify->AA_Login();
+    std::vector<std::string> v;
+    aaCenter.AA_StringToVectorString(loginr, v, "&");
+    std::string login_count = AA_SafeStringAtIndex(v, 0);
+    std::string status = AA_SafeStringAtIndex(v, 1);
+    aaCenter.aa_version.aa_login_count = aaCenter.AA_StringInt32(login_count);
+    aaCenter.aa_version.status = status;
+    aaCenter.aa_version.aa_login_count = aaCenter.aa_version.aa_login_count > 0 ? aaCenter.aa_version.aa_login_count : 1;
+    if (aaCenter.aa_version.aa_login_count == 1) {//单机体验
+        aaCenter.aa_version.status = "";
+    }
+    //aaCenter.aa_version.status = "a1ba2ba3ba4ba5ba6ba7ba8ba9ba10ba100ba101ba102ba103ba104ba105ba106ba107ba108ba109ba110ba111ba200ba201ba202ba203ba204ba205ba206ba207ba208ba209ba210ba211ba212ba213ba214ba215ba300ba301ba302ba303ba304ba305ba400ba401ba402ba403ba404ba405ba406ba407ba408ba409b";
+    //aaCenter.aa_version.aa_login_count = 50;
+
     TC_LOG_INFO("server.loading", "Initialize data stores...");
     ///- Load DB2s
     m_availableDbcLocaleMask = sDB2Manager.LoadStores(m_dataPath, m_defaultDbcLocale);
@@ -2531,197 +2546,176 @@ void World::SetInitialWorldSettings()
 
     TC_METRIC_EVENT("events", "World initialized", "World initialized in " + std::to_string(startupDuration / 60000) + " minutes " + std::to_string((startupDuration % 60000) / 1000) + " seconds");
 
-    // {
-    //     aaCenter.aa_version.uuid = sAAVerify->AA_GetUUID();
-
-    //     std::string loginr = sAAVerify->AA_Login();
-    //     std::vector<std::string> v;
-    //     aaCenter.AA_StringToVectorString(loginr, v, "&");
-    //     std::string login_count = AA_SafeStringAtIndex(v, 0);
-    //     std::string status = AA_SafeStringAtIndex(v, 1);
-    //     aaCenter.aa_version.aa_login_count = aaCenter.AA_StringInt32(login_count);
-    //     aaCenter.aa_version.status = status;
-    //     aaCenter.aa_version.aa_login_count = aaCenter.aa_version.aa_login_count > 0 ?aaCenter.aa_version.aa_login_count : 1;
-    //     if (aaCenter.aa_version.aa_login_count == 1) {//单机体验
-    //         aaCenter.aa_version.status = "";
-    //     }
-    // }
-
-    aaCenter.aa_version.status = "a1ba2ba3ba4ba5ba6ba7ba8ba9ba10ba100ba101ba102ba103ba104ba105ba106ba107ba108ba109ba200ba201ba202ba203ba204ba205ba206ba207ba208ba209ba210ba211ba212ba300ba301ba302ba303ba304b";
-    aaCenter.aa_version.aa_login_count = 999;
-
     {
-        TC_LOG_INFO("server.loading", ">> 『 防脚本 』  → 验证通过  〔1.0k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 防外挂 』  → 验证通过  〔2.0k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 关键字 』  → 验证通过  〔3.0k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 Lua脚本 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 在线假人 』 → 验证通过  〔1.0k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 物品描述 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 按钮图标 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 超级公告 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 自动入会 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 阵营平衡 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 战场调控 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 推广系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 狂暴系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 天赋调控 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 传唤功能 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 任务重置 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 生物武器 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 模板传送 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 模板召唤 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 杀死全图 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 死亡解卡 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 副本吸血 』 → 验证通过  〔0.5k    续费赠送   定制用户：苍井空〕");
-        TC_LOG_INFO("server.loading", ">> 『 定点复活 』 → 验证通过  〔0.5k    续费赠送   定制用户：DN〕");
-        TC_LOG_INFO("server.loading", ">> 『 团队召唤 』 → 验证通过  〔0.5k    续费赠送   定制用户：DN〕");
-        TC_LOG_INFO("server.loading", ">> 『 组队召唤 』 → 验证通过  〔0.5k    续费赠送   定制用户：DN〕");
-        TC_LOG_INFO("server.loading", ">> 『 区域限制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 技能调控 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 限制多开 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 聊天屏蔽 』 → 验证通过  〔0.5k    续费赠送   定制用户：RPG〕");
-        TC_LOG_INFO("server.loading", ">> 『 斗气系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：老zhou〕");
-        TC_LOG_INFO("server.loading", ">> 『 军衔系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：BUG〕");
-        TC_LOG_INFO("server.loading", ">> 『 巅峰系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：haowow〕");
-        TC_LOG_INFO("server.loading", ">> 『 混排战场 』 → 验证通过  〔0.5k    续费赠送   定制用户：haowow〕");
-        TC_LOG_INFO("server.loading", ">> 『 秘境副本 』 → 验证通过  〔0.5k    续费赠送   定制用户：晓宇〕");
-        TC_LOG_INFO("server.loading", ">> 『 会员系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 积分拍卖 』 → 验证通过  〔0.5k    续费赠送   定制用户：战神〕");
-        TC_LOG_INFO("server.loading", ">> 『 跨甲幻化 』 → 验证通过  〔0.5k    续费赠送   定制用户：Lee〕");
-        TC_LOG_INFO("server.loading", ">> 『 背包神器 』 → 验证通过  〔0.5k    续费赠送   定制用户：kkk〕");
-        TC_LOG_INFO("server.loading", ">> 『 超级兑换 』 → 验证通过  〔0.5k    续费赠送   定制用户：A神〕");
-        TC_LOG_INFO("server.loading", ">> 『 签到奖励 』 → 验证通过  〔0.5k    续费赠送   定制用户：haowow〕");
-        TC_LOG_INFO("server.loading", ">> 『 集合商人 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 一键拾取 』 → 验证通过  〔0.5k    续费赠送   定制用户：猛男〕");
-        TC_LOG_INFO("server.loading", ">> 『 多倍拾取 』 → 验证通过  〔0.5k    续费赠送   定制用户：猛男〕");
-        TC_LOG_INFO("server.loading", ">> 『 拾取几率 』 → 验证通过  〔0.5k    续费赠送   定制用户：猛男〕");
-        TC_LOG_INFO("server.loading", ">> 『 拾取覆盖 』 → 验证通过  〔0.5k    续费赠送   定制用户：猛男〕");
-        TC_LOG_INFO("server.loading", ">> 『 拾取奖励 』 → 验证通过  〔0.5k    续费赠送   定制用户：猛男〕");
-        TC_LOG_INFO("server.loading", ">> 『 超级回收 』 → 验证通过  〔0.5k    续费赠送   定制用户：战神〕");
-        TC_LOG_INFO("server.loading", ">> 『 出生公会 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 转换种族 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 角色改名 』 → 验证通过  〔0.5k    续费赠送   定制用户：肖恩〕");
-        TC_LOG_INFO("server.loading", ">> 『 变身系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：术士〕");
-        TC_LOG_INFO("server.loading", ">> 『 转职系统 』 → 验证通过  〔0.5k    续费赠送   定制用户：MG〕");
-        TC_LOG_INFO("server.loading", ">> 『 装备改名 』 → 验证通过  〔0.5k    续费赠送   定制用户：BUG〕");
-        TC_LOG_INFO("server.loading", ">> 『 物品合成 』 → 验证通过  〔0.5k    续费赠送   定制用户：DBWOW〕");
-        TC_LOG_INFO("server.loading", ">> 『 随身商人 』 → 验证通过  〔0.5k    续费赠送   定制用户：木木〕");
-        TC_LOG_INFO("server.loading", ">> 『 宝石拆卸 』 → 验证通过  〔0.5k    续费赠送   定制用户：赤血残阳〕");
-        TC_LOG_INFO("server.loading", ">> 『 购买限制 』 → 验证通过  〔0.5k    续费赠送   定制用户：Lee〕");
-        TC_LOG_INFO("server.loading", ">> 『 使用限制 』 → 验证通过  〔0.5k    续费赠送   定制用户：Lee〕");
-        TC_LOG_INFO("server.loading", ">> 『 购买奖励 』 → 验证通过  〔0.5k    续费赠送   定制用户：LALA〕");
-        TC_LOG_INFO("server.loading", ">> 『 使用奖励 』 → 验证通过  〔0.5k    续费赠送   定制用户：贰拾肆〕");
-        TC_LOG_INFO("server.loading", ">> 『 连杀奖励 』 → 验证通过  〔0.5k    续费赠送   定制用户：地雷叔叔〕");
-        TC_LOG_INFO("server.loading", ">> 『 智能公告 』 → 验证通过  〔0.5k    续费赠送   定制用户：kkk〕");
-        TC_LOG_INFO("server.loading", ">> 『 技能控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：九遥〕");
-        TC_LOG_INFO("server.loading", ">> 『 地图控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：理想-AUG〕");
-        TC_LOG_INFO("server.loading", ">> 『 生物控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：kkk〕");
-        TC_LOG_INFO("server.loading", ">> 『 物体控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：kkk〕");
-        TC_LOG_INFO("server.loading", ">> 『 职业控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：江南一点〕");
-        TC_LOG_INFO("server.loading", ">> 『 事件控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 佩戴技能 』 → 验证通过  〔0.5k    续费赠送   定制用户：DN〕");
-        TC_LOG_INFO("server.loading", ">> 『 动作控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 任务控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 成就控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 间隔时间 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 累计时间 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 时间限制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 上线触发 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 击杀控制 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 动作触发 』 → 验证通过  〔0.5k    续费赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑野外 』 → 验证通过  〔1.0k    满额赠送   定制用户：命运〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑副本 』 → 验证通过  〔1.0k    满额赠送   定制用户：白发〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑成长 』 → 验证通过  〔3.0k    满额赠送   定制用户：白发〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑符文 』 → 验证通过  〔3.0k    满额赠送   定制用户：萝卜〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑强化 』 → 验证通过  〔1.5k    满额赠送   定制用户：发哥〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑鉴定 』 → 验证通过  〔1.5k    满额赠送   定制用户：发哥〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑觉醒 』 → 验证通过  〔1.5k    满额赠送   定制用户：A神〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑洗练 』 → 验证通过  〔1.0k    满额赠送   定制用户：A神〕");
-        TC_LOG_INFO("server.loading", ">> 『 暗黑重铸 』 → 验证通过  〔1.0k    满额赠送   定制用户：A神〕");
-        TC_LOG_INFO("server.loading", ">> 『 宠物鉴定 』 → 验证通过  〔1.0k    满额赠送   定制用户：江南〕");
-        TC_LOG_INFO("server.loading", ">> 『 宠物强化 』 → 验证通过  〔1.5k    满额赠送   定制用户：江南〕");
-        TC_LOG_INFO("server.loading", ">> 『 宠物进化 』 → 验证通过  〔1.5k    满额赠送   定制用户：江南〕");
-        TC_LOG_INFO("server.loading", ">> 『 宠物觉醒 』 → 验证通过  〔1.5k    满额赠送   定制用户：江南〕");
-        TC_LOG_INFO("server.loading", ">> 『 随机属性 』 → 验证通过  〔1.5k    满额赠送   定制用户：地雷叔叔〕");
-        TC_LOG_INFO("server.loading", ">> 『 超级弹窗 』 → 验证通过  〔3.0k    满额赠送   定制用户：AA〕");
-        TC_LOG_INFO("server.loading", ">> 『 自定变量 』 → 验证通过  〔3.0k    满额赠送   定制用户：AA〕");
+        TC_LOG_INFO("server.loading", ">> 『 防脚本 』  → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 防外挂 』  → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 关键字 』  → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 Lua脚本 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 在线假人 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 物品描述 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 按钮图标 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 超级公告 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 自动入会 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 阵营平衡 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 战场调控 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 推广系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 狂暴系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 天赋调控 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 传唤功能 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 任务重置 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 生物武器 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 模板传送 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 模板召唤 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 杀死全图 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 死亡解卡 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 副本吸血 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 定点复活 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 团队召唤 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 组队召唤 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 区域限制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 技能调控 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 限制多开 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 聊天屏蔽 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 斗气系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 军衔系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 巅峰系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 混排战场 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 秘境副本 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 会员系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 积分拍卖 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 跨甲幻化 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 背包神器 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 超级兑换 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 签到奖励 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 集合商人 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 一键拾取 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 多倍拾取 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 拾取几率 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 拾取覆盖 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 拾取奖励 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 超级回收 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 出生公会 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 转换种族 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 角色改名 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 变身系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 转职系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 装备改名 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 物品合成 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 随身商人 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 宝石拆卸 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 购买限制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 使用限制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 购买奖励 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 使用奖励 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 连杀奖励 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 智能公告 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 技能控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 地图控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 生物控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 物体控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 职业控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 事件控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 佩戴技能 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 动作控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 任务控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 成就控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 间隔时间 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 累计时间 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 时间限制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 上线触发 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 击杀控制 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 动作触发 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑野外 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑副本 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑成长 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑符文 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑强化 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑鉴定 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑觉醒 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑洗练 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 暗黑重铸 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 战宠系统 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 随机属性 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 超级弹窗 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 自定变量 』 → 验证通过  〔基础功能〕");
+        TC_LOG_INFO("server.loading", ">> 『 点卡模式 』 → 验证通过  〔基础功能〕");
         if (aaCenter.AA_VerifyCode("a1b")) {
-            TC_LOG_INFO("server.loading", ">> 『 累计充值 』 → 验证通过  〔0.8k    满额赠送   定制用户：小武〕");
+            TC_LOG_INFO("server.loading", ">> 『 累计充值 』 → 验证通过  〔0.8k    定制功能   定制用户：小武〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 累计充值 』 → 验证失败  〔0.8k    满额赠送   定制用户：小武〕");
+            TC_LOG_INFO("server.loading", ">> 『 累计充值 』 → 验证失败  〔0.8k    定制功能   定制用户：小武〕");
         }
         if (aaCenter.AA_VerifyCode("a2b")) {
-            TC_LOG_INFO("server.loading", ">> 『 个人理财 』 → 验证通过  〔0.8k    满额赠送   定制用户：梦幻〕");
+            TC_LOG_INFO("server.loading", ">> 『 个人理财 』 → 验证通过  〔0.8k    定制功能   定制用户：梦幻〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 个人理财 』 → 验证失败  〔0.8k    满额赠送   定制用户：梦幻〕");
+            TC_LOG_INFO("server.loading", ">> 『 个人理财 』 → 验证失败  〔0.8k    定制功能   定制用户：梦幻〕");
         }
         if (aaCenter.AA_VerifyCode("a3b")) {
-            TC_LOG_INFO("server.loading", ">> 『 每日首充 』 → 验证通过  〔0.8k    满额赠送   定制用户：DBWOW〕");
+            TC_LOG_INFO("server.loading", ">> 『 每日首充 』 → 验证通过  〔0.8k    定制功能   定制用户：DBWOW〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 每日首充 』 → 验证失败  〔0.8k    满额赠送   定制用户：DBWOW〕");
+            TC_LOG_INFO("server.loading", ">> 『 每日首充 』 → 验证失败  〔0.8k    定制功能   定制用户：DBWOW〕");
         }
         if (aaCenter.AA_VerifyCode("a4b")) {
-            TC_LOG_INFO("server.loading", ">> 『 等级奖励 』 → 验证通过  〔0.8k    满额赠送   定制用户：萝卜〕");
+            TC_LOG_INFO("server.loading", ">> 『 等级奖励 』 → 验证通过  〔0.8k    定制功能   定制用户：萝卜〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 等级奖励 』 → 验证失败  〔0.8k    满额赠送   定制用户：萝卜〕");
+            TC_LOG_INFO("server.loading", ">> 『 等级奖励 』 → 验证失败  〔0.8k    定制功能   定制用户：萝卜〕");
         }
         if (aaCenter.AA_VerifyCode("a5b")) {
-            TC_LOG_INFO("server.loading", ">> 『 超级 AI 』 → 验证通过  〔5.0k    满额赠送   定制用户：三水〕");
+            TC_LOG_INFO("server.loading", ">> 『 超级 AI 』 → 验证通过  〔5.0k    定制功能   定制用户：三水〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 超级 AI 』 → 验证失败  〔5.0k    满额赠送   定制用户：三水〕");
+            TC_LOG_INFO("server.loading", ">> 『 超级 AI 』 → 验证失败  〔5.0k    定制功能   定制用户：三水〕");
         }
         if (aaCenter.AA_VerifyCode("a6b")) {
-            TC_LOG_INFO("server.loading", ">> 『 超级命令 』 → 验证通过  〔1.5k    满额赠送   定制用户：巅峰少年〕");
+            TC_LOG_INFO("server.loading", ">> 『 超级命令 』 → 验证通过  〔1.5k    定制功能   定制用户：巅峰少年〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 超级命令 』 → 验证失败  〔1.5k    满额赠送   定制用户：巅峰少年〕");
+            TC_LOG_INFO("server.loading", ">> 『 超级命令 』 → 验证失败  〔1.5k    定制功能   定制用户：巅峰少年〕");
         }
         if (aaCenter.AA_VerifyCode("a100b")) {
-            TC_LOG_INFO("server.loading", ">> 『 高级抽奖 』 → 验证通过  〔1.5k    满额赠送   定制用户：江南一点〕");
+            TC_LOG_INFO("server.loading", ">> 『 高级抽奖 』 → 验证通过  〔1.5k    定制功能   定制用户：江南一点〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 高级抽奖 』 → 验证失败  〔1.5k    满额赠送   定制用户：江南一点〕");
+            TC_LOG_INFO("server.loading", ">> 『 高级抽奖 』 → 验证失败  〔1.5k    定制功能   定制用户：江南一点〕");
         }
         if (aaCenter.AA_VerifyCode("a101b")) {
-            TC_LOG_INFO("server.loading", ">> 『 副本闯关 』 → 验证通过  〔1.5k    满额赠送   定制用户：晓宇〕");
+            TC_LOG_INFO("server.loading", ">> 『 副本闯关 』 → 验证通过  〔1.5k    定制功能   定制用户：晓宇〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 副本闯关 』 → 验证失败  〔1.5k    满额赠送   定制用户：晓宇〕");
+            TC_LOG_INFO("server.loading", ">> 『 副本闯关 』 → 验证失败  〔1.5k    定制功能   定制用户：晓宇〕");
         }
         if (aaCenter.AA_VerifyCode("a102b")) {
-            TC_LOG_INFO("server.loading", ">> 『 伤害排行 』 → 验证通过  〔1.5k    满额赠送   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 伤害排行 』 → 验证通过  〔1.5k    定制功能   定制用户：AH〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 伤害排行 』 → 验证失败  〔1.5k    满额赠送   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 伤害排行 』 → 验证失败  〔1.5k    定制功能   定制用户：AH〕");
         }
         if (aaCenter.AA_VerifyCode("a103b")) {
-            TC_LOG_INFO("server.loading", ">> 『 萃取传承 』 → 验证通过  〔1.0k    满额赠送   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 萃取传承 』 → 验证通过  〔1.0k    定制功能   定制用户：AH〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 萃取传承 』 → 验证失败  〔1.0k    满额赠送   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 萃取传承 』 → 验证失败  〔1.0k    定制功能   定制用户：AH〕");
         }
         if (aaCenter.AA_VerifyCode("a104b")) {
-            TC_LOG_INFO("server.loading", ">> 『 翻牌奖励 』 → 验证通过  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 翻牌奖励 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 翻牌奖励 』 → 验证失败  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 翻牌奖励 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a105b")) {
-            TC_LOG_INFO("server.loading", ">> 『 在线商城 』 → 验证通过  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 在线商城 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 在线商城 』 → 验证失败  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 在线商城 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a106b")) {
-            TC_LOG_INFO("server.loading", ">> 『 收集系统 』 → 验证通过  〔3.0k    满额赠送   定制用户：苦茶〕");
+            TC_LOG_INFO("server.loading", ">> 『 收集系统 』 → 验证通过  〔3.0k    定制功能   定制用户：苦茶〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 收集系统 』 → 验证失败  〔3.0k    满额赠送   定制用户：苦茶〕");
+            TC_LOG_INFO("server.loading", ">> 『 收集系统 』 → 验证失败  〔3.0k    定制功能   定制用户：苦茶〕");
         }
         if (aaCenter.AA_VerifyCode("a107b")) {
             TC_LOG_INFO("server.loading", ">> 『 物品租债 』 → 验证通过  〔0.5k    定制功能   定制用户：蚂蚁〕");
@@ -2754,136 +2748,154 @@ void World::SetInitialWorldSettings()
             TC_LOG_INFO("server.loading", ">> 『 记忆传送 』 → 验证失败  〔1.0k    定制功能   定制用户：蚂蚁〕");
         }
         if (aaCenter.AA_VerifyCode("a200b")) {
-            TC_LOG_INFO("server.loading", ">> 『 排名奖励 』 → 验证通过  〔1.5k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 排名奖励 』 → 验证通过  〔1.5k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 排名奖励 』 → 验证失败  〔1.5k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 排名奖励 』 → 验证失败  〔1.5k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a202b")) {
-            TC_LOG_INFO("server.loading", ">> 『 购买次数 』 → 验证通过  〔1.5k    满额赠送   定制用户：肖恩〕");
+            TC_LOG_INFO("server.loading", ">> 『 购买次数 』 → 验证通过  〔1.5k    定制功能   定制用户：肖恩〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 购买次数 』 → 验证失败  〔1.5k    满额赠送   定制用户：肖恩〕");
+            TC_LOG_INFO("server.loading", ">> 『 购买次数 』 → 验证失败  〔1.5k    定制功能   定制用户：肖恩〕");
         }
         if (aaCenter.AA_VerifyCode("a203b")) {
-            TC_LOG_INFO("server.loading", ">> 『 属性转移 』 → 验证通过  〔1.0k    满额赠送   定制用户：九遥〕");
+            TC_LOG_INFO("server.loading", ">> 『 属性转移 』 → 验证通过  〔1.0k    定制功能   定制用户：九遥〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 属性转移 』 → 验证失败  〔1.0k    满额赠送   定制用户：九遥〕");
-        }
-        if (aaCenter.AA_VerifyCode("a204b")) {
-            TC_LOG_INFO("server.loading", ">> 『 成就货币 』 → 验证通过  〔0.5k    满额赠送   定制用户：九遥〕");
-        }
-        else {
-            TC_LOG_INFO("server.loading", ">> 『 成就货币 』 → 验证失败  〔0.5k    满额赠送   定制用户：九遥〕");
+            TC_LOG_INFO("server.loading", ">> 『 属性转移 』 → 验证失败  〔1.0k    定制功能   定制用户：九遥〕");
         }
         if (aaCenter.AA_VerifyCode("a205b")) {
-            TC_LOG_INFO("server.loading", ">> 『 高级觉醒 』 → 验证通过  〔1.5k    满额赠送   定制用户：A神〕");
+            TC_LOG_INFO("server.loading", ">> 『 高级觉醒 』 → 验证通过  〔1.5k    定制功能   定制用户：A神〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 高级觉醒 』 → 验证失败  〔1.5k    满额赠送   定制用户：A神〕");
+            TC_LOG_INFO("server.loading", ">> 『 高级觉醒 』 → 验证失败  〔1.5k    定制功能   定制用户：A神〕");
         }
         if (aaCenter.AA_VerifyCode("a206b")) {
-            TC_LOG_INFO("server.loading", ">> 『 野外战场 』 → 验证通过  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 野外战场 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 野外战场 』 → 验证失败  〔2.0k    满额赠送   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 野外战场 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a207b")) {
-            TC_LOG_INFO("server.loading", ">> 『 排行光环 』 → 验证通过  〔0.8k    满额赠送   定制用户：理想〕");
+            TC_LOG_INFO("server.loading", ">> 『 排行光环 』 → 验证通过  〔0.8k    定制功能   定制用户：理想〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 排行光环 』 → 验证失败  〔0.8k    满额赠送   定制用户：理想〕");
+            TC_LOG_INFO("server.loading", ">> 『 排行光环 』 → 验证失败  〔0.8k    定制功能   定制用户：理想〕");
         }
         if (aaCenter.AA_VerifyCode("a208b")) {
-            TC_LOG_INFO("server.loading", ">> 『 队伍光环 』 → 验证通过  〔1.0k    满额赠送   定制用户：理想〕");
+            TC_LOG_INFO("server.loading", ">> 『 队伍光环 』 → 验证通过  〔1.0k    定制功能   定制用户：理想〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 队伍光环 』 → 验证失败  〔1.0k    满额赠送   定制用户：理想〕");
-        }
-        if (aaCenter.AA_VerifyCode("a209b")) {
-            TC_LOG_INFO("server.loading", ">> 『 觉醒卡牌 』 → 验证通过  〔5.0k    满额赠送   定制用户：SN〕");
-        }
-        else {
-            TC_LOG_INFO("server.loading", ">> 『 觉醒卡牌 』 → 验证失败  〔5.0k    满额赠送   定制用户：SN〕");
+            TC_LOG_INFO("server.loading", ">> 『 队伍光环 』 → 验证失败  〔1.0k    定制功能   定制用户：理想〕");
         }
         if (aaCenter.AA_VerifyCode("a210b")) {
-            TC_LOG_INFO("server.loading", ">> 『 弹性副本 』 → 验证通过  〔2.0k    满额赠送   定制用户：九遥〕");
+            TC_LOG_INFO("server.loading", ">> 『 最低血量 』 → 验证通过  〔1.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 弹性副本 』 → 验证失败  〔2.0k    满额赠送   定制用户：九遥〕");
+            TC_LOG_INFO("server.loading", ">> 『 最低血量 』 → 验证失败  〔1.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a211b")) {
-            TC_LOG_INFO("server.loading", ">> 『 比武大会 』 → 验证通过  〔2.0k    满额赠送   定制用户：暗黑〕");
+            TC_LOG_INFO("server.loading", ">> 『 比武大会 』 → 验证通过  〔2.0k    定制功能   定制用户：暗黑〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 比武大会 』 → 验证失败  〔2.0k    满额赠送   定制用户：暗黑〕");
+            TC_LOG_INFO("server.loading", ">> 『 比武大会 』 → 验证失败  〔2.0k    定制功能   定制用户：暗黑〕");
         }
         if (aaCenter.AA_VerifyCode("a212b")) {
-            TC_LOG_INFO("server.loading", ">> 『 竞技大赛 』 → 验证通过  〔2.0k    特制功能   定制用户：暗黑〕");
+            TC_LOG_INFO("server.loading", ">> 『 竞技大赛 』 → 验证通过  〔2.0k    定制功能   定制用户：暗黑〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 竞技大赛 』 → 验证失败  〔2.0k    特制功能   定制用户：暗黑〕");
+            TC_LOG_INFO("server.loading", ">> 『 竞技大赛 』 → 验证失败  〔2.0k    定制功能   定制用户：暗黑〕");
+        }
+        if (aaCenter.AA_VerifyCode("a213b")) {
+            TC_LOG_INFO("server.loading", ">> 『 首领争霸 』 → 验证通过  〔3.5k    定制功能   定制用户：闪指〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 首领争霸 』 → 验证失败  〔3.5k    定制功能   定制用户：闪指〕");
+        }
+        if (aaCenter.AA_VerifyCode("a214b")) {
+            TC_LOG_INFO("server.loading", ">> 『 抢占资源 』 → 验证通过  〔5k    定制功能   定制用户：术士〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 抢占资源 』 → 验证失败  〔5k    定制功能   定制用户：术士〕");
+        }
+        if (aaCenter.AA_VerifyCode("a215b")) {
+            TC_LOG_INFO("server.loading", ">> 『 攻城战 』 → 验证通过  〔5k    定制功能   定制用户：暗黑〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 攻城战 』 → 验证失败  〔5k    定制功能   定制用户：暗黑〕");
         }
         if (aaCenter.AA_VerifyCode("a300b")) {
-            TC_LOG_INFO("server.loading", ">> 『 UI传送 』 → 验证通过  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI传送 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 UI传送 』 → 验证失败  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI传送 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a301b")) {
-            TC_LOG_INFO("server.loading", ">> 『 UI时装 』 → 验证通过  〔3.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI时装 』 → 验证通过  〔3.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 UI时装 』 → 验证失败  〔3.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI时装 』 → 验证失败  〔3.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a302b")) {
-            TC_LOG_INFO("server.loading", ">> 『 UI神器 』 → 验证通过  〔3.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI神器 』 → 验证通过  〔3.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 UI神器 』 → 验证失败  〔3.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI神器 』 → 验证失败  〔3.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a303b")) {
-            TC_LOG_INFO("server.loading", ">> 『 UI捐献 』 → 验证通过  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI捐献 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 UI捐献 』 → 验证失败  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI捐献 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a304b")) {
-            TC_LOG_INFO("server.loading", ">> 『 UI集结号 』 → 验证通过  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI集结号 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 UI集结号 』 → 验证失败  〔2.0k    特制功能   定制用户：AA〕");
+            TC_LOG_INFO("server.loading", ">> 『 UI集结号 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
+        }
+        if (aaCenter.AA_VerifyCode("a305b")) {
+            TC_LOG_INFO("server.loading", ">> 『 UI活跃度 』 → 验证通过  〔2.0k    定制功能   定制用户：AA〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 UI活跃度 』 → 验证失败  〔2.0k    定制功能   定制用户：AA〕");
         }
         if (aaCenter.AA_VerifyCode("a400b")) {
-            TC_LOG_INFO("server.loading", ">> 『 答题活动 』 → 验证通过  〔1.0k    特制功能   定制用户：蚂蚁〕");
+            TC_LOG_INFO("server.loading", ">> 『 答题活动 』 → 验证通过  〔1.0k    定制功能   定制用户：蚂蚁〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 答题活动 』 → 验证失败  〔1.0k    特制功能   定制用户：蚂蚁〕");
+            TC_LOG_INFO("server.loading", ">> 『 答题活动 』 → 验证失败  〔1.0k    定制功能   定制用户：蚂蚁〕");
         }
         if (aaCenter.AA_VerifyCode("a401b")) {
-            TC_LOG_INFO("server.loading", ">> 『 属性配置 』 → 验证通过  〔1.0k    特制功能   定制用户：酸酸〕");
+            TC_LOG_INFO("server.loading", ">> 『 属性配置 』 → 验证通过  〔1.0k    定制功能   定制用户：酸酸〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 属性配置 』 → 验证失败  〔1.0k    特制功能   定制用户：酸酸〕");
+            TC_LOG_INFO("server.loading", ">> 『 属性配置 』 → 验证失败  〔1.0k    定制功能   定制用户：酸酸〕");
+        }
+        if (aaCenter.AA_VerifyCode("a402b")) {
+            TC_LOG_INFO("server.loading", ">> 『 定制属性 』 → 验证通过  〔1.0k    定制功能   定制用户：AH〕");
+        }
+        else {
+            TC_LOG_INFO("server.loading", ">> 『 定制属性 』 → 验证失败  〔1.0k    定制功能   定制用户：AH〕");
         }
         if (aaCenter.AA_VerifyCode("a404b")) {
-            TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证通过  〔3.5k    特制功能   定制用户：蚂蚁〕");
+            TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证通过  〔3.5k    定制功能   定制用户：蚂蚁〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证失败  〔3.5k    特制功能   定制用户：蚂蚁〕");
+            TC_LOG_INFO("server.loading", ">> 『 一命模式 』 → 验证失败  〔3.5k    定制功能   定制用户：蚂蚁〕");
         }
         if (aaCenter.AA_VerifyCode("a405b")) {
-            TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证通过  〔2.0k    特制功能   定制用户：技术〕");
+            TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证通过  〔2.0k    定制功能   定制用户：技术〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证失败  〔2.0k    特制功能   定制用户：技术〕");
+            TC_LOG_INFO("server.loading", ">> 『 自定任务 』 → 验证失败  〔2.0k    定制功能   定制用户：技术〕");
         }
         if (aaCenter.AA_VerifyCode("a406b")) {
-            TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证通过  〔2.0k    特制功能   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证通过  〔2.0k    定制功能   定制用户：AH〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证失败  〔2.0k    特制功能   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 锁定洗炼 』 → 验证失败  〔2.0k    定制功能   定制用户：AH〕");
         }
         if (aaCenter.AA_VerifyCode("a407b")) {
             TC_LOG_INFO("server.loading", ">> 『 红包系统 』 → 验证通过  〔1.5k    定制功能   定制用户：AA〕");
@@ -2907,24 +2919,16 @@ void World::SetInitialWorldSettings()
         else { //10人或者25人
             TC_LOG_INFO("server.loading", ">> 当前限制{}人，如需开通服务，请联系管理员QQ:643125009。", aaCenter.aa_version.aa_login_count);
         }
-        aaCenter.aa_version.version = "20230715";
+        aaCenter.aa_version.version = "10AA20231125";
         if (aaCenter.aa_version.uuid != "") {
-            TC_LOG_INFO("server.loading", ">> 当前版本号:{}-{}", aaCenter.aa_version.version.c_str(), aaCenter.aa_version.uuid.c_str());
+            TC_LOG_INFO("server.loading", ">> Version:{}-{}", aaCenter.aa_version.version.c_str(), aaCenter.aa_version.uuid.c_str());
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 当前版本号:{}", aaCenter.aa_version.version.c_str());
+            TC_LOG_INFO("server.loading", ">> Version:{}", aaCenter.aa_version.version.c_str());
         }
-    }
-
-    //验证权限
-    if (!aaCenter.AA_VerifyCode("a205b")) {
-        for (auto& it : aaCenter.aa_stats) {
-            AA_Stat conf = it.second;
-            if (conf.type >= 400) {
-                aaCenter.aa_stats[it.first].value = 0;
-                aaCenter.aa_stats[it.first].point = 0;
-                aaCenter.aa_stats[it.first].chance = 0;
-            }
+        //AAVerify
+        if (loginr.find("$") != std::string::npos) {
+            TC_LOG_INFO("server.loading", "\n");
         }
     }
 }
@@ -2967,6 +2971,24 @@ void World::LoadAutobroadcasts()
 
     TC_LOG_INFO("server.loading", ">> Loaded {} autobroadcast definitions in {} ms", m_Autobroadcasts.size(), GetMSTimeDiffToNow(oldMSTime));
 }
+
+void AA_AAVerify()
+{
+    sAAVerify->AA_Login();
+    //-1 exit  0 player 999 wuxianzhi
+    int32 playerCount = 1;
+    playerCount = aaCenter.aa_version.aa_login_count;
+    if (playerCount < 0) {
+        playerCount = 0;
+    }
+    if ((int32)sWorld->GetPlayerCount() > playerCount)
+    {
+        for (Player* p : aaCenter.aa_onlinePlayers) {
+            p->RemoveFromWorld();
+        }
+    }
+}
+
 //mutex aa_lock;
 void AA_World_Update(World* world, uint32 diff)
 {
@@ -3644,6 +3666,9 @@ void AA_World_Update(World* world, uint32 diff)
     }
     if (world->aa_minute_10 > 600000) {
         world->aa_minute_10 = 0;
+        {
+            std::async(std::launch::async, AA_AAVerify);
+        }
     }
     if (world->aa_minute_60 > 3600000) {
         world->aa_minute_60 = 0;

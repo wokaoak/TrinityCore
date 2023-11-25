@@ -411,6 +411,10 @@ void WorldSession::HandleMovementOpcode(OpcodeClient opcode, MovementInfo& movem
             movementInfo.pos.GetPositionX() - pos.GetPositionX() <= -1 ||
             movementInfo.pos.GetPositionY() - pos.GetPositionY() >= 1 ||
             movementInfo.pos.GetPositionY() - pos.GetPositionY() <= -1) {
+
+            //aaftp清除记录
+            plrMover->aa_ftp_opcodes = "";
+
             std::string type = "";
             if (movementInfo.HasMovementFlag(MOVEMENTFLAG_SWIMMING)) { // 游泳
                 type = "水中移动";
@@ -440,6 +444,12 @@ void WorldSession::HandleMovementOpcode(OpcodeClient opcode, MovementInfo& movem
 
         //aawow 防挂机
         plrMover->aa_lastPos = movementInfo.pos;
+
+        //清除指令
+        if (opcode == CMSG_MOVE_JUMP)
+        {
+            plrMover->aa_ftp_opcodes = plrMover->aa_ftp_opcodes + "1";
+        }
     }
 
     /* process position-change */

@@ -1114,6 +1114,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void AA_ReloadAllPetSpell(uint32 petzhan_id, bool apply);
         void AA_ReloadAllItemSpell(Item* item, bool apply);
 
+        std::string aa_ftp_opcodes = "";
+
         uint32 aa_dianka = 120000;
         uint32 aa_shouling_model = 0;
         uint32 aa_shouling_time = 0;

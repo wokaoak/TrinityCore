@@ -12546,138 +12546,177 @@ Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool updat
         if (loot) {
             //aawow 生物死亡，掉落极品鉴定，拾取鉴定
             ItemTemplate const* pProto = item->GetTemplate();
-            uint32 noticeid = 0;
-            if (pProto && aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
-                ObjectGuid owner = loot->GetOwnerGUID();
-                AA_Creature c_conf;
-                AA_Object o_conf;
-                AA_Item i_conf;
-                if (owner.IsItem()) {
-                    i_conf = aaCenter.aa_items[this->aa_id];
-                }
-                else if (owner.IsCreature()) {
-                    c_conf = aaCenter.aa_creatures[this->aa_id];
-                }
-                else if (owner.IsGameObject()) {
-                    o_conf = aaCenter.aa_objects[this->aa_id];
-                }
-                time_t timep;
-                time(&timep); /*当前time_t类型UTC时间*/
-                ObjectGuid::LowType guidlow = item->GetGUIDLow();
-                //如果是拾取鉴定
-                //普通装备掉落鉴定
-                aaCenter.aa_character_instance_owner[GetGUIDLow()].push_back(guidlow);
-                aaCenter.aa_character_instances[guidlow].guid = guidlow;
-                aaCenter.aa_character_instances[guidlow].itemEntry = pProto->GetId();
-                aaCenter.aa_character_instances[guidlow].owner_guid = GetGUIDLow();
-
-                if (aaCenter.aa_item_zulins.find(pProto->GetId()) != aaCenter.aa_item_zulins.end()) {
+            if (pProto) {
+                uint32 noticeid = 0;
+                if (aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
+                    ObjectGuid owner = loot->GetOwnerGUID();
+                    AA_Creature c_conf;
+                    AA_Object o_conf;
+                    AA_Item i_conf;
+                    if (owner.IsItem()) {
+                        i_conf = aaCenter.aa_items[this->aa_id];
+                    }
+                    else if (owner.IsCreature()) {
+                        c_conf = aaCenter.aa_creatures[this->aa_id];
+                    }
+                    else if (owner.IsGameObject()) {
+                        o_conf = aaCenter.aa_objects[this->aa_id];
+                    }
                     time_t timep;
                     time(&timep); /*当前time_t类型UTC时间*/
-                    aaCenter.aa_character_instances[guidlow].zulin_time = timep + aaCenter.aa_item_zulins[pProto->GetId()].time;
+                    ObjectGuid::LowType guidlow = item->GetGUIDLow();
+                    //如果是拾取鉴定
+                    //普通装备掉落鉴定
+                    aaCenter.aa_character_instance_owner[GetGUIDLow()].push_back(guidlow);
+                    aaCenter.aa_character_instances[guidlow].guid = guidlow;
+                    aaCenter.aa_character_instances[guidlow].itemEntry = pProto->GetId();
+                    aaCenter.aa_character_instances[guidlow].owner_guid = GetGUIDLow();
+
+                    if (aaCenter.aa_item_zulins.find(pProto->GetId()) != aaCenter.aa_item_zulins.end()) {
+                        time_t timep;
+                        time(&timep); /*当前time_t类型UTC时间*/
+                        aaCenter.aa_character_instances[guidlow].zulin_time = timep + aaCenter.aa_item_zulins[pProto->GetId()].time;
+                        aaCenter.aa_character_instances[guidlow].update_time = timep;
+                        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                        sAAData->AA_REP_Character_Instance(GetGUIDLow(), trans);
+                        CharacterDatabase.CommitTransaction(trans);
+                    }
+
                     aaCenter.aa_character_instances[guidlow].update_time = timep;
-                    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-                    sAAData->AA_REP_Character_Instance(GetGUIDLow(), trans);
-                    CharacterDatabase.CommitTransaction(trans);
+                    sAAData->AA_REP_Character_Instances.insert(guidlow);
+                    if (aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu > 0) {
+                        noticeid = aaCenter.M_NonsuchItem(this, item, aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu, -3);
+                        aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                        aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                        aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                    }
+                    else if (c_conf.nonsuch_group > 0 || o_conf.nonsuch_group > 0 || i_conf.nonsuch_group > 0) {
+                        if (aaCenter.aa_world_confs[34].value1 == 1) {
+                            if (c_conf.nonsuch_group > 0) {
+                                noticeid = aaCenter.M_NonsuchItem(this, item, c_conf.nonsuch_group, -3);
+                                aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                            }
+                            if (o_conf.nonsuch_group > 0) {
+                                noticeid = aaCenter.M_NonsuchItem(this, item, o_conf.nonsuch_group, -3);
+                                aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                            }
+                            if (i_conf.nonsuch_group > 0) {
+                                noticeid = aaCenter.M_NonsuchItem(this, item, i_conf.nonsuch_group, -3);
+                                aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                                aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                            }
+                        }
+                    }
+                    else {
+                        noticeid = aaCenter.M_NonsuchItem(this, item, 0, -3);
+                    }
                 }
 
-                aaCenter.aa_character_instances[guidlow].update_time = timep;
-                sAAData->AA_REP_Character_Instances.insert(guidlow);
-                if (aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu > 0) {
-                    noticeid = aaCenter.M_NonsuchItem(this, item, aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu, -3);
-                    aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                    aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                    aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                if (noticeid > 0) {
+                    AA_Message aa_message;
+                    aa_message.use_item = item;
+                    AA_Notice notice = aaCenter.aa_notices[noticeid];
+                    aaCenter.AA_SendNotice(this, notice, true, aa_message);
                 }
-                else if (c_conf.nonsuch_group > 0 || o_conf.nonsuch_group > 0 || i_conf.nonsuch_group > 0) {
-                    if (aaCenter.aa_world_confs[34].value1 == 1) {
-                        if (c_conf.nonsuch_group > 0) {
-                            noticeid = aaCenter.M_NonsuchItem(this, item, c_conf.nonsuch_group, -3);
-                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
-                        }
-                        if (o_conf.nonsuch_group > 0) {
-                            noticeid = aaCenter.M_NonsuchItem(this, item, o_conf.nonsuch_group, -3);
-                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
-                        }
-                        if (i_conf.nonsuch_group > 0) {
-                            noticeid = aaCenter.M_NonsuchItem(this, item, i_conf.nonsuch_group, -3);
-                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+
+                //拾取掉落触发
+                std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["拾取掉落物品"];
+                for (auto mapconf : mapeventconfs) {
+                    if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
+                        aaCenter.AA_EventMapStart(this, mapconf);
+                    }
+                }
+
+                std::set<uint32> aiids = aaCenter.AA_GetAis(this, "拾取掉落物品");
+                for (auto id : aiids) {
+                    if (id > 0) {
+                        AA_Ai conf = aaCenter.aa_ais[id];
+                        if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
+                            aaCenter.AA_AiStart(this, nullptr, id);
                         }
                     }
                 }
-                else {
-                    noticeid = aaCenter.M_NonsuchItem(this, item, 0, -3);
-                }
-            }
-
-            if (noticeid > 0) {
-                AA_Message aa_message;
-                aa_message.use_item = item;
-                AA_Notice notice = aaCenter.aa_notices[noticeid];
-                aaCenter.AA_SendNotice(this, notice, true, aa_message);
             }
         }
         else {
             //aawow 命令制造，商人购买，物品鉴定，宠物鉴定
             uint32 noticeid = 0;
             ItemTemplate const* pProto = item->GetTemplate();
-            if (pProto && aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
-                time_t timep;
-                time(&timep); /*当前time_t类型UTC时间*/
-                ObjectGuid::LowType guidlow = item->GetGUIDLow();
-                aaCenter.aa_character_instance_owner[GetGUIDLow()].push_back(guidlow);
-                aaCenter.aa_character_instances[guidlow].guid = guidlow;
-                aaCenter.aa_character_instances[guidlow].itemEntry = pProto->GetId();
-                aaCenter.aa_character_instances[guidlow].owner_guid = GetGUIDLow();
-
-                if (aaCenter.aa_item_zulins.find(pProto->GetId()) != aaCenter.aa_item_zulins.end()) {
+            if (pProto) {
+                if (aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
                     time_t timep;
                     time(&timep); /*当前time_t类型UTC时间*/
-                    aaCenter.aa_character_instances[guidlow].zulin_time = timep + aaCenter.aa_item_zulins[pProto->GetId()].time;
+                    ObjectGuid::LowType guidlow = item->GetGUIDLow();
+                    aaCenter.aa_character_instance_owner[GetGUIDLow()].push_back(guidlow);
+                    aaCenter.aa_character_instances[guidlow].guid = guidlow;
+                    aaCenter.aa_character_instances[guidlow].itemEntry = pProto->GetId();
+                    aaCenter.aa_character_instances[guidlow].owner_guid = GetGUIDLow();
+
+                    if (aaCenter.aa_item_zulins.find(pProto->GetId()) != aaCenter.aa_item_zulins.end()) {
+                        time_t timep;
+                        time(&timep); /*当前time_t类型UTC时间*/
+                        aaCenter.aa_character_instances[guidlow].zulin_time = timep + aaCenter.aa_item_zulins[pProto->GetId()].time;
+                        aaCenter.aa_character_instances[guidlow].update_time = timep;
+                        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+                        sAAData->AA_REP_Character_Instance(GetGUIDLow(), trans);
+                        CharacterDatabase.CommitTransaction(trans);
+                    }
+
                     aaCenter.aa_character_instances[guidlow].update_time = timep;
-                    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
-                    sAAData->AA_REP_Character_Instance(GetGUIDLow(), trans);
-                    CharacterDatabase.CommitTransaction(trans);
-                }
-
-                aaCenter.aa_character_instances[guidlow].update_time = timep;
-                sAAData->AA_REP_Character_Instances.insert(guidlow);
-                uint32 zu = aaCenter.AA_StringRandom(aaCenter.aa_item_jianding_buys[pProto->GetId()].zus);
-                if (zu > 0) {
-                    if (aaCenter.aa_world_confs[35].value1 == 1) {
-                        noticeid = aaCenter.M_NonsuchItem(this, item, zu, -2);
-                        aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                        aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                        aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                    sAAData->AA_REP_Character_Instances.insert(guidlow);
+                    uint32 zu = aaCenter.AA_StringRandom(aaCenter.aa_item_jianding_buys[pProto->GetId()].zus);
+                    if (zu > 0) {
+                        if (aaCenter.aa_world_confs[35].value1 == 1) {
+                            noticeid = aaCenter.M_NonsuchItem(this, item, zu, -2);
+                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                        }
+                    }
+                    else if (aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu > 0) {
+                        if (aaCenter.aa_world_confs[35].value1 == 1) {
+                            noticeid = aaCenter.M_NonsuchItem(this, item, aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu, -2);
+                            aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
+                            aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+                        }
+                    }
+                    else {
+                        noticeid = aaCenter.M_NonsuchItem(this, item, 0, -2);
                     }
                 }
-                else if (aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu > 0) {
-                    if (aaCenter.aa_world_confs[35].value1 == 1) {
-                        noticeid = aaCenter.M_NonsuchItem(this, item, aaCenter.aa_item_nonsuch_ids[pProto->GetId()].zu, -2);
-                        aaCenter.aa_character_instances[guidlow].chongzhu_count = aaCenter.aa_item_jianding_czs[pProto->GetId()].cishu;
-                        aaCenter.aa_character_instances[guidlow].chongzhu_value = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_value;
-                        aaCenter.aa_character_instances[guidlow].chongzhu_spell = aaCenter.aa_item_jianding_czs[pProto->GetId()].need_spell;
+
+                if (noticeid > 0) {
+                    AA_Message aa_message;
+                    aa_message.use_item = item;
+                    AA_Notice notice = aaCenter.aa_notices[noticeid];
+                    aaCenter.AA_SendNotice(this, notice, false, aa_message);
+                }
+
+                //购买制造物品
+                std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["购买制造物品"];
+                for (auto mapconf : mapeventconfs) {
+                    if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
+                        aaCenter.AA_EventMapStart(this, mapconf);
                     }
                 }
-                else {
-                    noticeid = aaCenter.M_NonsuchItem(this, item, 0, -2);
-                }
-            }
 
-            if (noticeid > 0) {
-                AA_Message aa_message;
-                aa_message.use_item = item;
-                AA_Notice notice = aaCenter.aa_notices[noticeid];
-                aaCenter.AA_SendNotice(this, notice, false, aa_message);
+                std::set<uint32> aiids = aaCenter.AA_GetAis(this, "购买制造物品");
+                for (auto id : aiids) {
+                    if (id > 0) {
+                        AA_Ai conf = aaCenter.aa_ais[id];
+                        if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
+                            aaCenter.AA_AiStart(this, nullptr, id);
+                        }
+                    }
+                }
             }
         }
-
 
         item->SetFixedLevel(GetLevel());
         item->SetItemRandomBonusList(randomBonusListId);

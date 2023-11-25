@@ -60,18 +60,6 @@ void WorldSession::HandlePartyInviteOpcode(WorldPackets::Party::PartyInviteClien
     Player* invitingPlayer = GetPlayer();
     Player* invitedPlayer = ObjectAccessor::FindPlayerByName(packet.TargetName);
 
-    // 一命模式 禁止组队
-    if (invitingPlayer) {
-        ObjectGuid::LowType guidlow = invitingPlayer->GetGUIDLow();
-        uint32 level = aaCenter.aa_characterss[guidlow].yiming;
-        AA_Yiming_Conf conf = aaCenter.aa_yiming_confs[level];
-        if (conf.is_zudui == 1) {
-            std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000无法进行团队操作|r";
-            aaCenter.AA_SendMessage(invitingPlayer, 1, msg.c_str());
-            return;
-        }
-    }
-
     // no player
     if (!invitedPlayer)
     {
@@ -84,6 +72,45 @@ void WorldSession::HandlePartyInviteOpcode(WorldPackets::Party::PartyInviteClien
     {
         SendPartyResult(PARTY_OP_INVITE, invitedPlayer->GetName(), ERR_BAD_PLAYER_NAME_S);
         return;
+    }
+
+    if (invitingPlayer)
+    {
+        std::set<ObjectGuid> groups = aaCenter.aa_groups[invitingPlayer->GetZoneId()];
+        if (groups.size() > 0) {
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|r|cffFF0000当前地图，无法进行团队操作|r";
+            aaCenter.AA_SendMessage(invitingPlayer, 1, msg.c_str());
+            return;
+        }
+    }
+
+    // 一命模式 禁止组队
+    {
+        ObjectGuid::LowType guidlow1 = invitingPlayer->GetGUIDLow();
+        ObjectGuid::LowType guidlow2 = invitedPlayer->GetGUIDLow();
+        uint32 level1 = aaCenter.aa_characterss[guidlow1].yiming;
+        uint32 level2 = aaCenter.aa_characterss[guidlow2].yiming;
+        AA_Yiming_Conf conf1 = aaCenter.aa_yiming_confs[level1];
+        AA_Yiming_Conf conf2 = aaCenter.aa_yiming_confs[level2];
+        if (conf1.is_zudui > 0 || conf2.is_zudui > 0) {
+            if (level1 != level2) {
+                std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队|r";
+                if (aaCenter.aa_world_confs[106].value1 > 0) {
+                    msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
+                }
+                aaCenter.AA_SendMessage(invitedPlayer, 1, msg.c_str());
+                return;
+            }
+            if (aaCenter.aa_world_confs[106].value1 > 0) {
+                int32 level = invitingPlayer->GetLevel() - invitedPlayer->GetLevel();
+                level = level < 0 ? -level : level;
+                if (level > aaCenter.aa_world_confs[106].value1) {
+                    std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
+                    aaCenter.AA_SendMessage(invitedPlayer, 1, msg.c_str());
+                    return;
+                }
+            }
+        }
     }
 
     // restrict invite to GMs

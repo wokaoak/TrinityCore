@@ -67,6 +67,7 @@
 #include "ChatPackets.h"
 #include "Map.h"
 #include <random>
+#include "GameObject.h"
 
 #include <iostream>
 #include <sstream>
@@ -3993,7 +3994,7 @@ bool AACenter::M_CanNeed(Player* player, uint32 needid, uint32 count, bool notic
                 aaCenter.AA_SendMessage(player, 0, str.c_str());
             }
             aaCenter.AA_SendMessage(player, 0, "╚┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╝");
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000条件不足|r");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000条件不足|r");
         }
     }
 
@@ -5040,9 +5041,9 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
         if (!pProto) return 0;
     }
     else {
-        if (!pItem) { aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000物品不存在。"); return 0; }
+        if (!pItem) { aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return 0; }
         pProto = pItem->GetTemplate();
-        if (!pProto) { aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000物品不存在。"); return 0; }
+        if (!pProto) { aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return 0; }
         //1、过滤不参与鉴定的物品
         AA_Character_Instance a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
         //2、获取鉴定conf
@@ -5062,7 +5063,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
                 }
                 uint32 xlzu = aaCenter.aa_item_jianding_xls[pProto->GetId()].zu;
                 zu = xlzu > 0 ? xlzu : zu;
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00洗炼成功");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00洗炼成功");
             }
             std::vector<uint32> conf_ids = aaCenter.aa_item_nonsuch_zus[zu];
             //获取总chance，分母
@@ -6193,7 +6194,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
             aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000物品不存在。"); return;
         }
         //        if (pItem->IsEquipped())
-        //        {aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;}
+        //        {aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;}
         ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
         AA_Character_Instance a_conf = aa_character_instances[guidlow];
         uint32 zu = a_conf.qh_zu;
@@ -6560,7 +6561,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
     try {
         if (!pItem || !pItem->IsInWorld())
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000物品不存在。"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return;
         }
         ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
         AA_Character_Instance a_conf = aa_character_instances[guidlow];
@@ -6587,7 +6588,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
         AA_Item_Level conf = aaCenter.aa_item_levels[confid];
         if (conf.distribution != 0 && conf.distribution != 1)
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000系统错误qh002"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000系统错误qh002"); return;
         }
         if (conf.zu != oldconf.zu && oldconf.level > 0) { return; }
         //增加百分比
@@ -6688,7 +6689,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
     }
     catch (std::exception const& e)
     {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000异常错误qh001");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000异常错误qh001");
     }
 }
 
@@ -6698,7 +6699,7 @@ void AACenter::M_FuWenKaichao(Player* player, Item* pItem, uint32 count)
     if (!pItem || !pItem->IsInWorld()) { return; }
     if (pItem->IsEquipped())
     {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
     }
     //符文功能是否开启
     if (aaCenter.aa_world_confs[39].value1 == 0) {
@@ -6706,7 +6707,7 @@ void AACenter::M_FuWenKaichao(Player* player, Item* pItem, uint32 count)
     }
     AA_Character_Instance c_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
     if (c_conf.fw_count + count > 9) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000最多只能开启9个凹槽。"); return;
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000最多只能开启9个凹槽。"); return;
     }
 
     if (aaCenter.aa_world_confs[41].value2 != "" && aaCenter.aa_world_confs[41].value2 != "0") {
@@ -6725,7 +6726,7 @@ void AACenter::M_FuWenKaichao(Player* player, Item* pItem, uint32 count)
     }
 
     c_conf.fw_count += count;
-    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00成功增加凹槽");
+    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00成功增加凹槽");
     time_t timep;
     time(&timep); /*当前time_t类型UTC时间*/
     c_conf.update_time = timep;
@@ -6739,7 +6740,7 @@ void AACenter::M_FuWenChaixie(Player* player, Item* pItem, uint32 index, bool cl
     if (!pItem || !pItem->IsInWorld() || index > 8) { return; }
     if (pItem->IsEquipped())
     {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
     }
     //符文功能是否开启
     if (aaCenter.aa_world_confs[39].value1 == 0) {
@@ -6756,13 +6757,13 @@ void AACenter::M_FuWenChaixie(Player* player, Item* pItem, uint32 index, bool cl
             }
         }
         if (!isOk) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000没有可拆卸的符文。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000没有可拆卸的符文。");
             return;
         }
     }
     else {
         if (fw_ids.size() > index && fw_ids[index] == 0) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000没有可拆卸的符文。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000没有可拆卸的符文。");
             return;
         }
     }
@@ -6784,7 +6785,7 @@ void AACenter::M_FuWenChaixie(Player* player, Item* pItem, uint32 index, bool cl
             fw_ids[index] = 0;
         }
     }
-    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00符文拆卸成功");
+    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00符文拆卸成功");
     std::string fw_values = "";
     aaCenter.AA_VectorIntToString(fw_values, fw_ids, ",");
     c_conf.fw_values = fw_values;
@@ -6815,17 +6816,17 @@ void AACenter::M_FuWenXiangqian(Player* player, Item* pItem, std::vector<int32> 
     if (!pItem || !pItem->IsInWorld() || c_conf.fw_count == 0 || fwItems.size() == 0 || fwItems.size() > 9) { return; }
     if (pItem->IsEquipped())
     {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
     }
     for (size_t i = 0; i < fwItems.size(); i++) {
         int32 fw_id = fwItems[i];
         int32 fw_entry = fwEntrys[i];
         if (fw_id > 0) {
             if (fw_ids[i] > 0 && fw_id != fw_ids[i]) { // 有符文
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000凹槽已经装备符文"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000凹槽已经装备符文"); return;
             }
             if (i > (c_conf.fw_count - 1)) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000凹槽未开启"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000凹槽未开启"); return;
             }
             //问题代码
             ObjectGuid::LowType guidlow = aaCenter.AA_GetRealItemGuid(fw_id, fw_entry);
@@ -6888,7 +6889,7 @@ void AACenter::M_FuWenXiangqian(Player* player, Item* pItem, std::vector<int32> 
         }
     }
     if (isOk) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00符文镶嵌成功");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00符文镶嵌成功");
         std::string fw_values = "";
         aaCenter.AA_VectorIntToString(fw_values, fw_ids, ",");
         c_conf.fw_values = fw_values;
@@ -7111,11 +7112,11 @@ bool AACenter::AA_HasBaoshi(Player* player, uint32 itemid)
 void AACenter::M_ChangeItemName(Player* player, Item* pItem, std::string name)
 {
     if (!pItem || !pItem->IsInWorld()) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000物品不存在。");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。");
         return;
     }
     if (name.length() == 0 || name.length() > 36) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000输入名字过长");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000输入名字过长");
         return;
     }
     uint32 needid = aaCenter.aa_world_confs[22].value1;
@@ -7133,7 +7134,7 @@ void AACenter::M_ChangeItemName(Player* player, Item* pItem, std::string name)
     aaCenter.aa_character_instances[guidlow].name = name;
     aaCenter.aa_character_instances[guidlow].update_time = timep;
     sAAData->AA_REP_Character_Instances.insert(guidlow);
-    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00改名成功");
+    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00改名成功");
 }
 
 void AACenter::M_GetSpellText(Player* player, std::vector<uint32> spellIds, std::vector<uint32> spellTimes)
@@ -7702,7 +7703,8 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix, std::string msg
             j++;
             result += "["; result += std::to_string(it.id); result += "]={";
             result += std::to_string(it.type); result += ",";
-            result += std::to_string(it.open); result += ",\"";
+            result += std::to_string(it.open_main); result += ",";
+            result += std::to_string(it.open_menu); result += ",\"";
             result += it.title; result += "\",\"";
             result += it.icon_path; result += "\",";
             result += std::to_string(it.icon_spell); result += ",";
@@ -7718,59 +7720,58 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix, std::string msg
         }
     }
     else if (prefix == "1002") { //等级奖励
-        std::vector<int32> levelv; levelv.clear();
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters conf = aaCenter.aa_characterss[guidlow];
         AA_Characters_Junxian jxconf = aaCenter.aa_characters_junxians[guidlow];
         AA_Characters_Douqi dqconf = aaCenter.aa_characters_douqis[guidlow];
         AA_Characters_Dianfeng dfconf = aaCenter.aa_characters_dianfengs[guidlow];
-        std::string levels = conf.shengji;
-        aaCenter.AA_StringToVectorInt(levels, levelv, ",");
+        std::map<int32, int32> levels; levels.clear();
+        aaCenter.AA_StringToMap(aaCenter.aa_characterss[guidlow].shengji, levels);
         std::string result = "{";//{[id]="text",[id]="text"}
         int j = 0;
-        size_t count = aaCenter.aa_reward_levels.size();
-        for (size_t i = 0; i < count; i++) {
-            uint32 index = aaCenter.aa_reward_levels[i];
-            AA_Reward_Level_Conf it = aaCenter.aa_reward_level_confs[index];
+        size_t count = aaCenter.aa_reward_level_confs.size();
+        int i = 0;
+        for (auto itr : aa_reward_level_confs) {
+            uint32 id = itr.first;
+            AA_Reward_Level_Conf conf = itr.second;
             int status = 0; // 0可领取 1已领取 2未达到
-            if (it.type == 0) { //等级类型(0普通1vip2军衔3斗气4巅峰)
-                if (player->GetLevel() < index) {
+            if (conf.type == 0) { //等级类型(0普通1vip2军衔3斗气4巅峰)
+                if (player->GetLevel() < conf.level) {
                     status = 2;
                 }
             }
-            else if (it.type == 1) {
+            else if (conf.type == 1) {
                 uint32 accountid = player->GetSession()->GetAccountId();
                 AA_Account a_conf = aaCenter.aa_accounts[accountid];
-                if (a_conf.vip < index) {
+                if (a_conf.vip < conf.level) {
                     status = 2;
                 }
             }
-            else if (it.type == 2) {
-                if (jxconf.level < index) {
+            else if (conf.type == 2) {
+                if (jxconf.level < conf.level) {
                     status = 2;
                 }
             }
-            else if (it.type == 3) {
-                if (dqconf.level < index) {
+            else if (conf.type == 3) {
+                if (dqconf.level < conf.level) {
                     status = 2;
                 }
             }
-            else if (it.type == 4) {
-                if (dfconf.level < index) {
+            else if (conf.type == 4) {
+                if (dfconf.level < conf.level) {
                     status = 2;
                 }
             }
-            for (size_t i = 0; i < levelv.size(); i++) {
-                uint32 leveli = levelv[i];
-                if (leveli == it.level) {
-                    status = 1; break;
-                }
+            if (levels.find(id) != levels.end() && levels[id] > 0) {
+                status = 1;
             }
             j++;
-            result += "["; result += std::to_string(it.level); result += "]={";
+            result += "["; result += std::to_string(conf.id); result += "]={";
+            result += std::to_string(conf.id); result += ",";
+            result += std::to_string(conf.level); result += ",";
             result += std::to_string(status); result += ",";
-            result += std::to_string(it.type); result += ",\"";
-            result += it.text; result += "\"},";
+            result += std::to_string(conf.type); result += ",\"";
+            result += conf.text; result += "\"},";
             if (j > 20 || i == count - 1) {
                 result += "}";
                 aaCenter.AA_StringReplaceLast(result, ",}", "}");
@@ -7778,8 +7779,9 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix, std::string msg
                 result = "{";
                 j = 0;
             }
+            i++;
         }
-    }
+        }
     else if (prefix == "1003") { //个人理财
         uint32 accountid = player->GetSession()->GetAccountId();
         AA_Account a_conf = aaCenter.aa_accounts[accountid];
@@ -10075,7 +10077,7 @@ void AACenter::AA_TelScript(Player* player, AA_Teleport_Conf conf, Item *item) {
                 return;
             }
             if (player->aa_target_item->IsEquipped()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
             }
         }
         if (conf.need > 0) {
@@ -10152,7 +10154,7 @@ bool AACenter::AA_Huishou(Player* player)
         return false;
     }
     if (aaCenter.AA_GetEmptyBag(player) < 5) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包剩余空间不足5个。");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包剩余空间不足5个。");
         return false;
     }
     bool isOk = false;
@@ -10169,7 +10171,7 @@ bool AACenter::AA_Hecheng(Player* player)
         return false;
     }
     if (aaCenter.AA_GetEmptyBag(player) < 5) {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包剩余空间不足5个。");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包剩余空间不足5个。");
         return false;
     }
     if (player->aa_item && player->aa_item->IsInWorld() && player->aa_target_item && player->aa_target_item->IsInWorld()) {
@@ -10264,7 +10266,7 @@ bool AACenter::AA_Chaixie(Player* player, int32 index)
 {
     if (player->aa_target_item && player->aa_target_item->GetState() != ITEM_REMOVED && player->aa_target_item->IsInWorld()) {
         if (aaCenter.AA_GetEmptyBag(player) < 5) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包剩余空间不足5个。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包剩余空间不足5个。");
             return false;
         }
         uint32 m_index = 0;
@@ -10340,7 +10342,7 @@ bool AACenter::AA_Jiebang(Player* player)
         uint32 entry = player->aa_target_item->GetEntry();
         AA_Jiebang_Conf conf = aaCenter.aa_jiebang_confs[entry];
         if (conf.itemid == 0) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法解绑。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法解绑。");
             return false;
         }
         if (conf.need > 0) {
@@ -10383,7 +10385,7 @@ bool AACenter::AA_Chengzhang_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.items, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) == items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10391,7 +10393,7 @@ bool AACenter::AA_Chengzhang_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.pcitems, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) != items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10403,7 +10405,7 @@ bool AACenter::AA_Chengzhang_Item_Do(Player* player)
         }
         if (!GiveCZXP(player, conf.exp, player->aa_target_item))
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
             return false;
         }
         if (conf.notice > 0) {
@@ -10438,7 +10440,7 @@ bool AACenter::AA_Jianding_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.items, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) == items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10446,7 +10448,7 @@ bool AACenter::AA_Jianding_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.pcitems, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) != items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10545,7 +10547,7 @@ bool AACenter::AA_Qianghua_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.items, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) == items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10553,7 +10555,7 @@ bool AACenter::AA_Qianghua_Item_Do(Player* player)
                 std::vector<int32> items; items.clear();
                 aaCenter.AA_StringToVectorInt(conf.pcitems, items, ",");
                 if (std::find(items.begin(), items.end(), pProto->GetId()) != items.end()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                     return false;
                 }
             }
@@ -10873,11 +10875,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
         return;
     }
     if (prefix == "" || receivemsg == "" || receivemsg.length() == 0) { return; }
-    //    if (prefix == "1" || prefix == "2" || prefix == "3" || prefix == "4" || prefix == "5" || prefix == "6" || prefix == "7" || prefix == "8" || prefix == "9" || prefix == "10") {
-    //        if (!aaCenter.AA_VerifyCode("a5b")) {
-    //            return;
-    //        }
-    //    }
     try {
         std::string msg = receivemsg;
         std::vector<std::string> msgs;
@@ -10918,7 +10915,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     aaCenter.M_UpgradeItem(player, pItem);
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -10939,10 +10936,10 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         }
                         AA_Character_Instance a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
                         if (a_conf.jd_zu == 0) {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法洗炼。"); return;
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼。"); return;
                         }
                         if (pItem->IsEquipped()) {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                         }
                         uint32 noticeid = aaCenter.M_NonsuchItem(player, pItem, a_conf.jd_zu, -1);
                         if (noticeid > 0) {
@@ -10967,7 +10964,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_ChangeItemName(player, pItem, msgs[2]);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -10998,7 +10995,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_FuWenChaixie(player, pItem, index, false);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -11015,7 +11012,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_FuWenKaichao(player, pItem, 1);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -11033,7 +11030,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 return;
             }
             if (pItem->IsEquipped()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
             }
             std::vector<std::string> fwstrs;
             fwstrs.clear();
@@ -11066,14 +11063,14 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     uint32 jdid = aaCenter.aa_character_instances[guidlow].jd_id;
                     if (jdid == 0) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000d该物品无法重铸。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
                     }
                     if (aaCenter.M_NonsuchItemFmValue(player, pItem, jdid, 0)) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重铸成功");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重铸成功");
                     }
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
                 }
@@ -11091,14 +11088,14 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     uint32 jdid = aaCenter.aa_character_instances[guidlow].jd_id;
                     if (jdid == 0) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000d该物品无法重铸。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
                     }
                     if (aaCenter.M_NonsuchItemFmSpell(player, pItem, jdid, 0)) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重铸成功");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重铸成功");
                     }
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
                 }
@@ -11325,7 +11322,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         player->guajiTime = 0;
                         player->guajiyanzhengtime = 0;
                         player->codetime = 0;
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00验证成功");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00验证成功");
                         return;
                     }
                     int32 cishu = player->codecishu - 1;
@@ -11342,7 +11339,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         }
                     }
                     else {
-                        std::string m1 = "|cff00FFFF[系统提示]|cffFF0000验证错误，你还有" + std::to_string(player->codecishu) + "次验证机会";
+                        std::string m1 = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000验证错误，你还有" + std::to_string(player->codecishu) + "次验证机会";
                         aaCenter.AA_SendMessage(player, 1, m1.c_str());
                         aaCenter.AA_SendMessage(player, 1, m1.c_str());
                         aaCenter.AA_SendMessage(player, 1, m1.c_str());
@@ -11428,7 +11425,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
         }
         else if (prefix == "10011") { //点击活动公告栏接受
             if (player->IsInCombat()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000战斗中无法使用!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战斗中无法使用!");
                 return;
             }
             if (msgs.size() == 0) { return; }
@@ -11437,7 +11434,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             if (conf.id > 0) {
                 //判断活动是否激活
                 if (!sGameEventMgr->IsActiveEvent(conf.game_event)) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000当前活动还未开始!");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000当前活动还未开始!");
                     return;
                 }
                 //开始执行
@@ -11501,10 +11498,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             aaCenter.M_SendAA_Conf(player, prefix);
          }
         else if (prefix == "1016") { //点开商城-购买商品-物品id
-            if (!aaCenter.AA_VerifyCode("a105b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[商城]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
-                return;
-            }
             if (msgs.size() < 3) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             uint32 ye = aaCenter.AA_StringUint32(msgs[1]);
@@ -11565,11 +11558,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "1017") { //获取一页双甲数据
-            //aaCenter.M_SendAA_Conf(player, prefix);
-            if (!aaCenter.AA_VerifyCode("a106b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             uint32 ye = aaCenter.AA_StringUint32(msgs[0]);
             if (ye == 0) {
@@ -11589,10 +11577,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "1018") { //镶嵌魂玉，如果有魂玉，就拆除魂玉再镶嵌
-            if (!aaCenter.AA_VerifyCode("a106b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 5) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 index = aaCenter.AA_StringUint32(msgs[1]);
@@ -11612,7 +11596,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             std::vector<int32> v; v.clear();
             aaCenter.AA_StringToVectorInt(conf.items, v, ",");
             if (index > v.size()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000插槽错误");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000插槽错误");
                 return;
             }
             AA_Caiji_Item cj_conf;
@@ -11636,7 +11620,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     if (conf1.entry == entry) {
                         cj_conf = conf1;
                         if (cj_conf.is_shuangjia == 0) {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法进行此操作");
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法进行此操作");
                             return;
                         }
                         isOk = true;
@@ -11650,11 +11634,11 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                             if (conf1.entry == i_conf.itemEntry) {
                                 AA_Item_Shuangjia_Xianzhi conf = aaCenter.aa_item_shuangjia_xianzhis[zu];
                                 if (conf.xiangqian == 1 && m.begin()->first == id) {
-                                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该类型物品每页只允许镶嵌1个");
+                                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该类型物品每页只允许镶嵌1个");
                                     return;
                                 }
                                 if (conf.xiangqian == 2) {
-                                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该类型物品只允许镶嵌1个");
+                                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该类型物品只允许镶嵌1个");
                                     return;
                                 }
                             }
@@ -11662,7 +11646,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     }
                 }
                 if (!isOk) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法进行此操作");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法进行此操作");
                     return;
                 }
 
@@ -11691,11 +11675,11 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                                 std::map<int32, int32> m; m.clear();
                                 aaCenter.AA_StringToMap(i_conf.weizhi, m);
                                 if (cj_conf.xiangqian == 1 && m.begin()->first == id && entry == i_conf.itemEntry) {
-                                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品每页只允许镶嵌1个");
+                                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品每页只允许镶嵌1个");
                                     return;
                                 }
                                 if (cj_conf.xiangqian == 2 && entry == i_conf.itemEntry) {
-                                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品只允许镶嵌1个");
+                                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品只允许镶嵌1个");
                                     return;
                                 }
                             }
@@ -11769,10 +11753,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "1019") { //双击魂玉，拆除魂玉
-            if (!aaCenter.AA_VerifyCode("a106b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 3) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 index = aaCenter.AA_StringUint32(msgs[1]);
@@ -11784,10 +11764,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             aaCenter.M_SendAA_Conf(player, prefix);
         }
         else if (prefix == "3001") { //自定义ui传送点击传送
-            if (!aaCenter.AA_VerifyCode("a300b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 miyao = aaCenter.AA_StringUint32(msgs[0]);
             uint32 id = aaCenter.AA_StringUint32(msgs[1]);
@@ -11802,10 +11778,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3020") { //自定义ui时装点击激活
-            if (!aaCenter.AA_VerifyCode("a301b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             uint32 index = aaCenter.AA_StringUint32(msgs[1]);
@@ -11922,10 +11894,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3021") { //自定义ui时装点击保存形象
-            if (!aaCenter.AA_VerifyCode("a301b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             uint32 index = aaCenter.AA_StringUint32(msgs[1]);
@@ -11963,7 +11931,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         player->SetObjectScale(1);
                         std::string gm = ".组合 *.变身 " + std::to_string(ci->GetModelByIdx(0)->CreatureDisplayID) + " " + std::to_string(conf.scale) + "<$自身>";
                         aaCenter.AA_DoCommand(player, gm.c_str());
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00变身成功，再次保存外观可以取消变身！");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00变身成功，再次保存外观可以取消变身！");
                     }
                     else {
                         aaCenter.aa_bianshen1[player->GetGUIDLow()] = 0;
@@ -11979,14 +11947,10 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 }
             }
             else {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法保存外观，没有激活!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法保存外观，没有激活!");
             }
         }
         else if (prefix == "3023") { //自定义ui时装 获取一页数据
-            if (!aaCenter.AA_VerifyCode("a301b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             if (lan < 101) {
@@ -11995,10 +11959,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             _AA_Shizhuang_3023(player, lan);
         }
         else if (prefix == "3030") { //自定义ui神器 点击激活
-            if (!aaCenter.AA_VerifyCode("a302b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             uint32 index = aaCenter.AA_StringUint32(msgs[1]);
@@ -12117,10 +12077,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3031") { //自定义ui神器 获取一页数据
-            if (!aaCenter.AA_VerifyCode("a302b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             uint32 lan = aaCenter.AA_StringUint32(msgs[0]);
             if (lan < 201) {
@@ -12129,10 +12085,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             _AA_Shenqi_3031(player, lan);
         }
         else if (prefix == "3040") { //自定义ui捐献 获取个人数据
-            if (!aaCenter.AA_VerifyCode("a303b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             //1、单位，个人捐献，最少捐献
             //2、排名，玩家信息，捐赠数量，称号物品
             //3、是否激活，光环描述
@@ -12227,10 +12179,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3041") { //自定义ui捐献 捐献
-            if (!aaCenter.AA_VerifyCode("a303b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             ObjectGuid::LowType guidlow = player->GetGUIDLow();
             uint32 juanxian = aaCenter.AA_StringUint32(msgs[0]);
@@ -12246,7 +12194,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             if (jconf.juanxian == 0) {
                 uint32 zuishao = aaCenter.aa_world_confs[94].value1;
                 if (juanxian < zuishao) {
-                    std::string zs = "|cff00FFFF[系统提示]|cffFF0000第一次最少捐献" + std::to_string(zuishao) + danwei;
+                    std::string zs = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000第一次最少捐献" + std::to_string(zuishao) + danwei;
                     aaCenter.AA_SendMessage(player, 1, zs.c_str());
                     return;
                 }
@@ -12268,48 +12216,40 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 aaCenter.aa_character_juanxians[guidlow].name = player->GetName();
                 sAAData->AA_REP_Character_Juanxians.insert(guidlow);
                 aaCenter.aa_character_juanxians[guidlow].update_time = timep;
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00捐献成功!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00捐献成功!");
                 aaCenter.M_SendClientAddonData(player, "3044", "{1}");
 
                 //刷新数据，重置当前玩家捐献数量属性，重置所有玩家排行光环
                 aaCenter.AA_UpdateJuanxianPaihang();
             } else {
-                std::string msg = "|cff00FFFF[系统提示]|cffFF0000你的" + danwei + "不足"+ std::to_string(juanxian) +"，无法捐献。|r";
+                std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的" + danwei + "不足"+ std::to_string(juanxian) +"，无法捐献。|r";
                 aaCenter.AA_SendMessage(player, 1, msg.c_str());
             }
         }
         else if (prefix == "3050") { //自定义ui集结号 请求队伍信息
-            if (!aaCenter.AA_VerifyCode("a304b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             aaCenter.M_SendAA_Conf(player, prefix);
         }
         else if (prefix == "3051") { //自定义ui集结号 请求列表信息
             aaCenter.M_SendAA_Conf(player, prefix);
         }
         else if (prefix == "3052") { //自定义ui集结号 创建活动
-            if (!aaCenter.AA_VerifyCode("a304b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             std::string msg = msgs[1];
             if (id == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请选择你要创建的活动地图!"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请选择你要创建的活动地图!"); return;
             }
             AA_UI_Jijie conf = aaCenter.aa_ui_jijies[id];
             if (conf.id == 0) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000系统错误3052"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000系统错误3052"); return;
             }
             if (conf.time == 0) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000系统错误3052"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000系统错误3052"); return;
             }
             if (msg == "" || msg == "输入活动说明") {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请输入活动说明!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请输入活动说明!");
                 return;
             }
             if (conf.need > 0) {
@@ -12336,7 +12276,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
             ObjectGuid::LowType guidlow = player->GetGUIDLow();
             if (std::find(aaCenter.aa_jijie_guidlows.begin(), aaCenter.aa_jijie_guidlows.end(), guidlow) != aaCenter.aa_jijie_guidlows.end()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你无法创建多个活动"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你无法创建多个活动"); return;
             }
             aaCenter.aa_jijie_guidlows.push_back(guidlow);
             player->aa_jijie_guidlow = guidlow;
@@ -12350,10 +12290,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3053") { //自定义ui集结号 加入活动
-            if (!aaCenter.AA_VerifyCode("a304b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             uint32 index = aaCenter.AA_StringUint32(msgs[0]);
             if (index == 0) {
@@ -12362,12 +12298,12 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             index = index - 1;
             if (player->aa_jijie_guidlow > 0) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法加入多个活动!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法加入多个活动!");
                 return;
             }
             if (aaCenter.aa_jijie_guidlows.size() <= index) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该活动不存在!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该活动不存在!");
                 return;
             }
             ObjectGuid::LowType guidlow_dz = aaCenter.aa_jijie_guidlows[index];
@@ -12375,12 +12311,12 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             AA_UI_Jijie conf = aaCenter.aa_ui_jijies[id];
             if (guidlow_dz == 0) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该活动不存在!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该活动不存在!");
                 return;
             }
             if (aaCenter.aa_jijie_times[index] == 0) {
                 aaCenter.M_SendAA_Conf(player, "3050");
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该活动已经结束!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该活动已经结束!");
                 return;
             }
             if (conf.need > 0) {
@@ -12393,7 +12329,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
             player->aa_jijie_guidlow = guidlow_dz;
 
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00加入成功，请等待活动开启！");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00加入成功，请等待活动开启！");
 
             //集结号
             //2、人数满了强行开启活动
@@ -12451,10 +12387,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3054") { //自定义ui集结号 离开活动
-            if (!aaCenter.AA_VerifyCode("a304b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-                return;
-            }
             if (msgs.size() < 1) { return; }
             uint32 index = aaCenter.AA_StringUint32(msgs[0]);
             if (index == 0) {
@@ -12525,10 +12457,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3061") { //自定义ui锁定洗炼 锁定技能
-            if (!aaCenter.AA_VerifyCode("a406b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
-                return;
-            }
             if (msgs.size() < 3) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 entry = aaCenter.AA_StringUint32(msgs[1]);
@@ -12593,11 +12521,8 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3062") { //自定义ui锁定洗炼 锁定属性
-            if (!aaCenter.AA_VerifyCode("a406b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
-                return;
-            }
             if (msgs.size() < 3) { return; }
+            if (!aaCenter.AA_VerifyCode("a406b")) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 entry = aaCenter.AA_StringUint32(msgs[1]);
             uint32 index = aaCenter.AA_StringUint32(msgs[2]);
@@ -12661,10 +12586,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3063") { //自定义ui锁定洗炼 洗炼技能
-            if (!aaCenter.AA_VerifyCode("a406b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 entry = aaCenter.AA_StringUint32(msgs[1]);
@@ -12699,10 +12620,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
             }
         }
         else if (prefix == "3064") { //自定义ui锁定洗炼 洗炼属性
-            if (!aaCenter.AA_VerifyCode("a406b")) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
-                return;
-            }
             if (msgs.size() < 2) { return; }
             uint32 id = aaCenter.AA_StringUint32(msgs[0]);
             uint32 entry = aaCenter.AA_StringUint32(msgs[1]);
@@ -14291,7 +14208,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_鉴定_未鉴定时显示 用时 {} 毫秒", (unsigned long)aa_jianding_displays.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a305b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_活跃度...");
         uint32 oldMSTime = getMSTime();
         aa_huoyue_confs.clear();
@@ -14315,7 +14232,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_活跃度 用时 {} 毫秒", (unsigned long)aa_huoyue_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a305b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_活跃度_奖励...");
         uint32 oldMSTime = getMSTime();
         aa_huoyue_jieduans.clear();
@@ -14337,7 +14254,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_活跃度_奖励 用时 {} 毫秒", (unsigned long)aa_huoyue_jieduans.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a215b")) {
         TC_LOG_INFO("server.loading", "正在加载 _活动_攻城战...");
         uint32 oldMSTime = getMSTime();
         aa_gongcheng_confs.clear();
@@ -14371,7 +14288,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _活动_攻城战 用时 {} 毫秒", (unsigned long)aa_gongcheng_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a214b")) {
         TC_LOG_INFO("server.loading", "正在加载 _活动_抢占资源...");
         uint32 oldMSTime = getMSTime();
         aa_ziyuan_confs.clear();
@@ -14405,7 +14322,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _活动_抢占资源 用时 {} 毫秒", (unsigned long)aa_ziyuan_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a405b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义_任务...");
         uint32 oldMSTime = getMSTime();
         aa_quests.clear();
@@ -14487,7 +14404,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _一命模式 用时 {} 毫秒", (unsigned long)aa_yiming_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a107b")) {
         TC_LOG_INFO("server.loading", "正在加载 _物品_租赁...");
         uint32 oldMSTime = getMSTime();
         aa_item_zulins.clear();
@@ -14504,7 +14421,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_租赁 用时 {} 毫秒", (unsigned long)aa_item_zulins.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a213b")) {
         TC_LOG_INFO("server.loading", "正在加载 _活动_首领争霸...");
         uint32 oldMSTime = getMSTime();
         aa_shouling_confs.clear();
@@ -14531,7 +14448,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _活动_首领争霸 用时 {} 毫秒", (unsigned long)aa_shouling_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a400b")) {
         TC_LOG_INFO("server.loading", "正在加载 _活动_答题x...");
         uint32 oldMSTime = getMSTime();
         aa_dati_confs.clear();
@@ -14598,7 +14515,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _模板_技能 用时 {} 毫秒", (unsigned long)aa_spellid_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a211b")) {
         TC_LOG_INFO("server.loading", "正在加载 _活动_比武大会...");
         uint32 oldMSTime = getMSTime();
         aa_biwu_confs.clear();
@@ -14707,7 +14624,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _模板_随机套装 用时 {} 毫秒", (unsigned long)aa_item_sets.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a303b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_捐献_排名奖励x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_juanxian_paimings.clear();
@@ -14724,7 +14641,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_捐献_排名奖励x 用时 {} 毫秒", (unsigned long)aa_ui_juanxian_paimings.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a303b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_捐献_数量奖励x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_juanxian_shuliangs.clear();
@@ -14741,7 +14658,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_捐献_数量奖励x 用时 {} 毫秒", (unsigned long)aa_ui_juanxian_shuliangs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a304b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_集结号x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_jijies.clear();
@@ -14764,7 +14681,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_集结号x 用时 {} 毫秒", (unsigned long)aa_ui_jijies.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a302b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_神器x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_shenqis.clear();
@@ -14791,7 +14708,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_神器x 用时 {} 毫秒", (unsigned long)aa_ui_shenqis.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a301b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_时装x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_shizhuangs.clear();
@@ -14813,7 +14730,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_时装x 用时 {} 毫秒", (unsigned long)aa_ui_shizhuangs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a300b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_传送x...");
         uint32 oldMSTime = getMSTime();
         aa_ui_chuansongs.clear();
@@ -14836,7 +14753,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_传送x 用时 {} 毫秒", (unsigned long)aa_ui_chuansongs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a106b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_收集x...");
         uint32 oldMSTime = getMSTime();
         aa_item_shuangjias.clear();
@@ -14857,7 +14774,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_收集x 用时 {} 毫秒", (unsigned long)aa_item_shuangjias.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a106b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义ui_收集_限制x...");
         uint32 oldMSTime = getMSTime();
         aa_item_shuangjia_xianzhis.clear();
@@ -14873,7 +14790,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ui_收集_限制x 用时 {} 毫秒", (unsigned long)aa_item_shuangjia_xianzhis.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a105b")) {
         TC_LOG_INFO("server.loading", "正在加载 _商城x...");
         uint32 oldMSTime = getMSTime();
         aa_shops.clear();
@@ -14994,7 +14911,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _属性调整_光环 用时 {} 毫秒", (unsigned long)aa_aura_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a104b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_翻牌x...");
         uint32 oldMSTime = getMSTime();
         aa_fanpais.clear();
@@ -15038,7 +14955,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _活动_公告栏x 用时 {} 毫秒", (unsigned long)aa_huodong_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a202b")) {
         TC_LOG_INFO("server.loading", "正在加载 _物品_每日购买次数x...");
         uint32 oldMSTime = getMSTime();
         aa_buy_times.clear();
@@ -15100,7 +15017,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _奖励_兑换码_领取限制 用时 {} 毫秒", (unsigned long)aa_duihuanma_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a100b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_抽奖x...");
         uint32 oldMSTime = getMSTime();
         aa_choujiangs.clear();
@@ -15122,7 +15039,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _奖励_抽奖x 用时 {} 毫秒", (unsigned long)aa_choujiangs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a200b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_排行榜x...");
         uint32 oldMSTime = getMSTime();
         aa_paihangxs.clear();
@@ -16710,7 +16627,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_回收 用时 {} 毫秒", (unsigned long)aa_huishou_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a5b")) {
         TC_LOG_INFO("server.loading", "正在加载 _自定义Ai...");
         uint32 oldMSTime = getMSTime();
         aa_ais.clear();
@@ -16895,13 +16812,14 @@ void AACenter::LoadAAData_World()
                 AA_Desktop_Conf conf;
                 conf.id = fields[1].GetUInt32();
                 conf.type = fields[2].GetUInt32();
-                conf.open = fields[3].GetUInt32();
-                conf.title = fields[4].GetString();
-                conf.icon_path = fields[5].GetString();
-                conf.icon_spell = fields[6].GetUInt32();
-                conf.icon_item = fields[7].GetUInt32();
-                conf.gm = fields[8].GetString();
-                conf.www = fields[9].GetString();
+                conf.open_main = fields[3].GetUInt32();
+                conf.open_menu = fields[4].GetUInt32();
+                conf.title = fields[5].GetString();
+                conf.icon_path = fields[6].GetString();
+                conf.icon_spell = fields[7].GetUInt32();
+                conf.icon_item = fields[8].GetUInt32();
+                conf.gm = fields[9].GetString();
+                conf.www = fields[10].GetString();
                 aa_desktops.push_back(conf.id);
                 aa_desktop_confs[conf.id] = conf;
             } while (result->NextRow());
@@ -16909,35 +16827,36 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _客户端_图标 用时 {} 毫秒", (unsigned long)aa_desktop_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a4b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_等级...");
 
         uint32 oldMSTime = getMSTime();
 
-        aa_reward_levels.clear();
-        aa_reward_level_confs.clear();                              // need for reload case
+        aa_reward_level_confs.clear();
+        aa_reward_level_conf_zus.clear();                              // need for reload case
 
         //                                               0      1       2     3
-        QueryResult result = WorldDatabase.Query("SELECT * FROM _奖励_等级 ORDER BY level");
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _奖励_等级 ORDER BY id");
         if (result) {
             do {
                 Field* fields = result->Fetch();
 
                 AA_Reward_Level_Conf conf;
-                conf.level = fields[1].GetUInt32();
-                conf.type = fields[2].GetUInt32();
-                conf.reward = fields[3].GetUInt32();
-                conf.count = fields[4].GetUInt32();
-                conf.notice = fields[5].GetUInt32();
-                conf.text = fields[6].GetString();
-                aa_reward_levels.push_back(conf.level);
-                aa_reward_level_confs[conf.level] = conf;
+                conf.id = fields[1].GetUInt32();
+                conf.level = fields[2].GetUInt32();
+                conf.type = fields[3].GetUInt32();
+                conf.reward = fields[4].GetUInt32();
+                conf.count = fields[5].GetUInt32();
+                conf.notice = fields[6].GetUInt32();
+                conf.text = fields[7].GetString();
+                aa_reward_level_confs[conf.id] = conf;
+                aa_reward_level_conf_zus[conf.type].push_back(conf.id);
             } while (result->NextRow());
 
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _奖励_等级 用时 {} 毫秒", (unsigned long)aa_reward_level_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a3b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_首充...");
 
         uint32 oldMSTime = getMSTime();
@@ -16964,7 +16883,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _奖励_首充 用时 {} 毫秒", (unsigned long)aa_reward_shouchong_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a2b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_理财...");
 
         uint32 oldMSTime = getMSTime();
@@ -16992,7 +16911,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _奖励_理财 用时 {} 毫秒", (unsigned long)aa_reward_licai_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a1b")) {
         TC_LOG_INFO("server.loading", "正在加载 _奖励_累充...");
 
         uint32 oldMSTime = getMSTime();
@@ -17101,7 +17020,7 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_符文组合 用时 {} 毫秒", (unsigned long)aa_fwzh_confs.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
-    {
+    if (aaCenter.AA_VerifyCode("a102b")) {
         TC_LOG_INFO("server.loading", "正在加载 _生物_伤害排行x...");
         uint32 oldMSTime = getMSTime();
         aa_boss_confs.clear();
@@ -17317,6 +17236,18 @@ void AACenter::LoadAAData_World()
                 aa_caiji_creature_zus[conf.zu].push_back(conf.id);
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 __采集_生物 用时 {} 毫秒", (unsigned long)aa_caiji_creatures.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
+
+    //验证权限
+    if (!aaCenter.AA_VerifyCode("a205b")) {
+        for (auto& it : aaCenter.aa_stats) {
+            AA_Stat conf = it.second;
+            if (conf.type >= 400) {
+                aaCenter.aa_stats[it.first].value = 0;
+                aaCenter.aa_stats[it.first].point = 0;
+                aaCenter.aa_stats[it.first].chance = 0;
+            }
         }
     }
 }
@@ -18274,9 +18205,6 @@ AA_Paihang AACenter::AA_GetPaihangs()
 
 std::string AACenter::AA_GetPaihangInfo(std::string& message, AA_Paihang conf)
 {
-    if (!aaCenter.AA_VerifyCode("a200b")) {
-        return "请联系QQ643125009开通";
-    }
     if (message.find("<$自定义角色排行数量") != std::string::npos) {
         std::string prestr = "<$自定义角色排行数量";
         std::string diy_key = aaCenter.AA_StringGet(message, prestr, "@");
@@ -20697,33 +20625,38 @@ GameObject* AACenter::AA_Biwu_SpawnGob(ObjectGuid::LowType guid, bool created)
 {
     GameObject* obj = nullptr;
 
-    //GameObjectData const* data = sObjectMgr->GetGameObjectData(guid);
-    //if (!data)
-    //    return obj;
-    ////Get map object
-    //Map* map = sMapMgr->CreateBaseMap(data->mapid);
-    //if (!map)
-    //    return obj;
+    GameObjectData const* data = sObjectMgr->GetGameObjectData(guid);
+    if (!data)
+        return obj;
+    //Get map object
+    Map* map = sMapMgr->FindMap(data->mapId, 0);
+    if (!map)
+        return obj;
 
     //if (created)
     //{
-    //    obj = new GameObject;
+    //    obj = new GameObject();
 
-    //    if (!obj->Create(sObjectMgr->GenerateGameObjectSpawnId(), data->id, map, data->phaseMask, data->posX, data->posY, data->posZ, data->orientation, G3D::Quat(), 0, GO_STATE_READY))
+    //    if (!obj->CreateGameObject(data->id, map, data->spawnPoint, data->rotation, data->animprogress, data->goState, data->artKit))
     //    {
     //        delete obj;
     //        return nullptr;
     //    }
 
-    //    map->AddToMap(obj);
-    //    obj->setActive(true);
-    //    obj->SetPhaseMask(1, true);
     //    aa_biwu_guid = obj->GetGUID();
     //}
     //else
     //{
     //    obj = map->GetGameObject(aa_biwu_guid);
     //}
+    obj = map->GetGameObjectBySpawnId(guid);
+
+    if (!obj || !obj->ToGameObject()) {
+        return nullptr;
+    }
+
+    aa_biwu_guid = obj->GetGUID();
+
     return obj;
 }
 
@@ -20986,10 +20919,6 @@ void AACenter::AA_Biwu_Start()
 
 void AACenter::AA_Biwu_Complete()
 {
-    if (!aaCenter.AA_VerifyCode("a211b")) {
-        aaCenter.AA_SendMessage(nullptr, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
-        return;
-    }
     //判断winners，teams 是否重开
     //如果决斗全部结束，重新开始
     if (aaCenter.aa_biwu_teams.size() == 0)
@@ -21037,11 +20966,6 @@ void AACenter::AA_Biwu_End()
     }
 
     AA_Biwu_Conf conf = aaCenter.aa_biwu_confs[aaCenter.aa_biwu_event_id];
-
-    if (GameObject* gob = aaCenter.AA_Biwu_SpawnGob(conf.guid, false)) {
-        gob->Delete();
-    }
-
     aaCenter.AA_SendMessage(nullptr, 0, "╔┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╗");
     aaCenter.AA_SendMessage(nullptr, 0, "· 比武大会结束，排名前十更新");
     std::set<ObjectGuid::LowType> players; players.clear();
@@ -21129,6 +21053,7 @@ void AACenter::AA_Biwu_End()
         aaCenter.AA_SendMessage(nullptr, 0, "╚┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╝");
     }
 
+    aaCenter.aa_biwu_score.clear();
     aaCenter.aa_biwu_winners.clear();
     aaCenter.aa_biwu_teams.clear();
     aaCenter.aa_biwu_guid = ObjectGuid::Empty;
@@ -22558,9 +22483,6 @@ void AACenter::AA_Gongcheng_End(uint32 teamid)
 
 bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
 {
-    if (!aaCenter.AA_VerifyCode("a202b")) {
-        return true;
-    }
     //aawow 商人购买需要，购买次数限制
     if (aaCenter.aa_buy_times[entry].entry > 0) {
         uint32 accountid = player->GetSession()->GetAccountId();
@@ -22650,9 +22572,6 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
 
 void AACenter::AA_Buy_Time_SetBuyCount(Player* player, uint32 entry, uint32 buycount)
 {
-    if (!aaCenter.AA_VerifyCode("a202b")) {
-        return;
-    }
     if (aaCenter.aa_buy_times[entry].buy_q > 0) {
         uint32 itemId = entry + 100000000;
         std::string gm = ".变量 系统 " + std::to_string(itemId) + " +" + std::to_string(buycount);

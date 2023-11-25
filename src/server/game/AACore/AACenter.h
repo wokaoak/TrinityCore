@@ -1394,6 +1394,7 @@ struct AA_Huishou_Conf
 
 struct AA_Reward_Level_Conf
 {
+    uint32 id = 0;
     uint32 level = 0;
     uint32 type = 0;
     uint32 reward = 0;
@@ -1441,7 +1442,8 @@ struct AA_Desktop_Conf
 {
     uint32 id = 0;
     uint32 type = 0;
-    uint32 open = 0;
+    uint32 open_main = 0;
+    uint32 open_menu = 0;
     std::string title = "";
     std::string icon_path = "";
     uint32 icon_spell = 0;
@@ -2173,8 +2175,8 @@ public:
     std::unordered_map<uint32, AA_World_Conf> aa_world_confs;
     std::unordered_map<uint32, AA_Desktop_Conf> aa_desktop_confs;
     std::vector<uint32> aa_desktops;
-    std::unordered_map<uint32, AA_Reward_Level_Conf> aa_reward_level_confs;
-    std::vector<uint32> aa_reward_levels;
+    std::map<uint32, AA_Reward_Level_Conf> aa_reward_level_confs;
+    std::unordered_map<uint32, std::vector<uint32>> aa_reward_level_conf_zus;
     std::unordered_map<uint32, AA_Reward_Shouchong_Conf> aa_reward_shouchong_confs;
     std::vector<uint32> aa_reward_shouchongs;
     std::unordered_map<uint32, AA_Reward_Licai_Conf> aa_reward_licai_confs;

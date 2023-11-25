@@ -858,6 +858,11 @@ public:
             playerTarget = player;
         }
 
+        if (!aaCenter.AA_VerifyCode("a107b")) {
+            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[物品租赁]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
+            return false;
+        }
+
         char* zustr = strtok((char*)args, " ");
         char* typestr = strtok(nullptr, " ");
 
@@ -1666,10 +1671,10 @@ public:
     }
     static bool AA_HandleLevelCommand(ChatHandler* handler, const char* args)
     {
-        Player* player = handler->GetSession()->GetPlayer();
-
-        if (!player)
+        Player* player = handler->getSelectedPlayerOrSelf();
+        if (!player || !player->IsInWorld()) {
             return false;
+        }
 
         if (!*args)
         {
@@ -2123,9 +2128,6 @@ public:
     }
     static bool AA_fanpaitanchuang(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a104b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return true;
@@ -2170,9 +2172,6 @@ public:
     }
     static bool AA_fanpai(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a104b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return true;
@@ -3409,9 +3408,6 @@ public:
     }
     static bool AA_choujiang(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a100b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return false;
@@ -3698,9 +3694,6 @@ public:
     }
     static bool AA_lingquleichong(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a1b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return false;
@@ -3763,9 +3756,6 @@ public:
     }
     static bool AA_lingqushouchong(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a3b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return false;
@@ -3889,9 +3879,6 @@ public:
     }
     static bool AA_lingqudengji(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a4b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return false;
@@ -3899,66 +3886,73 @@ public:
         char* typestr = strtok((char*)args, " ");
         if (!typestr)
         {
-            ChatHandler(handler->GetSession()).PSendSysMessage("语法格式:.领取等级 索引等级");
+            ChatHandler(handler->GetSession()).PSendSysMessage("语法格式:.领取等级 _奖励_等级_id");
             return false;
         }
-        uint32 level = atoi(typestr);
-        AA_Reward_Level_Conf conf = aaCenter.aa_reward_level_confs[level];
+        uint32 id = atoi(typestr);
+        AA_Reward_Level_Conf conf = aaCenter.aa_reward_level_confs[id];
         if (conf.level > 0) {
-            std::vector<int32> levelv; levelv.clear();
             ObjectGuid::LowType guidlow = player->GetGUIDLow();
             AA_Characters aconf = aaCenter.aa_characterss[guidlow];
             AA_Characters_Junxian jxconf = aaCenter.aa_characters_junxians[guidlow];
             AA_Characters_Douqi dqconf = aaCenter.aa_characters_douqis[guidlow];
             AA_Characters_Dianfeng dfconf = aaCenter.aa_characters_dianfengs[guidlow];
-            std::string levels = aconf.shengji;
-            aaCenter.AA_StringToVectorInt(levels, levelv, ",");
-            bool isOk = false;
-            for (size_t i = 0; i < levelv.size(); i++) {
-                uint32 leveli = levelv[i];
-                if (leveli == conf.level) {
-                    isOk = true; break;
-                }
-            }
+
             if (conf.type == 0) { //等级类型(0普通1vip2军衔3斗气4巅峰)
-                if (player->GetLevel() < level) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000等级不足");
+                if (player->GetLevel() < conf.level) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000等级不足");
                     return false;
                 }
             }
             else if (conf.type == 1) {
                 uint32 accountid = player->GetSession()->GetAccountId();
                 AA_Account a_conf = aaCenter.aa_accounts[accountid];
-                if (a_conf.vip < level) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000等级不足");
+                if (a_conf.vip < conf.level) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000等级不足");
                     return false;
                 }
             }
             else if (conf.type == 2) {
-                if (jxconf.level < level) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000等级不足");
+                if (jxconf.level < conf.level) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000等级不足");
                     return false;
                 }
             }
             else if (conf.type == 3) {
-                if (dqconf.level < level) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000等级不足");
+                if (dqconf.level < conf.level) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000等级不足");
                     return false;
                 }
             }
             else if (conf.type == 4) {
-                if (dfconf.level < level) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000等级不足");
+                if (dfconf.level < conf.level) {
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000等级不足");
                     return false;
                 }
             }
-            if (!isOk) { //没有领取过
-                if (levels == "") {
-                    aaCenter.aa_characterss[player->GetGUIDLow()].shengji = std::to_string(level);
+
+            if (aaCenter.aa_characterss[player->GetGUIDLow()].shengji == "") {
+                for (auto itr : aaCenter.aa_reward_level_confs) {
+                    aaCenter.aa_characterss[player->GetGUIDLow()].shengji = aaCenter.aa_characterss[player->GetGUIDLow()].shengji + "0" + ",";
                 }
-                else {
-                    aaCenter.aa_characterss[player->GetGUIDLow()].shengji = levels + "," + std::to_string(level);
+            }
+
+            std::map<int32, int32> levels; levels.clear();
+            aaCenter.AA_StringToMap(aaCenter.aa_characterss[player->GetGUIDLow()].shengji, levels);
+
+            if (levels.find(id) != levels.end() && levels[id] > 0) {
+                if (conf.notice > 0) {
+                    AA_Message aa_message;
+                    AA_Notice notice = aaCenter.aa_notices[conf.notice];
+                    aaCenter.AA_SendNotice(player, notice, false, aa_message);
                 }
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已经领取过奖励");
+            }
+            else {
+                levels[id] = 1;
+                std::string str = "";
+                aaCenter.AA_MapToString(levels, str);
+                aaCenter.aa_characterss[player->GetGUIDLow()].shengji = str;
                 time_t timep;
                 time(&timep);
                 aaCenter.aa_characterss[player->GetGUIDLow()].update_time = timep;
@@ -3966,7 +3960,7 @@ public:
                 if (conf.reward > 0) {
                     aaCenter.M_Reward(player, conf.reward);
                 }
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00领取成功");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00领取成功");
                 if (conf.notice > 0) {
                     AA_Message aa_message;
                     AA_Notice notice = aaCenter.aa_notices[conf.notice];
@@ -3974,22 +3968,11 @@ public:
                 }
                 aaCenter.M_SendAA_Conf(player, "1002");
             }
-            else {
-                if (conf.notice > 0) {
-                    AA_Message aa_message;
-                    AA_Notice notice = aaCenter.aa_notices[conf.notice];
-                    aaCenter.AA_SendNotice(player, notice, false, aa_message);
-                }
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你已经领取过奖励");
-            }
         }
         return true;
     }
     static bool AA_lingqulicai(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a2b")) {
-            return false;
-        }
         Player* player = handler->getSelectedPlayerOrSelf();
         if (!player || !player->IsInWorld()) {
             return false;
@@ -4564,9 +4547,6 @@ public:
     }
     static bool AA_paihangjiangli(ChatHandler* handler, const char* args)
     {
-        if (!aaCenter.AA_VerifyCode("a200b")) {
-            return false;
-        }
         Player* me = handler->getSelectedPlayerOrSelf();
         if (!me || !me->IsInWorld()) {
             return false;

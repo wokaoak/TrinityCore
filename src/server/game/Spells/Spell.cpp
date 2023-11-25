@@ -3418,8 +3418,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
     // 技能是否禁用
     AA_Spell_Conf conf = aaCenter.aa_spell_confs[m_spellInfo->Id];
     if (conf.isOk == "是") {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER) {
-            Player* p = m_caster->ToPlayer();
+        if (Player* p = m_caster->ToPlayer()) {
             if (p && p->IsInWorld()) {
                 aaCenter.AA_SendMessage(p, 1, "|cff00FFFF[系统提示]|cffFF0000该技能已被禁用|r");
             }
@@ -3427,8 +3426,25 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
         return SPELL_FAILED_UNKNOWN;
     }
 
-    if (m_caster->GetTypeId() == TYPEID_PLAYER) {
-        Player* p = m_caster->ToPlayer();
+    //系统默认禁用的一些技能，写死了
+    if (m_caster) { //28383 NAXX无限召唤
+        std::array<uint32, 1> jinyongs{ 28383 };
+        if (std::find(jinyongs.begin(), jinyongs.end(), m_spellInfo->Id) != jinyongs.end()) {
+            return SPELL_FAILED_UNKNOWN;
+        }
+    }
+
+    //死亡骑士专职后，不允许用熔炉符文
+    if (Player* p = m_caster->ToPlayer()) {
+        if (p->GetClass() != CLASS_DEATH_KNIGHT) {
+            std::array<uint32, 12> weapon_enchants_dk{ 53387,43588,56903,53386,53362,60209,50401,51714,53365,62157,70163,54449 };
+            if (std::find(weapon_enchants_dk.begin(), weapon_enchants_dk.end(), m_spellInfo->Id) != weapon_enchants_dk.end()) {
+                return SPELL_FAILED_UNKNOWN;
+            }
+        }
+    }
+
+    if (Player* p = m_caster->ToPlayer()) {
         if (p && p->IsInWorld()) {
             AA_Map_Player_Conf conf = aaCenter.AA_GetAA_Map_Player_Conf(p);
             if (conf.jyjineng != "" && conf.jyjineng != "0") {
@@ -3460,8 +3476,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
 
     // 施放技能需要
     if (conf.need > 0) {
-        if (m_caster->GetTypeId() == TYPEID_PLAYER) {
-            Player* p = m_caster->ToPlayer();
+        if (Player* p = m_caster->ToPlayer()) {
             if (!aaCenter.M_CanNeed(p, conf.need)) {
                 return SPELL_FAILED_UNKNOWN;
             }
