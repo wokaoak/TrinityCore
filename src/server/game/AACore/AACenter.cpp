@@ -12686,6 +12686,10 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 if (entry == 0) {
                     continue;
                 }
+                ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(entry);
+                if (!pProto) {
+                    continue;
+                }
                 if (times[entry] > 0 && aaCenter.aa_character_instance_displays[entry].update_time == times[entry]) {
                     continue;
                 }
@@ -17943,7 +17947,7 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
         }
         //武器外观远程
         if (conf.moxing3 != "" && conf.moxing3 != "0") {
-            uint32 moxing = aaCenter.AA_StringRandom(conf.moxing2);
+            uint32 moxing = aaCenter.AA_StringRandom(conf.moxing3);
             creature->SetVirtualItem(2, moxing, 0, 0);
         }
         else {

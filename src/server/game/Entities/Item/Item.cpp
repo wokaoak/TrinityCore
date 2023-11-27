@@ -3084,12 +3084,16 @@ bool Item::AA_LoadFromDB(ObjectGuid::LowType guid, ObjectGuid ownerGuid, uint32 
         "ig.gemItemId1, ig.gemBonuses1, ig.gemContext1, ig.gemScalingLevel1, ig.gemItemId2, ig.gemBonuses2, ig.gemContext2, ig.gemScalingLevel2, ig.gemItemId3, ig.gemBonuses3, ig.gemContext3, ig.gemScalingLevel3, " \
         "im.fixedScalingLevel, im.artifactKnowledgeLevel, bag, slot FROM character_inventory ci JOIN item_instance ii ON ci.item = ii.guid LEFT JOIN item_instance_gems ig ON ii.guid = ig.itemGuid LEFT JOIN item_instance_transmog iit ON ii.guid = iit.itemGuid LEFT JOIN item_instance_modifiers im ON ii.guid = im.itemGuid WHERE ii.guid = {}", guid);
 
+    if (guid == 0 || entry == 0) {
+        return false;
+    }
+
     uint32 count = 0;
 
     AA_Item_Instance conf = aaCenter.aa_item_instances[guid];
-    if (conf.guid == 0 || conf.weizhi == "") {
-        return false;
-    }
+    //if (conf.guid == 0 || conf.weizhi == "") {
+    //    return false;
+    //}
     Object::_Create(ObjectGuid::Create<HighGuid::Item>(guid));
 
     // Set entry, MUST be before proto check

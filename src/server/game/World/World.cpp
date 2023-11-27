@@ -1789,6 +1789,7 @@ void World::SetInitialWorldSettings()
 
     LoginDatabase.PExecute("UPDATE realmlist SET icon = {}, timezone = {} WHERE id = '{}'", server_type, realm_zone, realm.Id.Realm);      // One-time query
 
+    aaCenter.aa_version.version = "10AA20231126";
     aaCenter.aa_version.uuid = sAAVerify->AA_GetUUID();
     std::string loginr = sAAVerify->AA_Login();
     std::vector<std::string> v;
@@ -2919,7 +2920,6 @@ void World::SetInitialWorldSettings()
         else { //10人或者25人
             TC_LOG_INFO("server.loading", ">> 当前限制{}人，如需开通服务，请联系管理员QQ:643125009。", aaCenter.aa_version.aa_login_count);
         }
-        aaCenter.aa_version.version = "10AA20231125";
         if (aaCenter.aa_version.uuid != "") {
             TC_LOG_INFO("server.loading", ">> Version:{}-{}", aaCenter.aa_version.version.c_str(), aaCenter.aa_version.uuid.c_str());
         }
