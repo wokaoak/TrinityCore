@@ -44,7 +44,7 @@ public:
                 time_t timep;
                 time(&timep); /*当前time_t类型UTC时间*/
                 uint32 time = aaCenter.aa_accounts[accountid].dianka * 0.001;
-                std::string msg = "|cff00FFFF[账号提示]|cffFFFF00你的游戏时间剩余【" + std::to_string(time / 60) + "】分钟。";
+                std::string msg = "|cFF00FFFF[账|r|cFF00D9FF号|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的游戏时间剩余【" + std::to_string(time / 60) + "】分钟。";
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
         }
@@ -99,7 +99,7 @@ public:
                     if (player->GetTeamId() == TEAM_HORDE) {
                         CharacterDatabaseTransaction trans(nullptr);
                         guild->AddMember(trans, player->GetGUID());
-                        std::string message = "|cff00FFFF[系统提示]|cffFFFF00你已加入公会["+guild->GetName()+"]";
+                        std::string message = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你已加入公会["+guild->GetName()+"]";
                         sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), player);
                     }
                 }
@@ -109,7 +109,7 @@ public:
                     if (player->GetTeamId() == TEAM_ALLIANCE) {
                         CharacterDatabaseTransaction trans(nullptr);
                         guild->AddMember(trans, player->GetGUID());
-                        std::string message = "|cff00FFFF[系统提示]|cffFFFF00你已加入公会["+guild->GetName()+"]";
+                        std::string message = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你已加入公会["+guild->GetName()+"]";
                         sWorld->SendServerMessage(SERVER_MSG_STRING, message.c_str(), player);
                     }
                 }

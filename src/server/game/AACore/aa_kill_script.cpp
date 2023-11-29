@@ -167,9 +167,9 @@ private:
                     }
                     aaCenter.AA_UpdateValueBools(conf.m_mapid, conf.m_mapmoshi, true, guidlow);
                     if (dietime >= conf.dietime) {
-                        aaCenter.AA_SendMessage(killed, 2, "|cff00FFFF[系统提示]|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
-                        aaCenter.AA_SendMessage(killed, 2, "|cff00FFFF[系统提示]|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
-                        aaCenter.AA_SendMessage(killed, 2, "|cff00FFFF[系统提示]|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
+                        aaCenter.AA_SendMessage(killed, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
+                        aaCenter.AA_SendMessage(killed, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
+                        aaCenter.AA_SendMessage(killed, 2, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的死亡次数已用尽，你被传出区域。|r");
                         killed->TeleportTo(killed->m_homebind.GetMapId(), killed->m_homebind.GetPositionX(), killed->m_homebind.GetPositionY(), killed->m_homebind.GetPositionZ(), killed->m_homebind.GetOrientation());
                     }
                 }

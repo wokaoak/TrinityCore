@@ -113,13 +113,13 @@ public:
                         uint32 entry = aaCenter.AA_GetBaoshiEntry(player->aa_target_item, 0);
                         AA_Chaixie_Conf conf = aaCenter.aa_chaixie_confs[entry];
                         if (conf.itemid == 0) {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                             player->aa_item = nullptr;
                             player->aa_target_item = nullptr;
                             return false;
                         }
                     } else {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                         player->aa_item = nullptr;
                         player->aa_target_item = nullptr;
                         return false;
@@ -157,13 +157,13 @@ public:
                             }
                             aaCenter.AA_SendMessage(player, 0, "╚┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈╝");
                         } else {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                             player->aa_item = nullptr;
                             player->aa_target_item = nullptr;
                             return false;
                         }
                     } else {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                         player->aa_item = nullptr;
                         player->aa_target_item = nullptr;
                         return false;
@@ -186,14 +186,14 @@ public:
                             }
                         }
                         else {
-                            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                             player->aa_item = nullptr;
                             player->aa_target_item = nullptr;
                             return false;
                         }
                     }
                     else {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法操作!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法操作!");
                         player->aa_item = nullptr;
                         player->aa_target_item = nullptr;
                         return false;
@@ -234,7 +234,7 @@ public:
             conf = aaCenter.aa_teleports[action];
         }
         if (player->IsInCombat() && (conf.gm.find("解除战斗") == std::string::npos && conf.is_zhandou == 0)) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000战斗中无法使用!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战斗中无法使用!");
             return;
         }
 

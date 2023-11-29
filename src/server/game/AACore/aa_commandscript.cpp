@@ -774,7 +774,7 @@ public:
         uint32 guidlow = player->GetGUIDLow();
 
         if (level == 0) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[一命模式]|cffFF0000你解除了一命模式。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|cffFF0000你解除了一命模式。");
             aaCenter.aa_characterss[guidlow].yiming = 0;
 
             //刷新一命光环
@@ -790,7 +790,7 @@ public:
 
         uint32 level_jc = aaCenter.aa_world_confs[102].value1;
         if (level_jc > 0 && player->GetLevel() >= level_jc) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[一命模式]|cffFF0000你已经满级，无法加入一命模式");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|cffFF0000你已经满级，无法加入一命模式");
             return false;
         }
 
@@ -802,20 +802,20 @@ public:
             }
 
             if (level_jr > 0 && player->GetLevel() > level_jr) {
-                std::string str = "|cff00FFFF[一命模式]|cffFF0000你已经超过" + std::to_string(level_jr) + "级，无法加入一命模式";
+                std::string str = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|cffFF0000你已经超过" + std::to_string(level_jr) + "级，无法加入一命模式";
                 aaCenter.AA_SendMessage(player, 1, str.c_str());
                 return false;
             }
         }
 
         if (aaCenter.aa_yiming_confs.find(level) == aaCenter.aa_yiming_confs.end()) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[一命模式]|cffFF0000等级输入有误");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|cffFF0000等级输入有误");
             return false;
         }
 
         uint32 viplevel = aaCenter.aa_characterss[guidlow].yiming;
         if (level == viplevel) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[一命模式]|cffFF0000你已达加入一命模式，请勿重复操作");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|cffFF0000你已达加入一命模式，请勿重复操作");
             return false;
         }
 
@@ -859,7 +859,7 @@ public:
         }
 
         if (!aaCenter.AA_VerifyCode("a107b")) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[物品租赁]|cffFF0000请联系QQ643125009开通AA核心特色功能!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[物|r|cFF00D9FF品|r|cFF00B3FF租|r|cFF008DFF赁|r|cFF00FFFF]|r|cffFF0000请联系QQ643125009开通AA核心特色功能!");
             return false;
         }
 
@@ -990,7 +990,7 @@ public:
                 time(&timep); /*当前time_t类型UTC时间*/
                 aaCenter.aa_accounts[accountid].update_time = timep;
                 sAAData->AA_REP_Accounts.insert(accountid);
-                std::string msg = "|cff00FFFF[账号提示]|cffFFFF00充值成功，你的游戏时间增加【" + std::to_string(length) + "】分钟。";
+                std::string msg = "|cFF00FFFF[账|r|cFF00D9FF号|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00充值成功，你的游戏时间增加【" + std::to_string(length) + "】分钟。";
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
         }
@@ -1006,7 +1006,7 @@ public:
             return false;
         }
         if (!aaCenter.AA_VerifyCode("a400b")) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请联系QQ643125009开通!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请联系QQ643125009开通!");
             return false;
         }
 
@@ -2456,7 +2456,7 @@ public:
             Field* fields = result->Fetch();
             std::string zhaomu = fields[0].GetString();
             if (zhaomu != "") {
-                std::string zmstr = "|cff00FFFF[系统提示]|cffFF0000你已经拥有招募者：" + zhaomu;
+                std::string zmstr = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已经拥有招募者：" + zhaomu;
                 aaCenter.AA_SendMessage(player, 1, zmstr.c_str());
                 return false;
             }
@@ -2467,11 +2467,11 @@ public:
                     accountId = p->GetSession()->GetAccountId();
                 }
                 if (accountId == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该玩家未找到或不在线，无法设置。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该玩家未找到或不在线，无法设置。");
                     return false;
                 }
                 if (player->GetSession()->GetAccountId() == accountId) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法招募当前账号的角色。");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法招募当前账号的角色。");
                     return false;
                 }
                 CharacterDatabase.DirectPExecute("UPDATE _玩家角色数据 SET 招募者姓名 = '{}' WHERE guid = {}", zhaomu, guidlow);
@@ -2487,7 +2487,7 @@ public:
             return false;
         }
         if (aaCenter.AA_GetEmptyBag(player) < 5) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包剩余空间不足5个。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包剩余空间不足5个。");
             return false;
         }
         char* typestr = strtok((char*)args, " ");
@@ -2517,10 +2517,10 @@ public:
             }
         }
         if (isOk) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00回收成功");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00回收成功");
         }
         else {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该物品无法回收");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法回收");
         }
         return true;
     }
@@ -2531,7 +2531,7 @@ public:
             return false;
         }
         if (aaCenter.AA_GetEmptyBag(player) < 5) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包剩余空间不足5个。");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包剩余空间不足5个。");
             return false;
         }
         bool isOk = false;
@@ -2566,16 +2566,16 @@ public:
             }
         }
         if (isBaoshi) {
-            aaCenter.AA_SendMessage(player, 0, "|cff00FFFF[系统提示]|cffFF0000背包中有镶嵌过宝石的物品不能回收。");
+            aaCenter.AA_SendMessage(player, 0, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包中有镶嵌过宝石的物品不能回收。");
         }
         if (isFuwen) {
-            aaCenter.AA_SendMessage(player, 0, "|cff00FFFF[系统提示]|cffFF0000背包中有镶嵌过符文的物品不能回收。");
+            aaCenter.AA_SendMessage(player, 0, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包中有镶嵌过符文的物品不能回收。");
         }
         if (isOk) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00回收成功");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00回收成功");
         }
         else {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000背包没有可回收的物品");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000背包没有可回收的物品");
         }
         return true;
     }
@@ -3495,7 +3495,7 @@ public:
                             aaCenter.aa_characterss[guidlow].choujianglq = cishu;
                             if (reward > 0) {
                                 aaCenter.M_Reward(player, reward);
-                                std::string msg = "|cff00FFFF[幸运抽奖]|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00累计抽奖达到|r【" + std::to_string(cishu) + "次|cffFFFF00】获得了额外奖励|r";
+                                std::string msg = "|cFF00FFFF[幸|r|cFF00D9FF运|r|cFF00B3FF抽|r|cFF008DFF奖|r|cFF00FFFF]|r|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00累计抽奖达到|r【" + std::to_string(cishu) + "次|cffFFFF00】获得了额外奖励|r";
                                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                             }
                         }
@@ -3509,7 +3509,7 @@ public:
                             text = aaCenter.AA_GetItemLink(conf.itemid);
                         }
                         if (conf.notice == 1) { //显示+公告
-                            std::string msg1 = "|cff00FFFF[幸运抽奖]|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + text + "|cffFFFF00】|r";
+                            std::string msg1 = "|cFF00FFFF[幸|r|cFF00D9FF运|r|cFF00B3FF抽|r|cFF008DFF奖|r|cFF00FFFF]|r|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + text + "|cffFFFF00】|r";
                             aaCenter.AA_SendMessage(player, 2, msg1.c_str());
                             std::string msg2 = aaCenter.AA_GetPlayerNameLink(player) + " 获得了 " + text;
                             aaCenter.aa_choujiangStrs.push_back(msg2);
@@ -3525,7 +3525,7 @@ public:
                             }
                         }
                         else if (conf.notice == 3) { //只公告
-                            std::string msg1 = "|cff00FFFF[幸运抽奖]|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + text + "|cffFFFF00】|r";
+                            std::string msg1 = "|cFF00FFFF[幸|r|cFF00D9FF运|r|cFF00B3FF抽|r|cFF008DFF奖|r|cFF00FFFF]|r|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + text + "|cffFFFF00】|r";
                             aaCenter.AA_SendMessage(player, 2, msg1.c_str());
                         }
                     }
@@ -3534,7 +3534,7 @@ public:
                             player->AddItem(conf.itemid, 1);
                         }
                         if (conf.notice == 1) { //显示+公告
-                            std::string msg1 = "|cff00FFFF[幸运抽奖]|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + aaCenter.AA_GetItemLink(conf.itemid) + "|cffFFFF00】|r";
+                            std::string msg1 = "|cFF00FFFF[幸|r|cFF00D9FF运|r|cFF00B3FF抽|r|cFF008DFF奖|r|cFF00FFFF]|r|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + aaCenter.AA_GetItemLink(conf.itemid) + "|cffFFFF00】|r";
                             aaCenter.AA_SendMessage(player, 2, msg1.c_str());
                             std::string msg2 = aaCenter.AA_GetPlayerNameLink(player) + " 获得了 " + aaCenter.AA_GetItemLink(conf.itemid);
                             aaCenter.aa_choujiangStrs.push_back(msg2);
@@ -3550,7 +3550,7 @@ public:
                             }
                         }
                         else if (conf.notice == 3) { //只公告
-                            std::string msg1 = "|cff00FFFF[幸运抽奖]|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + aaCenter.AA_GetItemLink(conf.itemid) + "|cffFFFF00】|r";
+                            std::string msg1 = "|cFF00FFFF[幸|r|cFF00D9FF运|r|cFF00B3FF抽|r|cFF008DFF奖|r|cFF00FFFF]|r|r|cffFFFF00【|r" + aaCenter.AA_GetPlayerNameLink(player) + "】|cffFFFF00获得了【|r" + aaCenter.AA_GetItemLink(conf.itemid) + "|cffFFFF00】|r";
                             aaCenter.AA_SendMessage(player, 2, msg1.c_str());
                         }
                     }
@@ -3724,7 +3724,7 @@ public:
                 }
             }
             if (a_conf.jifen_all < conf.jifen) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000条件不足");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000条件不足");
                 return false;
             }
             if (!isOk) { //没有领取过
@@ -3743,12 +3743,12 @@ public:
                     AA_Notice notice = aaCenter.aa_notices[conf.notice];
                     aaCenter.AA_SendNotice(player, notice, true, aa_message);
                 }
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00领取成功");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00领取成功");
                 aaCenter.M_SendAA_Conf(player, "1005");
                 return true;
             }
             else {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你已经领取过奖励");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已经领取过奖励");
                 return true;
             }
         }
@@ -3767,11 +3767,11 @@ public:
         uint32 day = time->tm_wday == 0 ? 7 : time->tm_wday;
         AA_Reward_Shouchong_Conf it = aaCenter.aa_reward_shouchong_confs[day];
         if (a_conf.shouchong_day < it.jifen) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000条件不足");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000条件不足");
             return false;
         }
         if (a_conf.shouchong == 1) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你已经领取过奖励");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已经领取过奖励");
             return true;
         }
         if (it.reward > 0) {
@@ -3785,7 +3785,7 @@ public:
         aaCenter.aa_accounts[accountid].shouchong = 1;
         aaCenter.aa_accounts[accountid].update_time = time1;
         sAAData->AA_REP_Accounts.insert(accountid);
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00领取成功");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00领取成功");
         aaCenter.M_SendAA_Conf(player, "1004");
         return true;
     }
@@ -3807,7 +3807,7 @@ public:
             uint32 accountid = player->GetSession()->GetAccountId();
             AA_Account a_conf = aaCenter.aa_accounts[accountid];
             if (a_conf.denglu_qiandao == 1) { //已签到
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你今天已经签到了。");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你今天已经签到了。");
                 aaCenter.M_SendAA_Conf(player, "1006");
             }
             else {
@@ -3819,7 +3819,7 @@ public:
                     AA_Notice notice = aaCenter.aa_notices[conf.notice];
                     aaCenter.AA_SendNotice(player, notice, true, aa_message);
                 }
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00签到成功");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00签到成功");
                 aaCenter.aa_accounts[accountid].denglu_qiandao = 1;
                 aaCenter.aa_accounts[accountid].denglu_day += 1;
                 time_t timep;
@@ -3844,7 +3844,7 @@ public:
                     }
                 }
                 if (a_conf.denglu_day < conf.day) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000条件不足");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000条件不足");
                     return true;
                 }
                 if (!isOk) { //没有领取过
@@ -3866,11 +3866,11 @@ public:
                         AA_Notice notice = aaCenter.aa_notices[conf.notice];
                         aaCenter.AA_SendNotice(player, notice, true, aa_message);
                     }
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00领取成功");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00领取成功");
                     aaCenter.M_SendAA_Conf(player, "1006");
                 }
                 else { //已经领取过
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你已经领取过奖励");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已经领取过奖励");
                 }
             }
         }
@@ -3989,7 +3989,7 @@ public:
             if (it.need > 0) {
                 if (aaCenter.M_CanNeed(player, it.need)) {
                     aaCenter.M_Need(player, it.need);
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00购买成功");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00购买成功");
                     aaCenter.aa_accounts[accountid].licai_day += it.day;
                     aaCenter.M_SendAA_Conf(player, "1003");
                 }
@@ -3999,7 +3999,7 @@ public:
             if (a_conf.licai == 0) {
                 if (it.reward > 0) {
                     aaCenter.M_Reward(player, it.reward);
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00领取成功");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00领取成功");
                     aaCenter.aa_accounts[accountid].licai_day -= 1;
                     aaCenter.aa_accounts[accountid].licai = 1;
                     aaCenter.M_SendAA_Conf(player, "1003");
@@ -4038,7 +4038,7 @@ public:
             return false;
         }
         player->DurabilityRepairAll(false, 0, false);
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修理装备成功!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修理装备成功!");
         return true;
     }
     static bool AA_chongzhitianfu(ChatHandler* handler, const char* args)
@@ -4048,7 +4048,7 @@ public:
             return false;
         }
         if (!player->IsAlive()) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000死亡状态下无法使用!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000死亡状态下无法使用!");
             return false;
         }
         Player* me = handler->GetSession()->GetPlayer();
@@ -4073,7 +4073,7 @@ public:
         }
 
         aaCenter.AA_DoCommand(player, gm.c_str());
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00天赋重置成功!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00天赋重置成功!");
         return true;
     }
     static bool AA_jiechuxuruo(ChatHandler* handler, const char* args)
@@ -4083,7 +4083,7 @@ public:
             return false;
         }
         if (player->HasAura(15007)) { player->RemoveAurasDueToSpell(15007); }
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00解除虚弱成功!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00解除虚弱成功!");
         return true;
     }
 
@@ -4096,10 +4096,10 @@ public:
         if (player->combatTime > 10000) {
             player->ClearInCombat();
             player->combatTime = 0;
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00脱离战斗成功!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00脱离战斗成功!");
         }
         else {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000功能冷却中!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000功能冷却中!");
         }
         return true;
     }
@@ -4113,7 +4113,7 @@ public:
             player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
         }
         player->SetHealth(player->GetMaxHealth());
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00恢复生命和魔法!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00恢复生命和魔法!");
         return true;
     }
     static bool AA_chongzhijineng(ChatHandler* handler, const char* args)
@@ -4123,7 +4123,7 @@ public:
             return false;
         }
         player->RemoveArenaSpellCooldowns();
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重置冷却成功!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重置冷却成功!");
         return true;
     }
     static bool AA_xiugaizhenying(ChatHandler* handler, const char* args)
@@ -4132,9 +4132,9 @@ public:
         if (!player || !player->IsInWorld()) {
             return false;
         }
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择阵营!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择阵营!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择阵营!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择阵营!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择阵营!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择阵营!");
         std::string gm = ".组合 *.character changefaction<$自身>";
         aaCenter.AA_DoCommand(player, gm.c_str());
         return true;
@@ -4145,9 +4145,9 @@ public:
         if (!player || !player->IsInWorld()) {
             return false;
         }
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择种族!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择种族!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择种族!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择种族!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择种族!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择种族!");
         std::string gm = ".组合 *.character changerace<$自身>";
         aaCenter.AA_DoCommand(player, gm.c_str());
         return true;
@@ -4158,9 +4158,9 @@ public:
         if (!player || !player->IsInWorld()) {
             return false;
         }
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退修改名字!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退修改名字!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退修改名字!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退修改名字!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退修改名字!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退修改名字!");
         std::string gm = ".组合 *.character rename<$自身>";
         aaCenter.AA_DoCommand(player, gm.c_str());
         return true;
@@ -4171,9 +4171,9 @@ public:
         if (!player || !player->IsInWorld()) {
             return false;
         }
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择外观!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择外观!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00修改成功，请小退重新选择外观!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择外观!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择外观!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00修改成功，请小退重新选择外观!");
         std::string gm = ".组合 *.character customize<$自身>";
         aaCenter.AA_DoCommand(player, gm.c_str());
         return true;
@@ -4205,7 +4205,7 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Dianfeng d_conf = aaCenter.aa_characters_dianfengs[guidlow];
         if (d_conf.dianshu == -1) { //重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你重置过属性，请小退!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你重置过属性，请小退!");
             return false;
         }
         if (aaCenter.aa_stat_xianzhis[type].value > 0) {
@@ -4229,13 +4229,13 @@ public:
                 num += values[type];
             }
             if (num >= aaCenter.aa_stat_xianzhis[type].value) {
-                std::string msg = "|cff00FFFF[系统提示]|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
+                std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
                 aaCenter.AA_SendMessage(player, 1, msg.c_str());
                 return false;
             }
         }
         if (d_conf.dianshu_all - d_conf.dianshu <= 0) {//点数不足
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你的点数不足!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的点数不足!");
             return false;
         }
         aaCenter.aa_characters_dianfengs[guidlow].dianshu = d_conf.dianshu + 1;
@@ -4287,7 +4287,7 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Douqi d_conf = aaCenter.aa_characters_douqis[guidlow];
         if (d_conf.dianshu == -1) { //重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你重置过属性，请小退!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你重置过属性，请小退!");
             return false;
         }
         if (aaCenter.aa_stat_xianzhis[type].value > 0) {
@@ -4311,13 +4311,13 @@ public:
                 num += values[type];
             }
             if (num >= aaCenter.aa_stat_xianzhis[type].value) {
-                std::string msg = "|cff00FFFF[系统提示]|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
+                std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
                 aaCenter.AA_SendMessage(player, 1, msg.c_str());
                 return false;
             }
         }
         if (d_conf.dianshu_all - d_conf.dianshu <= 0) {//点数不足
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你的点数不足!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的点数不足!");
             return false;
         }
         aaCenter.aa_characters_douqis[guidlow].dianshu = d_conf.dianshu + 1;
@@ -4369,7 +4369,7 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Junxian d_conf = aaCenter.aa_characters_junxians[guidlow];
         if (d_conf.dianshu == -1) { //重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你重置过属性，请小退!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你重置过属性，请小退!");
             return false;
         }
         if (aaCenter.aa_stat_xianzhis[type].value > 0) {
@@ -4393,13 +4393,13 @@ public:
                 num += values[type];
             }
             if (num >= aaCenter.aa_stat_xianzhis[type].value) {
-                std::string msg = "|cff00FFFF[系统提示]|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
+                std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000这个属性最大限制" + std::to_string(aaCenter.aa_stat_xianzhis[type].value) + "点。";
                 aaCenter.AA_SendMessage(player, 1, msg.c_str());
                 return false;
             }
         }
         if (d_conf.dianshu_all - d_conf.dianshu <= 0) {//点数不足
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你的点数不足!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的点数不足!");
             return false;
         }
         aaCenter.aa_characters_junxians[guidlow].dianshu = d_conf.dianshu + 1;
@@ -4440,12 +4440,12 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Dianfeng d_conf = aaCenter.aa_characters_dianfengs[guidlow];
         if (d_conf.dianshu == -1 || d_conf.dianshu == 0 || d_conf.dianshu_all == 0) { //无需重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000没有可重置的点数!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000没有可重置的点数!");
             return false;
         }
         aaCenter.aa_characters_dianfengs[guidlow].value = "";
         aaCenter.aa_characters_dianfengs[guidlow].dianshu = -1;
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重置成功，请小退生效!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重置成功，请小退生效!");
         time_t timep;
         time(&timep);
         aaCenter.aa_characters_dianfengs[guidlow].update_time = timep;
@@ -4468,12 +4468,12 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Douqi d_conf = aaCenter.aa_characters_douqis[guidlow];
         if (d_conf.dianshu == -1 || d_conf.dianshu == 0 || d_conf.dianshu_all == 0) { //无需重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00没有可重置的点数!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00没有可重置的点数!");
             return false;
         }
         aaCenter.aa_characters_douqis[guidlow].value = "";
         aaCenter.aa_characters_douqis[guidlow].dianshu = -1;
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重置成功，请小退生效!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重置成功，请小退生效!");
         time_t timep;
         time(&timep);
         aaCenter.aa_characters_douqis[guidlow].update_time = timep;
@@ -4496,12 +4496,12 @@ public:
         ObjectGuid::LowType guidlow = player->GetGUIDLow();
         AA_Characters_Junxian d_conf = aaCenter.aa_characters_junxians[guidlow];
         if (d_conf.dianshu == -1 || d_conf.dianshu == 0 || d_conf.dianshu_all == 0) { //无需重置
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00没有可重置的点数!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00没有可重置的点数!");
             return false;
         }
         aaCenter.aa_characters_junxians[guidlow].value = "";
         aaCenter.aa_characters_junxians[guidlow].dianshu = -1;
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00重置成功，请小退生效!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重置成功，请小退生效!");
         time_t timep;
         time(&timep);
         aaCenter.aa_characters_junxians[guidlow].update_time = timep;
@@ -4518,7 +4518,7 @@ public:
         uint32 viplevel = aaCenter.aa_accounts[accountid].vip + 1;
         AA_Vip_Conf conf = aaCenter.aa_vip_confs[viplevel];
         if (conf.level <= 0) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000你已达到最大会员等级");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已达到最大会员等级");
             return false;
         }
         if (conf.need > 0) {
@@ -5068,7 +5068,7 @@ public:
             //该角色不属于您的账号，请重新输入
             //无法解卡自己
             //没有该角色，请重新输入
-            aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000无法解卡自己");
+            aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法解卡自己");
             return false;
         }
         else {
@@ -5094,17 +5094,17 @@ public:
                 }
             }
             if (accountId == 0) {
-                aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000没有该角色，请重新输入");
+                aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000没有该角色，请重新输入");
                 return false; //未知错误
             }
             if (currAccountId != accountId) {
-                aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000该角色不属于您的账号，请重新输入");
+                aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该角色不属于您的账号，请重新输入");
                 return false;
             }
         }
 
         CharacterDatabase.DirectPExecute("UPDATE characters SET position_x = {},position_y = {}, position_z = {}, map = {}, instance_id = 0, instance_mode_mask = 0 where name=\"{}\";", target->m_homebind.GetPositionX(), target->m_homebind.GetPositionY(), target->m_homebind.GetPositionZ(), target->m_homebind.GetMapId(), currName);
-        aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|r|cffFFFF00解卡成功，角色已经被传送至出生点");
+        aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|r|cffFFFF00解卡成功，角色已经被传送至出生点");
         return true;
     }
     static bool AA_chongzhirirenwu(ChatHandler* handler, char const* args)
@@ -5299,7 +5299,7 @@ public:
         // xinef: learn default race/class spells
         PlayerInfo const* sinfo = sObjectMgr->GetPlayerInfo(player->GetRace(), newclass);
         if (!sinfo) {
-            std::string message = "|cff00FFFF[系统提示]|cffFF0000你的种族不适合[" + newclasstext + "]职业";
+            std::string message = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的种族不适合[" + newclasstext + "]职业";
             ChatHandler(player->GetSession()).PSendSysMessage("{}", message.c_str());
             aaCenter.AA_SendMessage(player, 1, message.c_str());
             return false;
@@ -5417,9 +5417,9 @@ public:
         aaCenter.AA_DoCommand(player, gm.c_str());
         //Customize(GetGUID(), GetGender(), 1, 1, 1, 1, 1);
 //        player->GetSession()->KickPlayer("GlobalMethods::Kick Kick the player");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00转职成功，请小退!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00转职成功，请小退!");
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFFFF00转职成功，请小退!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00转职成功，请小退!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00转职成功，请小退!");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00转职成功，请小退!");
 
         return true;
     }
@@ -5488,7 +5488,7 @@ public:
             aaCenter.aa_accounts[accountid].update_time = timep;
             aaCenter.aa_accounts[accountid].mobi = val;
             sAAData->AA_REP_Accounts.insert(accountid);
-            std::string msg = "|cff00FFFF[系统提示]|cffFFFF00你的" + aaCenter.aa_world_confs[63].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].mobi);
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的" + aaCenter.aa_world_confs[63].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].mobi);
             sWorld->SendServerMessage(SERVER_MSG_STRING, msg.c_str(), target);
         }
         return true;
@@ -5509,7 +5509,7 @@ public:
             aaCenter.aa_accounts[accountid].update_time = timep;
             aaCenter.aa_accounts[accountid].paodian = val;
             sAAData->AA_REP_Accounts.insert(accountid);
-            std::string msg = "|cff00FFFF[系统提示]|cffFFFF00你的" + aaCenter.aa_world_confs[62].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].paodian);
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的" + aaCenter.aa_world_confs[62].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].paodian);
             sWorld->SendServerMessage(SERVER_MSG_STRING, msg.c_str(), target);
         }
         return true;
@@ -5530,7 +5530,7 @@ public:
             aaCenter.aa_accounts[accountid].battlecore = val;
             aaCenter.aa_accounts[accountid].update_time = timep;
             sAAData->AA_REP_Accounts.insert(accountid);
-            std::string msg = "|cff00FFFF[系统提示]|cffFFFF00你的" + aaCenter.aa_world_confs[65].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].battlecore);
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的" + aaCenter.aa_world_confs[65].value2 + "增加：" + std::to_string(count) + "，剩余：" + std::to_string(aaCenter.aa_accounts[accountid].battlecore);
             sWorld->SendServerMessage(SERVER_MSG_STRING, msg.c_str(), target);
         }
         return true;
@@ -5550,7 +5550,7 @@ public:
             AA_Vip_Conf conf = aaCenter.aa_vip_confs[level];
             std::string msg = "";
             if (conf.level == 0) {
-                msg = "|cff00FFFF[系统提示]|cffFF0000你已达到最大会员等级";
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已达到最大会员等级";
             }
             else {
                 time_t timep;
@@ -5558,7 +5558,7 @@ public:
                 aaCenter.aa_accounts[accountid].update_time = timep;
                 aaCenter.aa_accounts[accountid].vip = level;
                 sAAData->AA_REP_Accounts.insert(accountid);
-                msg = "|cff00FFFF[系统提示]|cffFFFF00你的会员等级提升：" + std::to_string(count) + "，当前等级：" + std::to_string(level) + "，请小退重新登录游戏！";
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的会员等级提升：" + std::to_string(count) + "，当前等级：" + std::to_string(level) + "，请小退重新登录游戏！";
 
                 //更新客户端玩家信息
                 ObjectGuid::LowType guidlow = target->GetGUIDLow();
@@ -5588,7 +5588,7 @@ public:
             AA_Junxian_Conf conf = aaCenter.aa_junxian_confs[level];
             std::string msg = "";
             if (conf.level == 0) {
-                msg = "|cff00FFFF[系统提示]|cffFF0000你已达到最大军衔等级";
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已达到最大军衔等级";
             }
             else {
                 time_t timep;
@@ -5596,7 +5596,7 @@ public:
                 aaCenter.aa_characters_junxians[guidlow].update_time = timep;
                 aaCenter.aa_characters_junxians[guidlow].level = level;
                 sAAData->AA_REP_Characters_Junxians.insert(guidlow);
-                msg = "|cff00FFFF[系统提示]|cffFFFF00你的军衔等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的军衔等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
 
                 //更新客户端玩家信息
                 ObjectGuid::LowType guidlow = target->GetGUIDLow();
@@ -5624,7 +5624,7 @@ public:
             AA_Douqi_Conf conf = aaCenter.aa_douqi_confs[level];
             std::string msg = "";
             if (conf.level == 0) {
-                msg = "|cff00FFFF[系统提示]|cffFF0000你已达到最大斗气等级";
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已达到最大斗气等级";
             }
             else {
                 time_t timep;
@@ -5632,7 +5632,7 @@ public:
                 aaCenter.aa_characters_douqis[guidlow].update_time = timep;
                 aaCenter.aa_characters_douqis[guidlow].level = level;
                 sAAData->AA_REP_Characters_Douqis.insert(guidlow);
-                msg = "|cff00FFFF[系统提示]|cffFFFF00你的斗气等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的斗气等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
 
                 //更新客户端玩家信息
                 ObjectGuid::LowType guidlow = target->GetGUIDLow();
@@ -5660,7 +5660,7 @@ public:
             AA_Dianfeng_Conf conf = aaCenter.aa_dianfeng_confs[level];
             std::string msg = "";
             if (conf.level == 0) {
-                msg = "|cff00FFFF[系统提示]|cffFF0000你已达到最大巅峰等级";
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你已达到最大巅峰等级";
             }
             else {
                 time_t timep;
@@ -5668,7 +5668,7 @@ public:
                 aaCenter.aa_characters_dianfengs[guidlow].update_time = timep;
                 aaCenter.aa_characters_dianfengs[guidlow].level = level;
                 sAAData->AA_REP_Characters_Dianfengs.insert(guidlow);
-                msg = "|cff00FFFF[系统提示]|cffFFFF00你的巅峰等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
+                msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00你的巅峰等级增加：" + std::to_string(count) + "，当前等级：" + std::to_string(level);
 
                 //更新客户端玩家信息
                 ObjectGuid::LowType guidlow = target->GetGUIDLow();
@@ -5694,7 +5694,7 @@ public:
         Player* target = handler->getSelectedPlayerOrSelf();
 
         if (target) {
-            std::string msg = "|cff00FFFF[系统提示]|cffFFFF00特色数据库已全部重新加载。";
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00特色数据库已全部重新加载。";
             sWorld->SendServerMessage(SERVER_MSG_STRING, msg.c_str(), target);
         }
         return true;
@@ -6092,7 +6092,7 @@ public:
             uint32 level = aaCenter.aa_characterss[guidlow].yiming;
             AA_Yiming_Conf conf = aaCenter.aa_yiming_confs[level];
             if (conf.is_chuansong == 1) {
-                std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000无法进行传送操作|r";
+                std::string msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000无法进行传送操作|r";
                 aaCenter.AA_SendMessage(player, 1, msg.c_str());
                 return false;
             }
@@ -6180,7 +6180,7 @@ public:
         uint32 type = atoi(typestr);
         if (!player->IsAlive())
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000死亡状态下无法使用");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000死亡状态下无法使用");
             return false;
         }
         if (player->IsNonMeleeSpellCast(false))
@@ -6330,7 +6330,7 @@ public:
         std::string sql = "INSERT INTO _奖励_兑换码 (注释,兑换码,奖励) VALUES " + sqlstrs;
         aaCenter.AA_StringReplaceLast(sql, ",", "");
         WorldDatabase.DirectExecute(sql.c_str());
-        aaCenter.AA_SendMessage(target, 0, "|cff00FFFF[系统提示]|cffFFFF00兑换码生成成功");
+        aaCenter.AA_SendMessage(target, 0, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00兑换码生成成功");
         return true;
     }
     static bool AA_duihuanma(ChatHandler* handler, char const* args)
@@ -6346,11 +6346,11 @@ public:
         }
         AA_Duihuanma conf = aaCenter.aa_duihuanmas[arg1];
         if (conf.cdk == "") {
-            aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000兑换码不存在。");
+            aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000兑换码不存在。");
             return false;
         }
         if (conf.time == 0) {
-            aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000兑换码已失效。");
+            aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000兑换码已失效。");
             return false;
         }
         ObjectGuid::LowType guidlow = target->GetGUIDLow();
@@ -6396,15 +6396,15 @@ public:
                     }
                 }
                 if (conf1.guid > 0 && conf1.guid <= count_guidlow) { //角色领取限制
-                    aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000你的角色达到领取数量限制。");
+                    aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的角色达到领取数量限制。");
                     return false;
                 }
                 if (conf1.account > 0 && conf1.account <= count_account) { //账号领取限制
-                    aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000你的账号达到领取数量限制。");
+                    aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的账号达到领取数量限制。");
                     return false;
                 }
                 if (conf1.ip > 0 && conf1.ip <= count_ip) { //ip领取限制
-                    aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFF0000你的IP达到领取数量限制。");
+                    aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000你的IP达到领取数量限制。");
                     return false;
                 }
             }
@@ -6452,7 +6452,7 @@ public:
             AA_Notice notice = aaCenter.aa_notices[conf.notice];
             aaCenter.AA_SendNotice(target, notice, true, aa_message);
         }
-        aaCenter.AA_SendMessage(target, 1, "|cff00FFFF[系统提示]|cffFFFF00兑换码兑换成功");
+        aaCenter.AA_SendMessage(target, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00兑换码兑换成功");
         return true;
     }
 };

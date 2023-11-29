@@ -176,7 +176,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_biwu_index = 1;
                     aaCenter.aa_biwu_isnotice = conf.wait_time;
-                    std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00比武大会将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
+                    std::string msg = "|cFF00FFFF[比|r|cFF00D9FF武|r|cFF00B3FF擂|r|cFF008DFF台|r|cFF00FFFF]|r|cffFFFF00比武大会将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
                     aaCenter.AA_SendMessage(p, 0, msg.c_str());
                 }
 
@@ -198,7 +198,7 @@ bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
                 //获取地图所有人
                 for (auto p : aaCenter.aa_onlinePlayers) {
                     aaCenter.aa_shouling_isnotice = conf.wait_time;
-                    std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
+                    std::string msg = "|cFF00FFFF[首|r|cFF00D9FF领|r|cFF00B3FF争|r|cFF008DFF霸|r|cFF00FFFF]|r|cffFFFF00首领争霸将在" + std::to_string(conf.wait_time) + "秒后开始，进入活动地图后，自动报名参加。";
                     aaCenter.AA_SendMessage(p, 0, msg.c_str());
                 }
 

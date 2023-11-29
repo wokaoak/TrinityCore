@@ -271,7 +271,7 @@ void AACenter::Update(Unit* unit, uint32 diff)
                 else {
                     aaCenter.aa_accounts[accountid].dianka = 0;
                     if (p->aa_dianka == 120000) {
-                        std::string msg = "|cff00FFFF[账号提示]|cffFF0000游戏时间已不足，你将在2分钟后被强制下线，请联系管理员充值。";
+                        std::string msg = "|cFF00FFFF[账|r|cFF00D9FF号|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000游戏时间已不足，你将在2分钟后被强制下线，请联系管理员充值。";
                         aaCenter.AA_SendMessage(p, 0, msg.c_str());
                     }
                     else if (p->aa_dianka == 0) {
@@ -5597,7 +5597,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
         a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
         if (type == 0) { //重铸
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法重铸");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法重铸");
                 return;
             }
             uint32 needid = aaCenter.aa_world_confs[67].value1;
@@ -5767,7 +5767,7 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
         if (!pProto) return false;
         if (type == 0) { //重铸
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法重铸");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法重铸");
                 return false;
             }
             ObjectGuid::LowType guidlow = pItem->GetGUID().GetCounter();
@@ -5786,7 +5786,7 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
         }
         else if (type == -4) { //锁定洗炼
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000该物品无法洗炼");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锁|r|cFF00D9FF定|r|cFF00B3FF洗|r|cFF008DFF炼|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼");
                 return false;
             }
 
@@ -5995,7 +5995,7 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
         if (!pProto) return false;
         if (type == 0) { //重铸
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法重铸");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法重铸");
                 return false;
             }
             ObjectGuid::LowType guidlow = pItem->GetGUID().GetCounter();
@@ -6014,7 +6014,7 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
         }
         else if (type == -4) { //锁定洗炼
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000该物品无法洗炼");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锁|r|cFF00D9FF定|r|cFF00B3FF洗|r|cFF008DFF炼|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼");
                 return false;
             }
 
@@ -6186,12 +6186,12 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
     try {
         if (!pItem)
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000物品不存在。"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return;
         }
         ItemTemplate const* pProto = pItem->GetTemplate();
         if (!pProto)
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000物品不存在。"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return;
         }
         //        if (pItem->IsEquipped())
         //        {aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;}
@@ -6200,11 +6200,11 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
         uint32 zu = a_conf.qh_zu;
         if (zu == 0)
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法强化"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法强化"); return;
         }
         if (a_conf.fugai == "" || a_conf.fugai == "0")
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法强化"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法强化"); return;
         }
         std::vector<int32> types; types.clear();
         std::vector<int32> jcvalues; jcvalues.clear();
@@ -6215,7 +6215,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
 
         if (jcvalues.size() == 0)
         {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法强化"); return;
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法强化"); return;
         }
 
         std::vector<int32> values; values.clear();
@@ -6242,7 +6242,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
             AA_Item_Upgrade mconf = aaCenter.aa_item_upgrades[qhid];
             if (mconf.level == 0)
             {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000该物品无法强化"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法强化"); return;
             }
             for (uint32 i = 1; i <= qhjlevel; i++) {
                 uint32 qhid = AA_SafeObjectAtIndex(aaCenter.aa_item_upgrade_zus[zu], i - 1);
@@ -6335,11 +6335,11 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
             AA_Item_Upgrade conf = aaCenter.aa_item_upgrades[confid];
             if (conf.distribution != 0 && conf.distribution != 1)
             {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000系统错误qh002"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000系统错误qh002"); return;
             }
             if (conf.zu != oldconf.zu && oldconf.level > 0)
             {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000已达到最大等级"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000已达到最大等级"); return;
             }
             if (conf.need > 0) {
                 if (aaCenter.M_CanNeed(player, conf.need)) {
@@ -6362,29 +6362,29 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                     aaCenter.AA_SendNotice(player, notice, false, aa_message);
                 }
                 if (conf.destroy == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000强化失败"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000强化失败"); return;
                 }
                 else if (conf.destroy == 1) { //等级清0
                     aaCenter.M_CleanUpgradeItem(pItem);
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000强化失败"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000强化失败"); return;
                 }
                 else if (conf.destroy == 2) { //物品消失
                     uint32 item = aaCenter.aa_world_confs[21].value1;
                     uint32 count = 1;
                     if (!aaCenter.AA_HasItemInBagCount(player, item, count)) {
                         player->DestroyItemCount(pItem, count, true);
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000强化失败,装备被摧毁"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000强化失败,装备被摧毁"); return;
                     }
                     else {
                         aaCenter.M_CleanUpgradeItem(pItem);
                         aaCenter.AA_DestroyItemInBagCount(player, item, count, true, false);
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000强化失败,保护生效"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000强化失败,保护生效"); return;
                     }
                 }
             }
             else
             {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFFFF00强化成功");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFFFF00强化成功");
             }
             //增加百分比
             if (conf.percent1 > 0 || conf.percent2 > 0) {
@@ -6479,7 +6479,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
     }
     catch (std::exception const& e)
     {
-        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锻造系统]|cffFF0000异常错误qh001");
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000异常错误qh001");
     }
 }
 
@@ -20747,7 +20747,7 @@ std::unordered_map<uint32, AA_Biwu_Team> AACenter::AA_Biwu_Fenzu()
         }
         else {
             aaCenter.aa_biwu_score[p->GetGUIDLow()] += 2;
-            std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00恭喜你，获得躺赢资格，请等待下一轮开始。";
+            std::string msg = "|cFF00FFFF[比|r|cFF00D9FF武|r|cFF00B3FF擂|r|cFF008DFF台|r|cFF00FFFF]|r|cffFFFF00恭喜你，获得躺赢资格，请等待下一轮开始。";
             aaCenter.AA_SendMessage(p, 0, msg.c_str());
             AA_Biwu_Conf conf = aaCenter.aa_biwu_confs[aaCenter.aa_biwu_event_id];
             if (conf.gm_win != "" && conf.gm_win != "0") {
@@ -20777,7 +20777,7 @@ void AACenter::AA_Biwu_Update(uint32 diff)
                 if (time == 10 || time == 20 || time == 30 || time == 40 || time == 50 || time == 60 || time == 90 || time == 120) {
                     if (aaCenter.aa_biwu_isnotice != time) {
                         aaCenter.aa_biwu_isnotice = time;
-                        std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00比武大会将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
+                        std::string msg = "|cFF00FFFF[比|r|cFF00D9FF武|r|cFF00B3FF擂|r|cFF008DFF台|r|cFF00FFFF]|r|cffFFFF00比武大会将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
                         for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
@@ -20818,7 +20818,7 @@ void AACenter::AA_Biwu_Update(uint32 diff)
             if (time == 10 || time == 20 || time == 30 || time == 40 || time == 50 || time == 60 || time == 90 || time == 120) {
                 if (aaCenter.aa_biwu_isnotice != time) {
                     aaCenter.aa_biwu_isnotice = time;
-                    std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00第" + std::to_string(aaCenter.aa_biwu_index) + "轮比拼，还剩" + std::to_string(time) + "秒结束。";
+                    std::string msg = "|cFF00FFFF[比|r|cFF00D9FF武|r|cFF00B3FF擂|r|cFF008DFF台|r|cFF00FFFF]|r|cffFFFF00第" + std::to_string(aaCenter.aa_biwu_index) + "轮比拼，还剩" + std::to_string(time) + "秒结束。";
                     for (auto guidlow : aaCenter.aa_biwu_players) {
                         if (Player* player = ObjectAccessor::FindPlayerByLowGUID(guidlow)) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
@@ -20892,7 +20892,7 @@ void AACenter::AA_Biwu_Update(uint32 diff)
             if (aaCenter.aa_biwu_winners.size() > 1) {
                 for (auto guidlow : aaCenter.aa_biwu_players) {
                     if (Player* player = ObjectAccessor::FindPlayerByLowGUID(guidlow)) {
-                        std::string msg = "|cff00FFFF[比武擂台]|cffFFFF00第" + std::to_string(aaCenter.aa_biwu_index) + "轮比拼，将在10秒后开启。";
+                        std::string msg = "|cFF00FFFF[比|r|cFF00D9FF武|r|cFF00B3FF擂|r|cFF008DFF台|r|cFF00FFFF]|r|cffFFFF00第" + std::to_string(aaCenter.aa_biwu_index) + "轮比拼，将在10秒后开启。";
                         aaCenter.AA_SendMessage(player, 0, msg.c_str());
                     }
                 }
@@ -21110,7 +21110,7 @@ void AACenter::AA_Shouling_Cancel(ObjectGuid::LowType guidlow)
             }
         }
 
-        std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00《" + aaCenter.AA_GetPlayerNameLink(p) + "》变异时间结束，状态恢复正常。";
+        std::string msg = "|cFF00FFFF[首|r|cFF00D9FF领|r|cFF00B3FF争|r|cFF008DFF霸|r|cFF00FFFF]|r|cffFFFF00《" + aaCenter.AA_GetPlayerNameLink(p) + "》变异时间结束，状态恢复正常。";
         for (auto guidlow : aaCenter.aa_shouling_players) {
             Player* p = ObjectAccessor::FindPlayerByLowGUID(guidlow);
             if (p) {
@@ -21247,7 +21247,7 @@ void AACenter::AA_Shouling_Fenzu()
             }
         }
 
-        std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00玩家" + aaCenter.AA_GetPlayerNameLink(p) + "发生变异，持续时间" + std::to_string(conf.bianshen_time) + "秒。";
+        std::string msg = "|cFF00FFFF[首|r|cFF00D9FF领|r|cFF00B3FF争|r|cFF008DFF霸|r|cFF00FFFF]|r|cffFFFF00玩家" + aaCenter.AA_GetPlayerNameLink(p) + "发生变异，持续时间" + std::to_string(conf.bianshen_time) + "秒。";
         for (auto guidlow : aaCenter.aa_shouling_players) {
             Player* p = ObjectAccessor::FindPlayerByLowGUID(guidlow);
             if (p) {
@@ -21285,7 +21285,7 @@ void AACenter::AA_Shouling_Update(uint32 diff)
     if (time == 10 || time == 20 || time == 30 || time == 40 || time == 50 || time == 60 || time == 90 || time == 120) {
         if (aaCenter.aa_shouling_isnotice != time) {
             aaCenter.aa_shouling_isnotice = time;
-            std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
+            std::string msg = "|cFF00FFFF[首|r|cFF00D9FF领|r|cFF00B3FF争|r|cFF008DFF霸|r|cFF00FFFF]|r|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
             for (auto player : aaCenter.aa_onlinePlayers) {
                 aaCenter.AA_SendMessage(player, 0, msg.c_str());
             }
@@ -21306,7 +21306,7 @@ void AACenter::AA_Shouling_Update(uint32 diff)
                 if (time == 10 || time == 20 || time == 30 || time == 40 || time == 50 || time == 60 || time == 90 || time == 120) {
                     if (aaCenter.aa_shouling_isnotice != time) {
                         aaCenter.aa_shouling_isnotice = time;
-                        std::string msg = "|cff00FFFF[首领争霸]|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
+                        std::string msg = "|cFF00FFFF[首|r|cFF00D9FF领|r|cFF00B3FF争|r|cFF008DFF霸|r|cFF00FFFF]|r|cffFFFF00首领争霸将在" + std::to_string(time) + "秒后开始，进入活动地图后，自动报名参加。";
                         for (auto player : aaCenter.aa_onlinePlayers) {
                             aaCenter.AA_SendMessage(player, 0, msg.c_str());
                         }
@@ -22495,7 +22495,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
             std::map<int32, int32> buy_times; buy_times.clear();
             aaCenter.AA_StringToMap(aaCenter.aa_accounts[accountid].buy_time_yj, buy_times);
             if (aaCenter.aa_buy_times[entry].yongjiu_a && (buy_times[entry] + buycount) > aaCenter.aa_buy_times[entry].yongjiu_a) {
-                std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品同一账号限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_a) + "]次";
+                std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品同一账号限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_a) + "]次";
                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                 return false;
             }
@@ -22504,7 +22504,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
             std::map<int32, int32> buy_times; buy_times.clear();
             aaCenter.AA_StringToMap(aaCenter.aa_characterss[guidlow].buy_time_yj, buy_times);
             if (aaCenter.aa_buy_times[entry].yongjiu_c && (buy_times[entry] + buycount) > aaCenter.aa_buy_times[entry].yongjiu_c) {
-                std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品同一角色限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_c) + "]次";
+                std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品同一角色限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_c) + "]次";
                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                 return false;
             }
@@ -22519,7 +22519,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
                     std::string str = mdiy_systems[std::to_string(itemId)];
                     uint32 count = aaCenter.AA_StringInt32(str);
                     if (buycount + count > aaCenter.aa_buy_times[entry].buy_q) {
-                        std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品全服每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_q) + "]次";
+                        std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品全服每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_q) + "]次";
                         aaCenter.AA_SendMessage(player, 2, msg.c_str());
                         return false;
                     }
@@ -22530,7 +22530,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
             std::map<int32, int32> buy_times; buy_times.clear();
             aaCenter.AA_StringToMap(aaCenter.aa_characterss[guidlow].buy_time_yj, buy_times);
             if (aaCenter.aa_buy_times[entry].yongjiu_c && (buy_times[entry] + buycount) > aaCenter.aa_buy_times[entry].yongjiu_c) {
-                std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品同一角色限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_c) + "]次";
+                std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品同一角色限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_c) + "]次";
                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                 return false;
             }
@@ -22539,7 +22539,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
             std::map<int32, int32> buy_times; buy_times.clear();
             aaCenter.AA_StringToMap(aaCenter.aa_accounts[accountid].buy_time, buy_times);
             if (aaCenter.aa_buy_times[entry].buy_a && (buy_times[entry] + buycount) > aaCenter.aa_buy_times[entry].buy_a) {
-                std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品同一账号每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_a) + "]次";
+                std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品同一账号每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_a) + "]次";
                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                 return false;
             }
@@ -22548,7 +22548,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
             std::map<int32, int32> buy_times; buy_times.clear();
             aaCenter.AA_StringToMap(aaCenter.aa_characterss[guidlow].buy_time, buy_times);
             if (aaCenter.aa_buy_times[entry].buy_c && (buy_times[entry] + buycount) > aaCenter.aa_buy_times[entry].buy_c) {
-                std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品同一角色每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_c) + "]次";
+                std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品同一角色每日限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].buy_c) + "]次";
                 aaCenter.AA_SendMessage(player, 2, msg.c_str());
                 return false;
             }
@@ -22563,7 +22563,7 @@ bool AACenter::AA_Buy_Time_CanBuy(Player* player, uint32 entry, uint32 buycount)
                     std::string str = mdiy_systems[std::to_string(itemId)];
                     uint32 count = aaCenter.AA_StringInt32(str);
                     if (buycount + count > aaCenter.aa_buy_times[entry].yongjiu_q) {
-                        std::string msg = "|cff00FFFF[购买限制]|cffFF0000该物品全服限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_q) + "]次";
+                        std::string msg = "|cFF00FFFF[购|r|cFF00D9FF买|r|cFF00B3FF限|r|cFF008DFF制|r|cFF00FFFF]|r|cffFF0000该物品全服限制购买[" + std::to_string(aaCenter.aa_buy_times[entry].yongjiu_q) + "]次";
                         aaCenter.AA_SendMessage(player, 2, msg.c_str());
                         return false;
                     }

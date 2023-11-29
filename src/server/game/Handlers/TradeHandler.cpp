@@ -700,7 +700,7 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPackets::Trade::InitiateTrade&
         uint32 level = aaCenter.aa_characterss[guidlow].yiming;
         AA_Yiming_Conf conf = aaCenter.aa_yiming_confs[level];
         if (conf.is_jiaoyi == 1) {
-            std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000无法进行交易|r";
+            std::string msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000无法进行交易|r";
             aaCenter.AA_SendMessage(_player, 1, msg.c_str());
             return;
         }

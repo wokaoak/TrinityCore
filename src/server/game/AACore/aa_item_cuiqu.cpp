@@ -36,18 +36,18 @@ public:
             AA_Character_Instance conf = aaCenter.aa_character_instances[item->GetGUIDLow()];
             conf_c = aaCenter.aa_cuiqu_items[itemid];
             if (itemid == 0 || conf.itemEntry != itemid || conf_c.itemid != itemid) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000道具不正确!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000道具不正确!");
                 return true;
             }
         } else {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000物品不存在!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在!");
             return true;
         }
         //赋值 item 和 targetitem
         if (targets.GetItemTarget()) {
             Item* target = targets.GetItemTarget();
             if (target && target->IsEquipped()) {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000请将物品放入背包再操作。"); return true;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return true;
             }
             if (ItemTemplate const* pProto = target->GetTemplate()) {
 
@@ -55,7 +55,7 @@ public:
                     std::vector<int32> items; items.clear();
                     aaCenter.AA_StringToVectorInt(conf_c.items, items, ",");
                     if (std::find(items.begin(), items.end(), pProto->GetId()) == items.end()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                         return true;
                     }
                 }
@@ -63,7 +63,7 @@ public:
                     std::vector<int32> items; items.clear();
                     aaCenter.AA_StringToVectorInt(conf_c.pcitems, items, ",");
                     if (std::find(items.begin(), items.end(), pProto->GetId()) != items.end()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000无法对该物品使用。");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000无法对该物品使用。");
                         return true;
                     }
                 }
@@ -84,7 +84,7 @@ public:
                 ItemTemplate const* tpProto = target->GetTemplate();
                 if (tpProto) {
                     if (conf2.cuiqu_pos != -1 && conf2.cuiqu_pos != (int32)tpProto->GetInventoryType()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000附魔的装备部位不正确!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000附魔的装备部位不正确!");
                         return true;
                     }
                 }
@@ -141,7 +141,7 @@ public:
             if (vindex > 0 || sindex > 0) {
                 SendGossipMenuFor(player, DEFAULT_GOSSIP_MESSAGE, item->GetGUID());
             } else {
-                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该装备无法萃取!");
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该装备无法萃取!");
             }
         }
         return true; // Cast the spell on use normally
@@ -153,7 +153,7 @@ public:
             return;
         }
         if (!player->aa_target_item || player->aa_target_item->GetState() == ITEM_REMOVED || !player->aa_target_item->IsInWorld()) {
-            aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[系统提示]|cffFF0000该装备无法萃取!");
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该装备无法萃取!");
             return;
         }
 
@@ -186,7 +186,7 @@ public:
                 int32 type = AA_SafeObjectAtIndex(types, 0);
                 int32 value = AA_SafeObjectAtIndex(values, 0);
                 if (value == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000该物品没有觉醒属性，无法传承!");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[淬|r|cFF00D9FF炼|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品没有觉醒属性，无法传承!");
                     return;
                 }
                 std::map<int32, int32> cuiqus; cuiqus.clear();
@@ -238,7 +238,7 @@ public:
 
                 uint32 spellid = AA_SafeObjectAtIndex(spells, 0);
                 if (spellid == 0) {
-                    aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000该物品没有觉醒技能，无法传承!");
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[淬|r|cFF00D9FF炼|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品没有觉醒技能，无法传承!");
                     return;
                 }
                 std::map<int32, int32> cuiqus; cuiqus.clear();
@@ -309,7 +309,7 @@ public:
                     int32 type = types[action];
                     int32 value = values[action];
                     if (type == 999999) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000无法萃取插槽!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[淬|r|cFF00D9FF炼|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000无法萃取插槽!");
                         CloseGossipMenuFor(player);
                         return;
                     }
@@ -337,7 +337,7 @@ public:
                 if (spells.size() > (action - 10000)) {
                     int32 spellid = spells[action - 10000];
                     if (spellid == 999999) {
-                        aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[淬炼系统]|cffFF0000无法萃取插槽!");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[淬|r|cFF00D9FF炼|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000无法萃取插槽!");
                         CloseGossipMenuFor(player);
                         return;
                     }

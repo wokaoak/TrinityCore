@@ -3420,7 +3420,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
     if (conf.isOk == "是") {
         if (Player* p = m_caster->ToPlayer()) {
             if (p && p->IsInWorld()) {
-                aaCenter.AA_SendMessage(p, 1, "|cff00FFFF[系统提示]|cffFF0000该技能已被禁用|r");
+                aaCenter.AA_SendMessage(p, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该技能已被禁用|r");
             }
         }
         return SPELL_FAILED_UNKNOWN;
@@ -3451,7 +3451,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
                 std::vector<int32> spells; spells.clear();
                 aaCenter.AA_StringToVectorInt(conf.jyjineng, spells, ",");
                 if (std::find(spells.begin(), spells.end(), m_spellInfo->Id) != spells.end()) {
-                    aaCenter.AA_SendMessage(p, 1, "|cff00FFFF[系统提示]|cffFF0000该地图中禁用此技能|r");
+                    aaCenter.AA_SendMessage(p, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该地图中禁用此技能|r");
                     return SPELL_FAILED_UNKNOWN;
                 }
             }
@@ -3465,7 +3465,7 @@ SpellCastResult Spell::prepare(SpellCastTargets const& targets, AuraEffect const
                     std::vector<int32> spells; spells.clear();
                     aaCenter.AA_StringToVectorInt(conf.jinzhi_spells, spells, ",");
                     if (std::find(spells.begin(), spells.end(), m_spellInfo->Id) != spells.end()) {
-                        std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000无法使用此技能|r";
+                        std::string msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000无法使用此技能|r";
                         aaCenter.AA_SendMessage(p, 1, msg.c_str());
                         return SPELL_FAILED_UNKNOWN;
                     }

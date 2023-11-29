@@ -94,9 +94,9 @@ void WorldSession::HandlePartyInviteOpcode(WorldPackets::Party::PartyInviteClien
         AA_Yiming_Conf conf2 = aaCenter.aa_yiming_confs[level2];
         if (conf1.is_zudui > 0 || conf2.is_zudui > 0) {
             if (level1 != level2) {
-                std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队|r";
+                std::string msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000只可以和一命模式的玩家组队|r";
                 if (aaCenter.aa_world_confs[106].value1 > 0) {
-                    msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
+                    msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
                 }
                 aaCenter.AA_SendMessage(invitedPlayer, 1, msg.c_str());
                 return;
@@ -105,7 +105,7 @@ void WorldSession::HandlePartyInviteOpcode(WorldPackets::Party::PartyInviteClien
                 int32 level = invitingPlayer->GetLevel() - invitedPlayer->GetLevel();
                 level = level < 0 ? -level : level;
                 if (level > aaCenter.aa_world_confs[106].value1) {
-                    std::string msg = "|cff00FFFF[一命模式]|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
+                    std::string msg = "|cFF00FFFF[一|r|cFF00D9FF命|r|cFF00B3FF模|r|cFF008DFF式|r|cFF00FFFF]|r|r|cffFF0000只可以和一命模式的玩家组队，且等级相差在[" + std::to_string(aaCenter.aa_world_confs[106].value1) + "级]内|r";
                     aaCenter.AA_SendMessage(invitedPlayer, 1, msg.c_str());
                     return;
                 }

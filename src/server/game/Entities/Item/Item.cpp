@@ -560,7 +560,7 @@ void Item::UpdateDuration(Player* owner, uint32 diff)
                     char tmp[32] = { NULL };
                     strftime(tmp, sizeof(tmp), "%Y-%m-%d %H:%M:%S", localtime(&t1));
                     std::string date(tmp);
-                    std::string msg = "|cff00FFFF[物品租赁]|cffFF0000你的|r" + aaCenter.AA_GetItemLinkJd(this) + "|cffFF0000" + "已于" + date + "过期。";
+                    std::string msg = "|cFF00FFFF[物|r|cFF00D9FF品|r|cFF00B3FF租|r|cFF008DFF赁|r|cFF00FFFF]|r|cffFF0000你的|r" + aaCenter.AA_GetItemLinkJd(this) + "|cffFF0000" + "已于" + date + "过期。";
                     aaCenter.AA_SendMessage(owner, 0, msg.c_str());
                 }
                 sScriptMgr->OnItemExpire(owner, GetTemplate());
