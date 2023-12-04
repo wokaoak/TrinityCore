@@ -68,6 +68,80 @@ void Unit::UpdateDamagePhysical(WeaponAttackType attType)
 
     CalculateMinMaxDamage(attType, false, true, minDamage, maxDamage);
 
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+    if (conf.class1 > 0) {
+        switch (attType)
+        {
+        case BASE_ATTACK:
+        {
+            if (conf.damage_base_bl > 0) {
+                minDamage = minDamage * conf.damage_base_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_base_bl * 0.01;
+            }
+            if (conf.damage_base_xx > 0) {
+                if (minDamage <= conf.damage_base_xx * 0.5) {
+                    minDamage = conf.damage_base_xx * 0.5;
+                }
+                if (maxDamage <= conf.damage_base_xx) {
+                    maxDamage = conf.damage_base_xx;
+                }
+            }
+            if (conf.damage_base_sx > 0 && maxDamage > conf.damage_base_sx) {
+                maxDamage = conf.damage_base_sx;
+            }
+            if (minDamage > maxDamage) {
+                minDamage = maxDamage;
+            }
+        }
+        break;
+        case OFF_ATTACK:
+        {
+            if (conf.damage_off_bl > 0) {
+                minDamage = minDamage * conf.damage_off_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_off_bl * 0.01;
+            }
+            if (conf.damage_off_xx > 0) {
+                if (minDamage <= conf.damage_off_xx * 0.5) {
+                    minDamage = conf.damage_off_xx * 0.5;
+                }
+                if (maxDamage <= conf.damage_off_xx) {
+                    maxDamage = conf.damage_off_xx;
+                }
+            }
+            if (conf.damage_off_sx > 0 && maxDamage > conf.damage_off_sx) {
+                maxDamage = conf.damage_off_sx;
+            }
+            if (minDamage > maxDamage) {
+                minDamage = maxDamage;
+            }
+        }
+        break;
+        case RANGED_ATTACK:
+        {
+            if (conf.damage_ranged_bl > 0) {
+                minDamage = minDamage * conf.damage_ranged_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_ranged_bl * 0.01;
+            }
+            if (conf.damage_ranged_xx > 0) {
+                if (minDamage <= conf.damage_ranged_xx * 0.5) {
+                    minDamage = conf.damage_ranged_xx * 0.5;
+                }
+                if (maxDamage <= conf.damage_ranged_xx) {
+                    maxDamage = conf.damage_ranged_xx;
+                }
+            }
+            if (conf.damage_ranged_sx > 0 && maxDamage > conf.damage_ranged_sx) {
+                maxDamage = conf.damage_ranged_sx;
+            }
+            if (minDamage > maxDamage) {
+                minDamage = maxDamage;
+            }
+        }
+        break;
+        default:
+            break;
+        }
+    }
     switch (attType)
     {
         case BASE_ATTACK:
@@ -156,8 +230,11 @@ void AA_UpdateFaqiang(Player* player, int32& DoneAdvertisedBenefit)
     if (conf.faqiangbl > 0) {
         DoneAdvertisedBenefit = DoneAdvertisedBenefit * conf.faqiangbl * 0.01;
     }
-    if (conf.faqiang > 0 && DoneAdvertisedBenefit > conf.faqiang) {
-        DoneAdvertisedBenefit = conf.faqiang;
+    if (conf.faqiangxx > 0 && DoneAdvertisedBenefit <= conf.faqiangxx) {
+        DoneAdvertisedBenefit = conf.faqiangxx;
+    }
+    if (conf.faqiangsx > 0 && DoneAdvertisedBenefit > conf.faqiangsx) {
+        DoneAdvertisedBenefit = conf.faqiangsx;
     }
 }
 
@@ -174,8 +251,11 @@ void Player::ApplySpellPowerBonus(int32 amount, bool apply)
         if (conf.zhiliaobl > 0) {
             heal = heal * (conf.zhiliaobl / 100.0);
         }
-        if (conf.zhiliao > 0 && heal > conf.zhiliao) {
-            heal = conf.zhiliao;
+        if (conf.zhiliaoxx > 0 && heal <= conf.zhiliaoxx) {
+            heal = conf.zhiliaoxx;
+        }
+        if (conf.zhiliaosx > 0 && heal > conf.zhiliaosx) {
+            heal = conf.zhiliaosx;
         }
     }
 
@@ -203,8 +283,11 @@ void Player::UpdateSpellDamageAndHealingBonus()
         if (conf.zhiliaobl > 0) {
             heal = heal * (conf.zhiliaobl / 100.0);
         }
-        if (conf.zhiliao > 0 && heal > conf.zhiliao) {
-            heal = conf.zhiliao;
+        if (conf.zhiliaoxx > 0 && heal <= conf.zhiliaoxx) {
+            heal = conf.zhiliaoxx;
+        }
+        if (conf.zhiliaosx > 0 && heal > conf.zhiliaosx) {
+            heal = conf.zhiliaosx;
         }
     }
     SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), heal);
@@ -306,17 +389,6 @@ void Player::UpdateArmor()
     value *= GetPctModifierValue(unitMod, TOTAL_PCT);
     value *= GetTotalAuraMultiplier(SPELL_AURA_MOD_BONUS_ARMOR_PCT);
 
-    //aawow 职业属性平衡,护甲上限,倍率
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
-    if (conf.class1 > 0) {
-        if (conf.hujiabl > 0) {
-            value = value * (conf.hujiabl / 100.0);
-        }
-        if (conf.hujiasx > 0 && value > conf.hujiasx) {
-            value = conf.hujiasx;
-        }
-    }
-
     //战宠给主人加护甲
     for (Unit* unit : this->m_Controlled)
     {
@@ -332,7 +404,21 @@ void Player::UpdateArmor()
             }
         }
     }
-    
+
+    //aawow 职业属性平衡,护甲上限,倍率
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+    if (conf.class1 > 0) {
+        if (conf.hujiabl > 0) {
+            value = value * (conf.hujiabl / 100.0);
+        }
+        if (conf.hujiaxx > 0 && value <= conf.hujiaxx) {
+            value = conf.hujiaxx;
+        }
+        if (conf.hujiasx > 0 && value > conf.hujiasx) {
+            value = conf.hujiasx;
+        }
+    }
+
     SetArmor(int32(value), int32(value - baseValue));
 
     Pet* pet = GetPet();
@@ -430,13 +516,13 @@ void Player::UpdateMaxHealth()
 
     //aawow 职业属性平衡,生命上限
     if (conf.class1 > 0) {
-        if (conf.hpsx > 0 && value > conf.hpsx) {
-            value = conf.hpsx;
-        }
         if (aaCenter.AA_VerifyCode("a210b")) {
-            if (conf.hpxx > 0 && value < conf.hpxx) {
+            if (conf.hpxx > 0 && value <= conf.hpxx) {
                 value = conf.hpxx;
             }
+        }
+        if (conf.hpsx > 0 && value > conf.hpsx) {
+            value = conf.hpsx;
         }
     }
 
@@ -501,44 +587,46 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
         val2 = CalculatePct(float(minSpellPower), *m_activePlayerData->OverrideAPBySpellPowerPercent);
     }
 
-    val2 += CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 600));
-    val2 += CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 601));
-    val2 += CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 602));
-    val2 += CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 603));
-
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
-    if (conf.class1 > 0) {
-        val2 += CalculatePct(GetStat(STAT_STAMINA), conf.nltogq);
-        val2 += CalculatePct(GetStat(STAT_STRENGTH), conf.lltogq);
-        val2 += CalculatePct(GetStat(STAT_AGILITY), conf.mjtogq);
-        val2 += CalculatePct(GetStat(STAT_INTELLECT), conf.zltogq);
-    }
-
-    val2 += CalculatePct(val2, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
-
-    if (conf.class1 > 0) {
-        if (conf.gongqiangbl > 0) {
-            val2 = val2 * conf.gongqiangbl * 0.01;
-        }
-        if (conf.gongqiang > 0 && val2 > conf.gongqiang) {
-            val2 = conf.gongqiang;
-        }
-    }
-
     SetStatFlatModifier(unitMod, BASE_VALUE, val2);
 
     float base_attPower = GetFlatModifierValue(unitMod, BASE_VALUE) * GetPctModifierValue(unitMod, BASE_PCT);
     float attPowerMod = GetFlatModifierValue(unitMod, TOTAL_VALUE);
     float attPowerMultiplier = GetPctModifierValue(unitMod, TOTAL_PCT) - 1.0f;
 
+    float aa_base_attPower = 0.0;
+    float aa_attPowerMod = 0.0;
+    aa_attPowerMod += CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 600));
+    aa_attPowerMod += CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 601));
+    aa_attPowerMod += CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 602));
+    aa_attPowerMod += CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 603));
+
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
+    if (conf.class1 > 0) {
+        aa_base_attPower += CalculatePct(GetStat(STAT_STAMINA), conf.nltogq);
+        aa_base_attPower += CalculatePct(GetStat(STAT_STRENGTH), conf.lltogq);
+        aa_base_attPower += CalculatePct(GetStat(STAT_AGILITY), conf.mjtogq);
+        aa_base_attPower += CalculatePct(GetStat(STAT_INTELLECT), conf.zltogq);
+    }
+
+    float bl = aaCenter.AA_FindMapValueUint32(aa_fm_values, 538);
+    base_attPower += CalculatePct(base_attPower, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
     attPowerMod += CalculatePct(attPowerMod, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
+    base_attPower += aa_base_attPower;
+    attPowerMod += aa_attPowerMod;
 
     if (conf.class1 > 0) {
         if (conf.gongqiangbl > 0) {
-            attPowerMod = attPowerMod * conf.gongqiangbl * 0.01;
+            bl += conf.gongqiangbl;
         }
-        if (conf.gongqiang > 0 && (base_attPower + attPowerMod) > conf.gongqiang) {
-            base_attPower = conf.gongqiang;
+    }
+    base_attPower += base_attPower * bl * 0.01;
+    attPowerMod += attPowerMod * bl * 0.01;
+    if (conf.class1 > 0) {
+        if (conf.gongqiangxx > 0 && (base_attPower + attPowerMod) <= conf.gongqiangxx) {
+            base_attPower = (conf.gongqiangxx - attPowerMod);
+        }
+        if (conf.gongqiangsx > 0 && (base_attPower + attPowerMod) > conf.gongqiangsx) {
+            base_attPower = conf.gongqiangsx;
             attPowerMod = 0;
         }
     }
@@ -636,6 +724,66 @@ void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bo
 
     minDamage = ((weaponMinDamage + baseValue) * basePct + totalValue) * totalPct * versaDmgMod;
     maxDamage = ((weaponMaxDamage + baseValue) * basePct + totalValue) * totalPct * versaDmgMod;
+
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+    if (conf.class1 > 0) {
+        switch (attType)
+        {
+        case BASE_ATTACK:
+        {
+            if (conf.damage_base_bl > 0) {
+                minDamage = minDamage * conf.damage_base_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_base_bl * 0.01;
+            }
+            if (conf.damage_base_xx > 0 && minDamage <= conf.damage_base_xx * 0.75) {
+                minDamage = conf.damage_base_xx * 0.75;
+            }
+            if (conf.damage_base_xx > 0 && maxDamage <= conf.damage_base_xx) {
+                maxDamage = conf.damage_base_xx;
+            }
+            if (conf.damage_base_sx > 0 && maxDamage > conf.damage_base_sx) {
+                maxDamage = conf.damage_base_sx;
+            }
+            break;
+        }
+        case OFF_ATTACK:
+        {
+            if (conf.damage_off_bl > 0) {
+                minDamage = minDamage * conf.damage_off_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_off_bl * 0.01;
+            }
+            if (conf.damage_off_xx > 0 && minDamage <= conf.damage_off_xx * 0.75) {
+                minDamage = conf.damage_off_xx * 0.75;
+            }
+            if (conf.damage_off_xx > 0 && maxDamage <= conf.damage_off_xx) {
+                maxDamage = conf.damage_off_xx;
+            }
+            if (conf.damage_off_sx > 0 && maxDamage > conf.damage_off_sx) {
+                maxDamage = conf.damage_off_sx;
+            }
+            break;
+        }
+        case RANGED_ATTACK:
+        {
+            if (conf.damage_ranged_bl > 0) {
+                minDamage = minDamage * conf.damage_ranged_bl * 0.01;
+                maxDamage = maxDamage * conf.damage_ranged_bl * 0.01;
+            }
+            if (conf.damage_ranged_xx > 0 && minDamage <= conf.damage_ranged_xx * 0.75) {
+                minDamage = conf.damage_ranged_xx * 0.75;
+            }
+            if (conf.damage_ranged_xx > 0 && maxDamage <= conf.damage_ranged_xx) {
+                maxDamage = conf.damage_ranged_xx;
+            }
+            if (conf.damage_ranged_sx > 0 && maxDamage > conf.damage_ranged_sx) {
+                maxDamage = conf.damage_ranged_sx;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
 }
 
 void Player::UpdateBlockPercentage()
@@ -655,6 +803,9 @@ void Player::UpdateBlockPercentage()
 
         //aawow 职业属性平衡,格挡上限,倍率
         if (conf.class1 > 0) {
+            if (conf.blockxx > 0 && value <= conf.blockxx) {
+                value = conf.blockxx;
+            }
             if (conf.blocksx > 0 && value > conf.blocksx) {
                 value = conf.blocksx;
             }
@@ -674,6 +825,9 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
         //aawow 职业属性平衡，暴击上限倍数
         AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
         if (conf.class1 > 0) {
+            if (conf.bjxx > 0 && value <= conf.bjxx) {
+                value = conf.bjxx;
+            }
             if (conf.bjsx > 0 && value > conf.bjsx) {
                 value = conf.bjsx;
             }
@@ -852,6 +1006,9 @@ void Player::UpdateParryPercentage()
         //aawow 职业属性平衡,招架上限,倍率
         AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
         if (conf.class1 > 0) {
+            if (conf.parryxx > 0 && value <= conf.parryxx) {
+                value = conf.parryxx;
+            }
             if (conf.parrysx > 0 && value > conf.parrysx) {
                 value = conf.parrysx;
             }
@@ -912,6 +1069,9 @@ void Player::UpdateDodgePercentage()
 
     //aawow 职业属性平衡,躲闪上限倍率
     if (conf.class1 > 0) {
+        if (conf.dodgexx > 0 && value <= conf.dodgexx) {
+            value = conf.dodgexx;
+        }
         if (conf.dodgesx > 0 && value > conf.dodgesx) {
             value = conf.dodgesx;
         }
@@ -936,6 +1096,9 @@ void Player::UpdateSpellCritChance()
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
     //aawow 职业属性平衡，技能暴击上限倍数
     if (conf.class1 > 0) {
+        if (conf.bjxx > 0 && crit <= conf.bjxx) {
+            crit = conf.bjxx;
+        }
         if (conf.bjsx > 0 && crit > conf.bjsx) {
             crit = conf.bjsx;
         }

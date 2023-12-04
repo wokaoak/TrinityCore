@@ -263,10 +263,12 @@ Map* MapManager::CreateMap(uint32 mapId, Player* player)
         }
     }
     //改变当前秘境难度
-    int32 instanceid_new = map->GetInstanceId();
-    aaCenter.aa_minstancevalues[instanceid_new][3] = aa_teleport_nandu;
-    aaCenter.AA_UpdateValueBools(instanceid_new, 3, true);
-    aaCenter.AA_UpdateValueBools(instanceid_new, 3, true, player->GetGUIDLow());
+    if (map) {
+        uint32 instanceid_new = map->GetInstanceId();
+        aaCenter.aa_minstancevalues[instanceid_new][3] = aa_teleport_nandu;
+        aaCenter.AA_UpdateValueBools(instanceid_new, 3, true);
+        aaCenter.AA_UpdateValueBools(instanceid_new, 3, true, player->GetGUIDLow());
+    }
 
     player->aa_teleport_nandu = -2;
     return map;

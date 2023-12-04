@@ -46,11 +46,13 @@ public:
         //赋值 item 和 targetitem
         if (targets.GetItemTarget()) {
             Item* target = targets.GetItemTarget();
-            if (target && target->IsEquipped()) {
+            if (!target) {
+                return false;
+            }
+            if (target->IsEquipped()) {
                 aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return true;
             }
             if (ItemTemplate const* pProto = target->GetTemplate()) {
-
                 if (conf_c.items != "" && conf_c.items != "0") {
                     std::vector<int32> items; items.clear();
                     aaCenter.AA_StringToVectorInt(conf_c.items, items, ",");

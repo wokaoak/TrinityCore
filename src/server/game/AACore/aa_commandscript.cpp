@@ -37,6 +37,21 @@
 
 using namespace Trinity::ChatCommands;
 
+//排序
+bool aa_cmp(std::pair<int32, int32> a, std::pair<int32, int32> b) {
+    return a.second < b.second;
+}
+
+void aa_paihangpx(std::vector<std::pair<int32, int32>>& v, std::map<int32, int32> mp)
+{
+    std::vector< std::pair<int32, int32> > vec; vec.clear();
+    for (std::map<int32, int32>::iterator it = mp.begin(); it != mp.end(); it++) {
+        vec.push_back(std::pair<int32, int32>(it->first, it->second));
+    }
+    sort(vec.begin(), vec.end(), aa_cmp);
+    v = vec;
+}
+
 class aa_commandscript : public CommandScript
 {
 public:
@@ -523,6 +538,22 @@ public:
         if (conf_c.type == danweiid) {
             aaCenter.aa_hongbaos[player->GetGUIDLow()] += conf_c.money_all;
         }
+
+        //发红包奖励
+        if (aaCenter.aa_world_confs[107].value2 != "" && aaCenter.aa_world_confs[107].value2 != "0") {
+            std::map<int32, int32> m; m.clear();
+            aaCenter.AA_StringToMap(aaCenter.aa_world_confs[107].value2, m);
+            std::vector<std::pair<int32, int32>> m1; m1.clear();
+            aa_paihangpx(m1, m);
+            for (auto& itr : m1) {
+                if (money_all >= itr.first) {
+                    if (itr.second > 0) {
+                        aaCenter.M_Reward(player, itr.second);
+                        break;
+                    }
+                }
+            }
+        }
         return true;
     }
     static bool AA_qianghongbao(ChatHandler* handler, char const* args)
@@ -649,6 +680,17 @@ public:
 
         if (aaCenter.aa_character_hongbaos[zu].count == aaCenter.aa_character_hongbaos[zu].count_all ||
             aaCenter.aa_character_hongbaos[zu].money == aaCenter.aa_character_hongbaos[zu].money_all) {
+            //拼手气红包奖励
+            if (aaCenter.aa_world_confs[107].value1 > 0 && aaCenter.aa_character_hongbaos[zu].count > 1) {
+                ObjectGuid::LowType guidlow = aaCenter.aa_hongbao_guids[zu][0];
+                std::string name = aaCenter.aa_hongbao_names[zu][0];
+                if (Player* p = ObjectAccessor::FindPlayerByLowGUID(guidlow)) {
+                    name = aaCenter.AA_GetPlayerColor(p) + p->GetName() + "|r";
+                    std::string msg = "|cFF00FFFF[红|r|cFF00D9FF包|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000恭喜玩家【" + name + "|cffFF0000】人品爆发，在拼手气红包中获得第一名，获得额外奖励。|r";
+                    aaCenter.AA_SendMessage(nullptr, 2, msg.c_str());
+                    aaCenter.M_Reward(p, aaCenter.aa_world_confs[107].value1);
+                }
+            }
             time_t timep;
             time(&timep);
             aaCenter.aa_character_hongbaos[zu].update_time = timep + 180;
@@ -4680,6 +4722,10 @@ public:
     static bool AA_zhaohuan(ChatHandler* handler, const char* args)
     {
         Player* target = handler->getSelectedPlayerOrSelf();
+        if (!target) {
+            return false;
+        }
+
         if (!*args)
         {
             ChatHandler(handler->GetSession()).PSendSysMessage("语法格式:.召唤 参数1：entry（正数 - Creature Entry;负数 - Gameobject Entry) 参数2：存在时间(Creature或Gameobject持续的时间，单位秒）参数3 ：难度id(可选参数，_属性调整_生物_id或_属性调整_物体_id 参数4：坐标x（可选） 参数5：坐标y（可选） 参数6：坐标z（可选） 参数7：坐标o（可选）");
@@ -4741,12 +4787,7 @@ public:
             pos.SetOrientation(target->GetOrientation());
         }
         if (entry > 0) {
-            Creature* creature = nullptr;
-
-            if (Map* map = target->GetMap()) {
-                creature = target->SummonCreature(entry, pos, TEMPSUMMON_TIMED_DESPAWN, time * 1s);
-            }
-
+            Creature* creature = target->SummonCreature(entry, pos, TEMPSUMMON_TIMED_DESPAWN, time * 1s);
             if (creature)
             {
                 if (nandu > 0) {
@@ -4756,23 +4797,26 @@ public:
                         creature->SelectLevel();
                     }
                 }
-                AA_Boss_Conf bconf = aaCenter.aa_boss_confs[entry];
 
-                if (bconf.id > 0) {
-                    creature->aa_boss_id = bconf.id;
-                    creature->aa_boss_time_max = (time / 60);
-                    creature->aa_boss_time = 0;
-                    creature->aa_boss_dmg.clear();
+                if (aaCenter.aa_boss_confs.find(entry) != aaCenter.aa_boss_confs.end()) {
+                    AA_Boss_Conf bconf = aaCenter.aa_boss_confs[entry];
+                    if (bconf.id > 0) {
+                        creature->aa_boss_id = bconf.id;
+                        creature->aa_boss_time_max = (time / 60);
+                        creature->aa_boss_time = 0;
+                        creature->aa_boss_dmg.clear();
+                    }
                 }
             }
         }
         else if (entry < 0) {
             GameObject* gameObject = target->SummonGameObject(abs(entry), pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), QuaternionData(), time * 1s);
-
-            if (nandu > 0) {
-                AA_Object conf = aaCenter.aa_objects[nandu];
-                if (conf.id > 0) {
-                    aaCenter.AA_ModifyGameObject(gameObject, conf);
+            if (gameObject) {
+                if (nandu > 0) {
+                    AA_Object conf = aaCenter.aa_objects[nandu];
+                    if (conf.id > 0) {
+                        aaCenter.AA_ModifyGameObject(gameObject, conf);
+                    }
                 }
             }
         }
@@ -4783,15 +4827,14 @@ public:
     static bool AA_zhaohuanmoban(ChatHandler* handler, const char* args)
     {
         Player* target = handler->getSelectedPlayerOrSelf();
-        if (!*args)
-        {
-            if (target) {
-                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
-            }
+
+        if (!target) {
             return false;
         }
 
-        if (!target->GetMap()) {
+        if (!*args)
+        {
+            aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
             return false;
         }
 
@@ -4802,9 +4845,7 @@ public:
 
         if (!s_zu || !s_time)
         {
-            if (target) {
-                aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
-            }
+            aaCenter.AA_SendMessage(target, 1, "语法格式:.召唤模板 参数1:（__采集_生物_组） 参数2（Creature或Gameobject持续的时间，单位 秒)  参数3，可选（是否组内随机，0组内按几率随机一个，1组内全部召唤）  参数4，可选(_属性调整_生物_id或_属性调整_物体_id");
             return false;
         }
 
@@ -4864,26 +4905,34 @@ public:
         for (auto id : conf_ids) {
             AA_Caiji_Creature conf = aaCenter.aa_caiji_creatures[id];
             Map* map = nullptr;
-            if (map = sMapMgr->CreateMap(conf.map, target)) {
-                if (map->IsDungeon()) {//如果是副本，并且自己也在当前副本，召唤生物。
-                    if (target->GetMapId() == conf.map) {
-                        map = sMapMgr->FindMap(conf.map, target->GetInstanceId());
-                    }
-                }
+            MapEntry const* entry = sMapStore.LookupEntry(conf.map);
+            if (!entry) {
+                continue;
             }
+            if (entry->Instanceable()) {
+                if (!target || !target->IsInWorld() || !target->GetMap() || target->GetMap()->GetId() != conf.map) {
+                    continue;
+                }
+                if (target->GetMapId() != conf.map) {
+                    continue;
+                }
+                map = target->GetMap();
+            }
+            else {
+                map = sMapMgr->CreateMap(conf.map, target);
+            }
+
             if (!map) {
                 continue;
             }
             if (conf.entry > 0) {
-                Creature* creature = nullptr;
-
                 Position pos;
                 pos.m_positionX = conf.position_x;
                 pos.m_positionY = conf.position_y;
                 pos.m_positionZ = conf.position_z;
                 pos.SetOrientation(conf.orientation);
 
-                creature = target->SummonCreature(conf.entry, pos, TEMPSUMMON_TIMED_DESPAWN, time * 1s);
+                Creature* creature = target->SummonCreature(conf.entry, pos, TEMPSUMMON_TIMED_DESPAWN, time * 1s);
                 if (creature) {
                     if (nandu > 0) {
                         AA_Creature conf = aaCenter.aa_creatures[nandu];
@@ -4893,22 +4942,25 @@ public:
                         }
                     }
 
-                    AA_Boss_Conf bconf = aaCenter.aa_boss_confs[conf.entry];
-                    if (creature && bconf.id > 0) {
-                        creature->aa_boss_id = bconf.id;
-                        creature->aa_boss_time_max = (time / 60);
-                        creature->aa_boss_time = 0;
-                        creature->aa_boss_dmg.clear();
+                    if (aaCenter.aa_boss_confs.find(conf.entry) != aaCenter.aa_boss_confs.end()) {
+                        AA_Boss_Conf bconf = aaCenter.aa_boss_confs[conf.entry];
+                        if (bconf.id > 0) {
+                            creature->aa_boss_id = bconf.id;
+                            creature->aa_boss_time_max = (time / 60);
+                            creature->aa_boss_time = 0;
+                            creature->aa_boss_dmg.clear();
+                        }
                     }
                 }
             }
             else {
                 GameObject* gameObject = target->SummonGameObject(abs(conf.entry), conf.position_x, conf.position_y, conf.position_z, conf.orientation, QuaternionData(), time * 1s);
-
-                if (nandu > 0) {
-                    AA_Object conf = aaCenter.aa_objects[nandu];
-                    if (conf.id > 0) {
-                        aaCenter.AA_ModifyGameObject(gameObject, conf);
+                if (gameObject) {
+                    if (nandu > 0) {
+                        AA_Object conf = aaCenter.aa_objects[nandu];
+                        if (conf.id > 0) {
+                            aaCenter.AA_ModifyGameObject(gameObject, conf);
+                        }
                     }
                 }
             }

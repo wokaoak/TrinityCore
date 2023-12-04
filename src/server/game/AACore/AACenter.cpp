@@ -68,6 +68,8 @@
 #include "Map.h"
 #include <random>
 #include "GameObject.h"
+#include "MotionMaster.h"
+#include "SmartAI.h"
 
 #include <iostream>
 #include <sstream>
@@ -817,6 +819,17 @@ void AACenter::Update(Unit* unit, uint32 diff)
         }
     }
     else if (Creature* creature = unit->ToCreature()) {
+        //离开原位置重置距离
+        if (creature->aa_id > 0) {
+            AA_Creature conf = aaCenter.aa_creatures[creature->aa_id];
+            if (conf.resetDistance > 0 && creature->GetHomePosition().GetExactDist2d(creature) > conf.resetDistance) {
+                creature->aa_reset_timer += diff;
+                if (creature->aa_reset_timer >= 3000) {
+                    creature->aa_reset_timer = 0;
+                    creature->AI()->EnterEvadeMode();
+                }
+            }
+        }
         { //boss排行
             {
                 if (creature->aa_boss_id > 0 && !creature->aa_boss_dmg.empty()) {
@@ -1646,6 +1659,15 @@ void AA_ReplaceStr(Player* player, std::string& message, std::string s)
     catch (std::exception const& e) {}
 }
 
+//系统频道新函数特效
+void SendSerSpecialMessage(Player* player, const char* Format, ...)
+{
+    if (!Format || !*Format)
+        return;
+
+    player->TextEmote(Format, player, false);
+}
+
 /*工具*/
 void AACenter::AA_SendMessage(Player* p, int type, const char* Text, ...)
 {
@@ -1678,6 +1700,9 @@ void AACenter::AA_SendMessage(Player* p, int type, const char* Text, ...)
         else if (type == 2) {
             sWorld->SendServerMessage(SERVER_MSG_STRING, Text, p);
             p->GetSession()->SendNotification("%s", Text);
+        }
+        else if (type == 3) {
+            SendSerSpecialMessage(p, Text);
         }
     }
 }
@@ -5027,110 +5052,174 @@ Item* AACenter::GetItemByGUIDLow(Player* player, ObjectGuid::LowType guid)
 }
 
 
-// aawow 拾取鉴定，购买制造，洗炼，品质券 (type 拾取鉴定-3，购买制造-2，洗炼-1 zu > 0) (品质券type>0 zu=0)int32 type
+// aawow 拾取鉴定，购买制造，洗炼，品质券 (type 拾取鉴定\购买制造\需求鉴定-2，洗炼-1 zu > 0) (品质券type=0 【zu>0 或者 nonsuch_id > 0】)
 // 拾取鉴定，购买制造，洗炼（改变装备的覆盖属性，后缀，极品，附魔属性，附魔技能，强化组，成长组），清空所有属性
 // 品质券（改变装备的覆盖属性，后缀，极品，附魔属性，附魔技能，强化组，成长组）清空所有属性，获得指定品质
-// 覆盖属性，极品属性，附魔属性，附魔技能，强化组，成长组
 uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 type, uint32 nonsuch_id, uint32 itemid)
 {
     AA_Item_Nonsuch conf;
     ItemTemplate const* pProto = nullptr;
-    if (nonsuch_id > 0) {
-        conf = aaCenter.aa_item_nonsuchs[nonsuch_id];
+    std::vector<int32> xilians; xilians.clear();
+    uint32 aa_zu = 0;
+    uint32 aa_id = 0;
+    if (itemid > 0) {
         pProto = sObjectMgr->GetItemTemplate(itemid);
-        if (!pProto) return 0;
     }
-    else {
-        if (!pItem) { aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return 0; }
+    else if (pItem) {
         pProto = pItem->GetTemplate();
-        if (!pProto) { aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000物品不存在。"); return 0; }
-        //1、过滤不参与鉴定的物品
-        AA_Character_Instance a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
-        //2、获取鉴定conf
-        if (type > 0) { //使用了品质券id
-            conf = aaCenter.aa_item_nonsuchs[type];
-        }
-        else {
-            if (type == -1) { //洗炼
-                uint32 needid = aaCenter.aa_world_confs[25].value1;
-                if (needid > 0) {
-                    if (aaCenter.M_CanNeed(player, needid)) {
-                        aaCenter.M_Need(player, needid);
-                    }
-                    else {
-                        return 0;
-                    }
-                }
-                uint32 xlzu = aaCenter.aa_item_jianding_xls[pProto->GetId()].zu;
-                zu = xlzu > 0 ? xlzu : zu;
-                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00洗炼成功");
-            }
-            std::vector<uint32> conf_ids = aaCenter.aa_item_nonsuch_zus[zu];
-            //获取总chance，分母
-            int count = conf_ids.size();
-            if (count == 0) { //这里是防错验证，Bug，有组，不可能找不到
-                conf = aaCenter.aa_item_nonsuchs[a_conf.jd_id];
-            }
-            else {
-                uint32 chanceMax = 0;
-                for (int i = 0; i < count; i++) {
-                    uint32 id = conf_ids[i];
-                    AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
-                    chanceMax += conf.chance;
-                }
-                if (chanceMax == 0) { chanceMax = 1; }
-                //获取随机chance，分子
-                uint32 chanceVal = rand() % chanceMax;
-                //获取Index
-                uint32 max = 0;
-                uint32 min = 0;
-                int index = -1;
-                for (int i = 0; i < count; i++) {
-                    uint32 id = conf_ids[i];
-                    AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
-                    max = conf.chance + max;
-                    min = 0;
-                    if (i == 0) {
-                        min = 0;
-                    }
-                    else {
-                        uint32 id = conf_ids[i - 1];
-                        AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
-                        min = conf.chance + min;
-                    }
-
-                    if (min <= chanceVal && chanceVal < max) {
-                        index = i;
-                        break;
-                    }
-                }
-                uint32 id = conf_ids[index];
-                conf = aaCenter.aa_item_nonsuchs[id];
-            }
-        }
     }
+    if (!pProto) return 0;
+
+    ObjectGuid::LowType guidlow = 0;
+    time_t timep;
+    std::time(&timep); /*当前time_t类型UTC时间*/
 
     if (pItem == nullptr) {
         pItem = NewItemOrBag(pProto);
 
         pItem->AA_LoadFromDB(1, ObjectGuid::Empty, itemid);
     }
+    else {
+        guidlow = pItem->GetGUIDLow();
+    }
+
+    if (type == 0) {//品质卷、UI重铸、UI洗炼
+        if (nonsuch_id > 0) {
+            aa_id = nonsuch_id;
+            aa_zu = aaCenter.aa_item_nonsuchs[aa_id].zu;
+        }
+        else if (zu > 0) {
+            aa_zu = zu;
+        }
+    }
+    else if (type == -1) {//洗炼
+        if (aaCenter.aa_item_jianding_xls[pProto->GetId()].xianzhi != "" && aaCenter.aa_item_jianding_xls[pProto->GetId()].xianzhi != "0") {
+            aaCenter.AA_StringToVectorInt(aaCenter.aa_item_jianding_xls[pProto->GetId()].xianzhi, xilians, ",");
+        }
+        uint32 needid = aaCenter.aa_item_jianding_xls[pProto->GetId()].need;
+        if (needid > 0) {
+            if (aaCenter.M_CanNeed(player, needid)) {
+                aaCenter.M_Need(player, needid);
+            }
+            else {
+                return 0;
+            }
+        }
+
+        if (needid == 0) {
+            needid = aaCenter.aa_world_confs[25].value1;
+            if (needid > 0) {
+                if (aaCenter.M_CanNeed(player, needid)) {
+                    aaCenter.M_Need(player, needid);
+                }
+                else {
+                    return 0;
+                }
+            }
+        }
+        uint32 xlzu = aaCenter.aa_item_jianding_xls[pProto->GetId()].zu;
+        aa_zu = xlzu > 0 ? xlzu : aa_zu = aaCenter.aa_character_instances[guidlow].jd_zu;
+
+        aaCenter.aa_character_instances[guidlow].update_time = timep;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
+        //9、清空强化
+        if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 3) != xilians.end()) {
+            aaCenter.aa_character_instances[guidlow].qh_id = 0;
+            aaCenter.aa_character_instances[guidlow].qh_level = 0;
+            aaCenter.aa_character_instances[guidlow].qh_values = "";
+            aaCenter.aa_character_instances[guidlow].qh_reward_value = 0; //强化奖励属性
+            aaCenter.aa_character_instances[guidlow].qh_reward_point = 0; //强化奖励属性百分比
+            aaCenter.aa_character_instances[guidlow].qh_reward_spell = ""; //强化奖励技能
+        }
+        //9、清空成长
+        if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 4) != xilians.end()) {
+            aaCenter.aa_character_instances[guidlow].cz_id = 0;
+            aaCenter.aa_character_instances[guidlow].cz_level = 0;
+            aaCenter.aa_character_instances[guidlow].cz_exp = 0;
+            aaCenter.aa_character_instances[guidlow].cz_values = "";
+            aaCenter.aa_character_instances[guidlow].cz_reward_value = 0;
+            aaCenter.aa_character_instances[guidlow].cz_reward_point = 0;
+            aaCenter.aa_character_instances[guidlow].cz_reward_spell = "";
+        }
+        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFFFF00洗炼成功");
+    }
+    else if (type == -2) {//拾取、购买、命令制造、需求鉴定
+        aa_zu = zu;
+    }
+    else if (type == -3) {//未鉴定显示
+        aa_id = nonsuch_id;
+        if (aaCenter.aa_item_zulins.find(itemid) != aaCenter.aa_item_zulins.end()) {
+            aaCenter.aa_character_instance_displays[itemid].zulin_time = timep + aaCenter.aa_item_zulins[itemid].time;
+        }
+
+        aaCenter.aa_character_instance_displays[itemid].chongzhu_count = aaCenter.aa_item_jianding_czs[itemid].cishu;
+        aaCenter.aa_character_instance_displays[itemid].chongzhu_value = aaCenter.aa_item_jianding_czs[itemid].need_value;
+        aaCenter.aa_character_instance_displays[itemid].chongzhu_spell = aaCenter.aa_item_jianding_czs[itemid].need_spell;
+
+        aaCenter.aa_character_instance_displays[itemid].itemEntry = itemid;
+        aaCenter.aa_character_instance_displays[itemid].update_time = aaCenter.aa_jianding_displays[itemid].update_time;
+        //9、清空强化和成长等级属性
+        aaCenter.aa_character_instance_displays[itemid].qh_id = 0;
+        aaCenter.aa_character_instance_displays[itemid].qh_level = 0;
+        aaCenter.aa_character_instance_displays[itemid].qh_values = "";
+        aaCenter.aa_character_instance_displays[itemid].qh_reward_value = 0; //强化奖励属性
+        aaCenter.aa_character_instance_displays[itemid].qh_reward_point = 0; //强化奖励属性百分比
+        aaCenter.aa_character_instance_displays[itemid].qh_reward_spell = ""; //强化奖励技能
+        aaCenter.aa_character_instance_displays[itemid].cz_id = 0;
+        aaCenter.aa_character_instance_displays[itemid].cz_level = 0;
+        aaCenter.aa_character_instance_displays[itemid].cz_exp = 0;
+        aaCenter.aa_character_instance_displays[itemid].cz_values = "";
+        aaCenter.aa_character_instance_displays[itemid].cz_reward_value = 0;
+        aaCenter.aa_character_instance_displays[itemid].cz_reward_point = 0;
+        aaCenter.aa_character_instance_displays[itemid].cz_reward_spell = "";
+    }
+
+    if (aa_id == 0 && aa_zu > 0) {
+        std::vector<uint32> conf_ids = aaCenter.aa_item_nonsuch_zus[aa_zu];
+        //获取总chance，分母
+        int count = conf_ids.size();
+        uint32 chanceMax = 0;
+        for (int i = 0; i < count; i++) {
+            uint32 id = conf_ids[i];
+            AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
+            chanceMax += conf.chance;
+        }
+        if (chanceMax == 0) { chanceMax = 1; }
+        //获取随机chance，分子
+        uint32 chanceVal = rand() % chanceMax;
+        //获取Index
+        uint32 max = 0;
+        uint32 min = 0;
+        int index = 0;
+        for (int i = 0; i < count; i++) {
+            uint32 id = conf_ids[i];
+            AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
+            max = conf.chance + max;
+            min = 0;
+            if (i == 0) {
+                min = 0;
+            }
+            else {
+                uint32 id = conf_ids[i - 1];
+                AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[id];
+                min = conf.chance + min;
+            }
+
+            if (min <= chanceVal && chanceVal < max) {
+                index = i;
+                break;
+            }
+        }
+        aa_id = conf_ids[index];
+    }
+    if (aa_id > 0) {
+        conf = aaCenter.aa_item_nonsuchs[aa_id];
+    }
+    if (conf.id > 0) {
+        aa_zu = conf.zu;
+    }
+
     uint32 itemlevel = pProto->GetBaseItemLevel();
-    //3、成长、强化组
-    uint32 qh_zu = 0;
-    if (aaCenter.aa_world_confs[37].value1 == 1) {
-        qh_zu = aaCenter.AA_StringRandom(aa_item_qh_ids[pProto->GetId()].zus);
-        if (qh_zu == 0 && aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
-            if (conf.qh_zus != "") { qh_zu = aaCenter.AA_StringRandom(conf.qh_zus); }
-        }
-    }
-    uint32 cz_zu = 0;
-    if (aaCenter.aa_world_confs[57].value1 == 1) {
-        cz_zu = aaCenter.AA_StringRandom(aa_item_level_ids[pProto->GetId()].zus);
-        if (cz_zu == 0 && aaCenter.aa_item_nojiandings[pProto->GetId()].itemid == 0) {
-            if (conf.cz_zus != "") { cz_zu = aaCenter.AA_StringRandom(conf.cz_zus); }
-        }
-    }
     //4、覆盖属性，根据装备类型判断，比如如果是武器，必有 伤害和速度，且不消耗覆盖属性数量
     std::vector<int32> types; types.clear();
     std::vector<int32> values; values.clear();
@@ -5393,71 +5482,63 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
             values.push_back(statVal);
         }
     }
-    ObjectGuid::LowType guidlow = 0;
-    time_t timep;
-    std::time(&timep); /*当前time_t类型UTC时间*/
-    if (pItem) {
-        guidlow = pItem->GetGUIDLow();
+
+    if (type == 0) {//品质卷、UI重铸、UI洗炼
     }
-    if (nonsuch_id > 0) {
-        if (aaCenter.aa_item_zulins.find(itemid) != aaCenter.aa_item_zulins.end()) {
-            aaCenter.aa_character_instance_displays[itemid].zulin_time = timep + aaCenter.aa_item_zulins[itemid].time;
+    else if (type == -1) {//洗炼
+        //清空基础
+        if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 1) != xilians.end()) {
+            std::string fugai = "";
+            aaCenter.AA_VectorToStringSort(fugai, types, values);
+            aaCenter.aa_character_instances[guidlow].fugai_zu = conf.fg_statzu;
+            aaCenter.aa_character_instances[guidlow].fugai = fugai;
         }
-        if (aaCenter.aa_world_confs[35].value1 == 1) {
-            aaCenter.aa_character_instance_displays[itemid].chongzhu_count = aaCenter.aa_item_jianding_czs[itemid].cishu;
-            aaCenter.aa_character_instance_displays[itemid].chongzhu_value = aaCenter.aa_item_jianding_czs[itemid].need_value;
-            aaCenter.aa_character_instance_displays[itemid].chongzhu_spell = aaCenter.aa_item_jianding_czs[itemid].need_spell;
-        }
-        aaCenter.aa_character_instance_displays[itemid].itemEntry = itemid;
-        aaCenter.aa_character_instance_displays[itemid].update_time = aaCenter.aa_jianding_displays[itemid].update_time;
-        aaCenter.aa_character_instance_displays[itemid].qh_zu = qh_zu;
-        aaCenter.aa_character_instance_displays[itemid].cz_zu = cz_zu;
-        //9、清空强化和成长等级属性
-        aaCenter.aa_character_instance_displays[itemid].qh_id = 0;
-        aaCenter.aa_character_instance_displays[itemid].qh_level = 0;
-        aaCenter.aa_character_instance_displays[itemid].qh_values = "";
-        aaCenter.aa_character_instance_displays[itemid].qh_reward_value = 0; //强化奖励属性
-        aaCenter.aa_character_instance_displays[itemid].qh_reward_point = 0; //强化奖励属性百分比
-        aaCenter.aa_character_instance_displays[itemid].qh_reward_spell = ""; //强化奖励技能
-        aaCenter.aa_character_instance_displays[itemid].cz_id = 0;
-        aaCenter.aa_character_instance_displays[itemid].cz_level = 0;
-        aaCenter.aa_character_instance_displays[itemid].cz_exp = 0;
-        aaCenter.aa_character_instance_displays[itemid].cz_values = "";
-        aaCenter.aa_character_instance_displays[itemid].cz_reward_value = 0;
-        aaCenter.aa_character_instance_displays[itemid].cz_reward_point = 0;
-        aaCenter.aa_character_instance_displays[itemid].cz_reward_spell = "";
-        std::string fugai = "";
-        aaCenter.AA_VectorToStringSort(fugai, types, values);
-        aaCenter.aa_character_instance_displays[itemid].fugai_zu = conf.fg_statzu;
-        aaCenter.aa_character_instance_displays[itemid].fugai = fugai;
     }
-    else {
-        aaCenter.aa_character_instances[guidlow].update_time = timep;
-        sAAData->AA_REP_Character_Instances.insert(guidlow);
-        aaCenter.aa_character_instances[guidlow].qh_zu = qh_zu;
-        aaCenter.aa_character_instances[guidlow].cz_zu = cz_zu;
-        //9、清空强化和成长等级属性
-        aaCenter.aa_character_instances[guidlow].qh_id = 0;
-        aaCenter.aa_character_instances[guidlow].qh_level = 0;
-        aaCenter.aa_character_instances[guidlow].qh_values = "";
-        aaCenter.aa_character_instances[guidlow].qh_reward_value = 0; //强化奖励属性
-        aaCenter.aa_character_instances[guidlow].qh_reward_point = 0; //强化奖励属性百分比
-        aaCenter.aa_character_instances[guidlow].qh_reward_spell = ""; //强化奖励技能
-        aaCenter.aa_character_instances[guidlow].cz_id = 0;
-        aaCenter.aa_character_instances[guidlow].cz_level = 0;
-        aaCenter.aa_character_instances[guidlow].cz_exp = 0;
-        aaCenter.aa_character_instances[guidlow].cz_values = "";
-        aaCenter.aa_character_instances[guidlow].cz_reward_value = 0;
-        aaCenter.aa_character_instances[guidlow].cz_reward_point = 0;
-        aaCenter.aa_character_instances[guidlow].cz_reward_spell = "";
+    else if (type == -2) {//拾取、购买、命令制造、需求鉴定
         std::string fugai = "";
         aaCenter.AA_VectorToStringSort(fugai, types, values);
         aaCenter.aa_character_instances[guidlow].fugai_zu = conf.fg_statzu;
         aaCenter.aa_character_instances[guidlow].fugai = fugai;
     }
+    else if (type == -3) {//未鉴定显示
+        std::string fugai = "";
+        aaCenter.AA_VectorToStringSort(fugai, types, values);
+        aaCenter.aa_character_instance_displays[itemid].fugai_zu = conf.fg_statzu;
+        aaCenter.aa_character_instance_displays[itemid].fugai = fugai;
+    }
 
-    //拾取鉴定或购买制造鉴定的物品有符文凹槽
-    if ((conf.fw_count1 > 0 || conf.fw_count2 > 0) && (type == -3 || type == -2)) {
+    //3、成长、强化组
+    uint32 qh_zu = 0;
+    if (aaCenter.aa_world_confs[37].value1 == 1) {
+        qh_zu = aaCenter.AA_StringRandom(aa_item_qh_ids[pProto->GetId()].zus);
+        if (qh_zu == 0) {
+            if (conf.qh_zus != "") { qh_zu = aaCenter.AA_StringRandom(conf.qh_zus); }
+        }
+    }
+    uint32 cz_zu = 0;
+    if (aaCenter.aa_world_confs[57].value1 == 1) {
+        cz_zu = aaCenter.AA_StringRandom(aa_item_level_ids[pProto->GetId()].zus);
+        if (cz_zu == 0) {
+            if (conf.cz_zus != "") { cz_zu = aaCenter.AA_StringRandom(conf.cz_zus); }
+        }
+    }
+    if (type == -3) {
+        aaCenter.aa_character_instance_displays[itemid].qh_zu = qh_zu;
+        aaCenter.aa_character_instance_displays[itemid].cz_zu = cz_zu;
+    }
+    else {
+        //9、清空强化
+        if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 3) != xilians.end()) {
+            aaCenter.aa_character_instances[guidlow].qh_zu = qh_zu;
+        }
+        //9、清空成长
+        if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 4) != xilians.end()) {
+            aaCenter.aa_character_instances[guidlow].cz_zu = cz_zu;
+        }
+    }
+
+    //拾取鉴定\购买制造\需求鉴定 有符文凹槽
+    if ((conf.fw_count1 > 0 || conf.fw_count2 > 0) && (type == -2 || type == -3)) {
         uint32 fw_count = 0;
         if (conf.fw_count1 >= conf.fw_count2) {
             fw_count = conf.fw_count1;
@@ -5465,7 +5546,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
         else {
             fw_count = (rand() % (conf.fw_count2 - conf.fw_count1 + 1)) + conf.fw_count1;
         }
-        if (nonsuch_id > 0) {
+        if (type == -3) {
             aaCenter.aa_character_instance_displays[itemid].fw_count = fw_count;
         }
         else {
@@ -5474,7 +5555,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
     }
 
     //拾取鉴定或购买制造鉴定的物品有强化等级
-    if ((type == -3 || type == -2) && qh_zu > 0) {
+    if (type == -2 && qh_zu > 0) {
         std::vector<uint32> conf_ids = aaCenter.aa_item_upgrade_zus[qh_zu];
         //获取总chance，分母
         int count = conf_ids.size();
@@ -5521,54 +5602,51 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
     }
 
     //如果拾取或制造。没有设置过鉴定的物品，只设置基础属性，强化组，成长组
-    if (((type == -3 || type == -2) && zu == 0 && nonsuch_id == 0) || aaCenter.aa_item_nojiandings[pProto->GetId()].itemid > 0) {
+    if (aa_zu == 0 && aa_id == 0) {
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
         return 0;
     }
-    //5设置 基础属性，极品，成长，强化，附魔属性，附魔技能
-    if (nonsuch_id > 0) {
-        aaCenter.aa_character_instance_displays[itemid].jd_zu = zu;
-        aaCenter.aa_character_instance_displays[itemid].jd_id = conf.id;
+    //5设置 鉴定，极品，成长，强化，附魔属性，附魔技能，附魔套装
+    if (type == -3) {
+        aaCenter.aa_character_instance_displays[itemid].jd_zu = aa_zu;
+        aaCenter.aa_character_instance_displays[itemid].jd_id = aa_id;
         aaCenter.aa_character_instance_displays[itemid].jd_level = conf.level;
     }
     else {
-        aaCenter.aa_character_instances[guidlow].jd_zu = zu;
-        aaCenter.aa_character_instances[guidlow].jd_id = conf.id;
+        aaCenter.aa_character_instances[guidlow].jd_zu = aa_zu;
+        aaCenter.aa_character_instances[guidlow].jd_id = aa_id;
         aaCenter.aa_character_instances[guidlow].jd_level = conf.level;
+        sAAData->AA_REP_Character_Instances.insert(guidlow);
     }
-    //6、极品属性
-    aaCenter.M_NonsuchItemJipin(player, pItem, conf.id, type, nonsuch_id, itemid);
-    //7、附魔属性
-    aaCenter.M_NonsuchItemFmValue(player, pItem, conf.id, type, nonsuch_id, itemid);
-    //8、附魔技能
-    aaCenter.M_NonsuchItemFmSpell(player, pItem, conf.id, type, nonsuch_id, itemid);
-    //9、随机套装
-    aaCenter.M_NonsuchItemSet(player, pItem, conf.id, type, nonsuch_id, itemid);
+    if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 2) != xilians.end()) {
+        //6、极品属性
+        aaCenter.M_NonsuchItemJipin(player, pItem, aa_id, type, itemid);
+    }
+    if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 5) != xilians.end()) {
+        //7、附魔属性
+        aaCenter.M_NonsuchItemFmValue(player, pItem, aa_id, type, itemid);
+    }
+    if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 6) != xilians.end()) {
+        //8、附魔技能
+        aaCenter.M_NonsuchItemFmSpell(player, pItem, aa_id, type, itemid);
+    }
+    if (xilians.size() == 0 || std::find(xilians.begin(), xilians.end(), 7) != xilians.end()) {
+        //9、随机套装
+        aaCenter.M_NonsuchItemSet(player, pItem, aa_id, type, itemid);
+    }
 
     return conf.notice;
 }
 
-bool AACenter::M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id, uint32 itemid)
+bool AACenter::M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid)
 {
     AA_Item_Nonsuch conf;
-    ItemTemplate const* pProto = nullptr;
-    if (nonsuch_id > 0) {
-        conf = aaCenter.aa_item_nonsuchs[nonsuch_id];
-        pProto = sObjectMgr->GetItemTemplate(itemid);
-    }
-    else {
-        conf = aaCenter.aa_item_nonsuchs[nonsuchId];
-        pProto = pItem->GetTemplate();
-    }
+    conf = aaCenter.aa_item_nonsuchs[nonsuchId];
 
-    if (!pProto) return false;
-
-    if (type == 0) { //重铸
-        return false;
-    }
     if (conf.itemsets != "" && conf.itemsets != "0") {
         uint32 zu = aaCenter.AA_StringRandom(conf.itemsets);
         if (zu > 0) {
-            if (nonsuch_id > 0) {
+            if (type == -3) {
                 aaCenter.aa_character_instance_displays[itemid].item_set = zu;
             }
             else {
@@ -5584,34 +5662,15 @@ bool AACenter::M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, i
     return true;
 }
 
-void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id, uint32 itemid)
+void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid)
 {
-    AA_Item_Nonsuch conf;
+    AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[nonsuchId];
     AA_Character_Instance a_conf;
-    if (nonsuch_id > 0) {
-        conf = aaCenter.aa_item_nonsuchs[nonsuch_id];
+    if (type == -3) {
         a_conf = aaCenter.aa_character_instance_displays[itemid];
     }
     else {
-        conf = aaCenter.aa_item_nonsuchs[nonsuchId];
         a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
-        if (type == 0) { //重铸
-            if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法重铸");
-                return;
-            }
-            uint32 needid = aaCenter.aa_world_confs[67].value1;
-            if (needid > 0) {
-                if (aaCenter.M_CanNeed(player, needid)) {
-                    aaCenter.M_Need(player, needid);
-                }
-                else {
-                    return;
-                }
-            }
-            // 消耗重铸次数
-            aaCenter.aa_character_instances[pItem->GetGUIDLow()].chongzhu_count -= 1;
-        }
     }
     //基础属性
     std::vector<int32> types; types.clear();
@@ -5730,15 +5789,13 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
             }
         }
     }
-    if (nonsuch_id > 0) {
-        std::string jdvalues = "";
-        aaCenter.AA_VectorIntToString(jdvalues, jd_values, ",");
+    std::string jdvalues = "";
+    aaCenter.AA_VectorIntToString(jdvalues, jd_values, ",");
+    if (type == -3) {
         aaCenter.aa_character_instance_displays[itemid].jd_values = jdvalues;
     }
     else {
         ObjectGuid::LowType guidlow = pItem->GetGUIDLow();
-        std::string jdvalues = "";
-        aaCenter.AA_VectorIntToString(jdvalues, jd_values, ",");
         aaCenter.aa_character_instances[guidlow].jd_values = jdvalues;
         time_t timep;
         time(&timep); /*当前time_t类型UTC时间*/
@@ -5747,21 +5804,18 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
     }
 }
 
-bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id, uint32 itemid)
+bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid)
 {
-    AA_Item_Nonsuch conf;
+    AA_Item_Nonsuch conf = aaCenter.aa_item_nonsuchs[nonsuchId];
     AA_Character_Instance a_conf;
     ItemTemplate const* pProto = nullptr;
     std::vector<int32> suodings; suodings.clear();
     uint32 suoding_count = 0;
-    if (nonsuch_id > 0) {
-        conf = aaCenter.aa_item_nonsuchs[nonsuch_id];
+
+    if (type == -3) {
         a_conf = aaCenter.aa_character_instance_displays[itemid];
-        pProto = sObjectMgr->GetItemTemplate(itemid);
-        if (!pProto) return false;
     }
     else {
-        conf = aaCenter.aa_item_nonsuchs[nonsuchId];
         a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
         pProto = pItem->GetTemplate();
         if (!pProto) return false;
@@ -5954,9 +6008,9 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
             values[i] = statVal;
             last_count++;
         }
-        if (nonsuch_id > 0) {
-            std::string fmvalues = "";
-            aaCenter.AA_VectorToString(fmvalues, types, values);
+        std::string fmvalues = "";
+        aaCenter.AA_VectorToString(fmvalues, types, values);
+        if (type == -3) {
             aaCenter.aa_character_instance_displays[itemid].fm_value_count = last_count;
             aaCenter.aa_character_instance_displays[itemid].fm_values = fmvalues;
         }
@@ -5966,8 +6020,6 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_character_instances[guidlow].update_time = timep;
             sAAData->AA_REP_Character_Instances.insert(guidlow);
-            std::string fmvalues = "";
-            aaCenter.AA_VectorToString(fmvalues, types, values);
             aaCenter.aa_character_instances[guidlow].fm_value_count = last_count;
             aaCenter.aa_character_instances[guidlow].fm_values = fmvalues;
         }
@@ -5975,21 +6027,17 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
     return true;
 }
 
-bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id, uint32 itemid)
+bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid)
 {
-    AA_Item_Nonsuch iconf;
+    AA_Item_Nonsuch iconf = aaCenter.aa_item_nonsuchs[nonsuchId];
     AA_Character_Instance a_conf;
     ItemTemplate const* pProto = nullptr;
     std::vector<int32> suodings; suodings.clear();
     uint32 suoding_count = 0;
-    if (nonsuch_id > 0) {
-        iconf = aaCenter.aa_item_nonsuchs[nonsuch_id];
+    if (type == -3) {
         a_conf = aaCenter.aa_character_instance_displays[itemid];
-        pProto = sObjectMgr->GetItemTemplate(itemid);
-        if (!pProto) return false;
     }
     else {
-        iconf = aaCenter.aa_item_nonsuchs[nonsuchId];
         a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
         pProto = pItem->GetTemplate();
         if (!pProto) return false;
@@ -6014,7 +6062,7 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
         }
         else if (type == -4) { //锁定洗炼
             if (a_conf.chongzhu_count == 0) {
-                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锁|r|cFF00D9FF定|r|cFF00B3FF洗|r|cFF008DFF炼|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼");
+                aaCenter.AA_SendMessage(player, 1, "|cff00FFFF[锁定洗炼]|cffFF0000该物品无法洗炼");
                 return false;
             }
 
@@ -6157,9 +6205,9 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
             last_count++;
         }
 
-        if (nonsuch_id > 0) {
-            std::string fmvalues = "";
-            aaCenter.AA_VectorIntToString(fmvalues, values, ",");
+        std::string fmvalues = "";
+        aaCenter.AA_VectorIntToString(fmvalues, values, ",");
+        if (type == -3) {
             aaCenter.aa_character_instance_displays[itemid].fm_spell_count = last_count;
             aaCenter.aa_character_instance_displays[itemid].fm_spells = fmvalues;
         }
@@ -6169,8 +6217,6 @@ bool AACenter::M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchI
             time(&timep); /*当前time_t类型UTC时间*/
             aaCenter.aa_character_instances[guidlow].update_time = timep;
             sAAData->AA_REP_Character_Instances.insert(guidlow);
-            std::string fmvalues = "";
-            aaCenter.AA_VectorIntToString(fmvalues, values, ",");
             aaCenter.aa_character_instances[guidlow].fm_spell_count = last_count;
             aaCenter.aa_character_instances[guidlow].fm_spells = fmvalues;
         }
@@ -7265,7 +7311,7 @@ void AACenter::M_GetItemTextDisplay(Player* player, std::vector<uint32> itemEntr
             AA_Character_Instance conf = aaCenter.aa_character_instance_displays[entry];
             if (conf.itemEntry == 0) {
                 AA_Jianding_Display conf_d = aaCenter.aa_jianding_displays[entry];
-                aaCenter.M_NonsuchItem(player, nullptr, 0, -2, conf_d.nonsuchid, conf_d.itemid);
+                aaCenter.M_NonsuchItem(player, nullptr, 0, -3, conf_d.nonsuchid, conf_d.itemid);
                 conf = aaCenter.aa_character_instance_displays[entry];
             }
             if (conf.itemEntry == 0) continue;
@@ -7544,7 +7590,8 @@ void AACenter::M_SendAA_Conf(Player* player, std::string prefix, std::string msg
             std::to_string(aaCenter.aa_world_confs[69].value1) + "," +
             std::to_string(aaCenter.aa_world_confs[80].value1) + "," +
             std::to_string(aaCenter.aa_world_confs[44].value1) + "," +
-            std::to_string(aaCenter.aa_world_confs[45].value1) + "}";
+            std::to_string(aaCenter.aa_world_confs[45].value1) + "," +
+            aaCenter.aa_world_confs[39].value2 + "}";
         aaCenter.M_SendClientAddonData(player, prefix, result);
     }
     else if (prefix == "21") {
@@ -10466,7 +10513,7 @@ bool AACenter::AA_Jianding_Item_Do(Player* player)
             aaCenter.AA_SendNotice(player, notice, isOk, aa_message);
         }
         if (isOk) {
-            uint32 noticeid = aaCenter.M_NonsuchItem(player, player->aa_target_item, 0, conf.nonsuchid);
+            uint32 noticeid = aaCenter.M_NonsuchItem(player, player->aa_target_item, conf.nonsuchzu, 0, conf.nonsuchid);
             if (noticeid > 0) {
                 AA_Notice notice = aa_notices[noticeid];
                 aaCenter.AA_SendNotice(player, notice, false, aa_message);
@@ -10915,7 +10962,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     aaCenter.M_UpgradeItem(player, pItem);
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -10934,12 +10981,15 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         if (!pItem->IsInWorld()) {
                             return;
                         }
+                        if (aaCenter.aa_item_jianding_xls.find(pProto->GetId()) == aaCenter.aa_item_jianding_xls.end()) {
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼。"); return;
+                        }
                         AA_Character_Instance a_conf = aaCenter.aa_character_instances[pItem->GetGUIDLow()];
                         if (a_conf.jd_zu == 0) {
-                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼。"); return;
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000该物品无法洗炼。"); return;
                         }
                         if (pItem->IsEquipped()) {
-                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                         }
                         uint32 noticeid = aaCenter.M_NonsuchItem(player, pItem, a_conf.jd_zu, -1);
                         if (noticeid > 0) {
@@ -10964,7 +11014,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_ChangeItemName(player, pItem, msgs[2]);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -10995,7 +11045,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_FuWenChaixie(player, pItem, index, false);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -11012,7 +11062,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                     return;
                 }
                 if (pItem->IsEquipped()) {
-                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                    aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                 }
                 aaCenter.M_FuWenKaichao(player, pItem, 1);
                 aaCenter.M_SendClientAddonData(player, prefix, "0");
@@ -11030,7 +11080,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 return;
             }
             if (pItem->IsEquipped()) {
-                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
             }
             std::vector<std::string> fwstrs;
             fwstrs.clear();
@@ -11063,14 +11113,14 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     uint32 jdid = aaCenter.aa_character_instances[guidlow].jd_id;
                     if (jdid == 0) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
                     }
                     if (aaCenter.M_NonsuchItemFmValue(player, pItem, jdid, 0)) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重铸成功");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFFFF00重铸成功");
                     }
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
                 }
@@ -11088,14 +11138,14 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                         return;
                     }
                     if (pItem->IsEquipped()) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000请将物品放入背包再操作。"); return;
                     }
                     uint32 jdid = aaCenter.aa_character_instances[guidlow].jd_id;
                     if (jdid == 0) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFF0000d该物品无法重铸。"); return;
                     }
                     if (aaCenter.M_NonsuchItemFmSpell(player, pItem, jdid, 0)) {
-                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFFFF00重铸成功");
+                        aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[锻|r|cFF00D9FF造|r|cFF00B3FF系|r|cFF008DFF统|r|cFF00FFFF]|r|cffFFFF00重铸成功");
                     }
                     aaCenter.M_SendClientAddonData(player, prefix, "0");
                 }
@@ -15156,10 +15206,11 @@ void AACenter::LoadAAData_World()
                 conf.itemid = fields[1].GetUInt32();
                 conf.need = fields[2].GetUInt32();
                 conf.chance = fields[3].GetFloat();
-                conf.nonsuchid = fields[4].GetUInt32();
-                conf.items = fields[5].GetString();
-                conf.pcitems = fields[6].GetString();
-                conf.notice = fields[7].GetUInt32();
+                conf.nonsuchzu = fields[4].GetUInt32();
+                conf.nonsuchid = fields[5].GetUInt32();
+                conf.items = fields[6].GetString();
+                conf.pcitems = fields[7].GetString();
+                conf.notice = fields[8].GetUInt32();
                 aa_jianding_items[conf.itemid] = conf;
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_鉴定_品质券 用时 {} 毫秒", (unsigned long)aa_jianding_items.size(), GetMSTimeDiffToNow(oldMSTime));
@@ -15311,7 +15362,7 @@ void AACenter::LoadAAData_World()
         }
     }
     //    _物品_鉴定_洗炼
-    {
+    if (aaCenter.AA_VerifyCode("a112b")) {
         TC_LOG_INFO("server.loading", "正在加载 _物品_鉴定_洗炼...");
         uint32 oldMSTime = getMSTime();
         aa_item_jianding_xls.clear();
@@ -15322,6 +15373,8 @@ void AACenter::LoadAAData_World()
                 AA_Item_Jianding_Xl conf;
                 conf.entry = fields[1].GetUInt32();
                 conf.zu = fields[2].GetUInt32();
+                conf.need = fields[3].GetUInt32();
+                conf.xianzhi = fields[4].GetString();
                 aa_item_jianding_xls[conf.entry] = conf;
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_鉴定_洗炼 用时 {} 毫秒", (unsigned long)aa_item_jianding_xls.size(), GetMSTimeDiffToNow(oldMSTime));
@@ -15839,6 +15892,28 @@ void AACenter::LoadAAData_World()
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_鉴定_按ID控制 用时 {} 毫秒", (unsigned long)aa_item_nonsuch_ids.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
+    if (aaCenter.AA_VerifyCode("a113b")) {
+        TC_LOG_INFO("server.loading", "正在加载 _物品_鉴定_按属性需求控制...");
+        uint32 oldMSTime = getMSTime();
+        aa_item_nonsuch_needs.clear();
+        QueryResult result = WorldDatabase.Query("SELECT * FROM _物品_鉴定_按属性需求控制");
+        if (result) {
+            do {
+                Field* fields = result->Fetch();
+                AA_Item_Nonsuch_Need conf;
+                conf.id = fields[1].GetUInt32();
+                conf.class1 = fields[2].GetInt32();
+                conf.subclass = fields[3].GetInt32();
+                conf.InventoryType = fields[4].GetInt32();
+                conf.ItemLevel = fields[5].GetUInt32();
+                conf.Quality = fields[6].GetUInt32();
+                conf.values = fields[7].GetString();
+                conf.zu = fields[8].GetUInt32();
+                aa_item_nonsuch_needs[conf.id] = conf;
+            } while (result->NextRow());
+            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _物品_鉴定_按属性需求控制 用时 {} 毫秒", (unsigned long)aa_item_nonsuch_needs.size(), GetMSTimeDiffToNow(oldMSTime));
+        }
+    }
     {
         TC_LOG_INFO("server.loading", "正在加载 _物品_强化...");
         uint32 oldMSTime = getMSTime();
@@ -16022,6 +16097,10 @@ void AACenter::LoadAAData_World()
                     conf.qiegepoint_dot = 0;
                 }
                 conf.qiege = fields[i++].GetUInt32();
+                conf.resetDistance = fields[i++].GetFloat();
+                if (!aaCenter.AA_VerifyCode("a114b")) {
+                    conf.resetDistance = 0;
+                }
                 conf.ais = fields[i++].GetString();
                 conf.nonsuch_group = fields[i++].GetUInt32();
                 conf.lootid = fields[i++].GetString();
@@ -16523,55 +16602,71 @@ void AACenter::LoadAAData_World()
                 conf.map = fields[i++].GetInt32();
                 conf.zone = fields[i++].GetInt32();
                 conf.area = fields[i++].GetInt32();
-                conf.liliang = fields[i++].GetUInt32();
+                conf.liliangxx = fields[i++].GetUInt32();
+                conf.liliangsx = fields[i++].GetUInt32();
                 conf.liliangbl = fields[i++].GetFloat();
-                conf.minjie = fields[i++].GetUInt32();
+                conf.minjiexx = fields[i++].GetUInt32();
+                conf.minjiesx = fields[i++].GetUInt32();
                 conf.minjiebl = fields[i++].GetFloat();
-                conf.zhili = fields[i++].GetUInt32();
+                conf.zhilixx = fields[i++].GetUInt32();
+                conf.zhilisx = fields[i++].GetUInt32();
                 conf.zhilibl = fields[i++].GetFloat();
-                conf.jingshen = fields[i++].GetUInt32();
-                conf.jingshenbl = fields[i++].GetFloat();
-                conf.naili = fields[i++].GetUInt32();
+                conf.nailixx = fields[i++].GetUInt32();
+                conf.nailisx = fields[i++].GetUInt32();
                 conf.nailibl = fields[i++].GetFloat();
-                conf.faqiang = fields[i++].GetUInt32();
+                conf.faqiangxx = fields[i++].GetUInt32();
+                conf.faqiangsx = fields[i++].GetUInt32();
                 conf.faqiangbl = fields[i++].GetFloat();
-                conf.gongqiang = fields[i++].GetUInt32();
+                conf.gongqiangxx = fields[i++].GetUInt32();
+                conf.gongqiangsx = fields[i++].GetUInt32();
                 conf.gongqiangbl = fields[i++].GetFloat();
-                conf.zhiliao = fields[i++].GetUInt32();
+                conf.zhiliaoxx = fields[i++].GetUInt32();
+                conf.zhiliaosx = fields[i++].GetUInt32();
                 conf.zhiliaobl = fields[i++].GetFloat();
-                conf.shensheng = fields[i++].GetUInt32();
+                conf.shenshengxx = fields[i++].GetUInt32();
+                conf.shenshengsx = fields[i++].GetUInt32();
                 conf.shenshengbl = fields[i++].GetFloat();
-                conf.huoyan = fields[i++].GetUInt32();
+                conf.huoyanxx = fields[i++].GetUInt32();
+                conf.huoyansx = fields[i++].GetUInt32();
                 conf.huoyanbl = fields[i++].GetFloat();
-                conf.ziran = fields[i++].GetUInt32();
+                conf.ziranxx = fields[i++].GetUInt32();
+                conf.ziransx = fields[i++].GetUInt32();
                 conf.ziranbl = fields[i++].GetFloat();
-                conf.bingshuang = fields[i++].GetUInt32();
+                conf.bingshuangxx = fields[i++].GetUInt32();
+                conf.bingshuangsx = fields[i++].GetUInt32();
                 conf.bingshuangbl = fields[i++].GetFloat();
-                conf.anying = fields[i++].GetUInt32();
+                conf.anyingxx = fields[i++].GetUInt32();
+                conf.anyingsx = fields[i++].GetUInt32();
                 conf.anyingbl = fields[i++].GetFloat();
-                conf.aoshu = fields[i++].GetUInt32();
+                conf.aoshuxx = fields[i++].GetUInt32();
+                conf.aoshusx = fields[i++].GetUInt32();
                 conf.aoshubl = fields[i++].GetFloat();
+                conf.blockxx = fields[i++].GetFloat();
                 conf.blocksx = fields[i++].GetFloat();
+                conf.parryxx = fields[i++].GetFloat();
                 conf.parrysx = fields[i++].GetFloat();
+                conf.dodgexx = fields[i++].GetFloat();
                 conf.dodgesx = fields[i++].GetFloat();
+                conf.bjxx = fields[i++].GetUInt32();
                 conf.bjsx = fields[i++].GetUInt32();
-                conf.renxingsx = fields[i++].GetUInt32();
-                conf.renxingbl = fields[i++].GetFloat();
+                conf.hujiaxx = fields[i++].GetUInt32();
                 conf.hujiasx = fields[i++].GetUInt32();
                 conf.hujiabl = fields[i++].GetFloat();
-                conf.jzsx = fields[i++].GetUInt32();
-                conf.jzbl = fields[i++].GetFloat();
                 conf.hpxx = fields[i++].GetUInt32();
                 conf.hpsx = fields[i++].GetUInt32();
                 conf.hpbl = fields[i++].GetFloat();
+                conf.jsxx = fields[i++].GetUInt32();
                 conf.jssx = fields[i++].GetUInt32();
                 conf.jsbl = fields[i++].GetFloat();
+                conf.ptshxx = fields[i++].GetUInt32();
                 conf.ptshsx = fields[i++].GetUInt32();
                 conf.ptshbl = fields[i++].GetFloat();
                 conf.cptshbl = fields[i++].GetFloat();
+                conf.jnshxx = fields[i++].GetUInt32();
                 conf.jnshsx = fields[i++].GetUInt32();
                 conf.jnshbl = fields[i++].GetFloat();
                 conf.cjnshbl = fields[i++].GetFloat();
+                conf.zlshxx = fields[i++].GetUInt32();
                 conf.zlshsx = fields[i++].GetUInt32();
                 conf.zlshbl = fields[i++].GetFloat();
                 conf.czlshbl = fields[i++].GetFloat();
@@ -16581,12 +16676,19 @@ void AACenter::LoadAAData_World()
                 conf.mjtofq = fields[i++].GetFloat();// 敏捷转法强，
                 conf.nltofq = fields[i++].GetFloat();// 耐力转法强，
                 conf.zltofq = fields[i++].GetFloat();// 智力转法强，
-                conf.jstofq = fields[i++].GetFloat();// 精神转法强，
                 conf.lltogq = fields[i++].GetFloat();// 力量转攻强，
                 conf.mjtogq = fields[i++].GetFloat();// 敏捷转攻强，
                 conf.nltogq = fields[i++].GetFloat();// 耐力转攻强，
                 conf.zltogq = fields[i++].GetFloat();// 智力转攻强，
-                conf.jstogq = fields[i++].GetFloat();// 精神转攻强，
+                conf.damage_base_xx = fields[i++].GetFloat();
+                conf.damage_base_sx = fields[i++].GetFloat();
+                conf.damage_base_bl = fields[i++].GetFloat();
+                conf.damage_off_xx = fields[i++].GetFloat();
+                conf.damage_off_sx = fields[i++].GetFloat();
+                conf.damage_off_bl = fields[i++].GetFloat();
+                conf.damage_ranged_xx = fields[i++].GetFloat();
+                conf.damage_ranged_sx = fields[i++].GetFloat();
+                conf.damage_ranged_bl = fields[i++].GetFloat();
                 aa_player_stats_confs[conf.id] = conf;
                 if (conf.area != -1) {
                     aa_player_stats_conf_areas[conf.area][conf.class1] = conf.id;
@@ -23724,6 +23826,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     if (conf.zlshbl > 0) {
                         damage_tmp = damage_tmp * (conf.zlshbl / 100.0);
                     }
+                    if (conf.zlshxx > 0 && damage_tmp <= conf.zlshxx) {
+                        damage_tmp = conf.zlshxx;
+                    }
                     if (conf.zlshsx > 0 && damage_tmp > conf.zlshsx) {
                         damage_tmp = conf.zlshsx;
                     }
@@ -23805,6 +23910,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     if (conf.ptshbl > 0) {
                         damage_tmp *= (conf.ptshbl / 100.0);
                     }
+                    if (conf.ptshxx > 0 && damage_tmp <= (conf.ptshxx * 0.5)) {
+                        damage_tmp = (conf.ptshxx * 0.5);
+                    }
                     if (conf.ptshsx > 0 && damage_tmp > (conf.ptshsx * 0.5)) {
                         damage_tmp = (conf.ptshsx * 0.5);
                     }
@@ -23812,6 +23920,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 else {
                     if (conf.jnshbl > 0) {
                         damage_tmp *= (conf.jnshbl / 100.0);
+                    }
+                    if (conf.jnshxx > 0 && damage_tmp <= conf.jnshxx) {
+                        damage_tmp = conf.jnshxx;
                     }
                     if (conf.jnshsx > 0 && damage_tmp > conf.jnshsx) {
                         damage_tmp = conf.jnshsx;
@@ -23880,6 +23991,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 if (conf.class1 > 0) {
                     if (conf.czlshbl > 0) {
                         damage_tmp = damage_tmp * (conf.czlshbl / 100.0);
+                    }
+                    if (conf.zlshxx > 0 && damage_tmp <= conf.zlshxx) {
+                        damage_tmp = conf.zlshxx;
                     }
                     if (conf.zlshsx > 0 && damage_tmp > conf.zlshsx) {
                         damage_tmp = conf.zlshsx;
@@ -23962,6 +24076,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     if (conf.cptshbl > 0) {
                         damage_tmp *= (conf.cptshbl / 100.0);
                     }
+                    if (conf.ptshxx > 0 && damage_tmp <= (conf.ptshxx * 0.5)) {
+                        damage_tmp = (conf.ptshxx * 0.5);
+                    }
                     if (conf.ptshsx > 0 && damage_tmp > (conf.ptshsx * 0.5)) {
                         damage_tmp = (conf.ptshsx * 0.5);
                     }
@@ -23969,6 +24086,9 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 else {
                     if (conf.cjnshbl > 0) {
                         damage_tmp *= (conf.cjnshbl / 100.0);
+                    }
+                    if (conf.jnshxx > 0 && damage_tmp <= conf.jnshxx) {
+                        damage_tmp = conf.jnshxx;
                     }
                     if (conf.jnshsx > 0 && damage_tmp > conf.jnshsx) {
                         damage_tmp = conf.jnshsx;

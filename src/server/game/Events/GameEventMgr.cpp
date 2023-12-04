@@ -139,13 +139,15 @@ void GameEventMgr::StartInternalEvent(uint16 event_id)
 bool GameEventMgr::StartEvent(uint16 event_id, bool overwrite)
 {
     GameEventData &data = mGameEvent[event_id];
-    AA_Event_GameEvent econf = aaCenter.aa_event_gameevents[event_id];
-    for (auto p : aaCenter.aa_onlinePlayers) {
-        if (econf.gm1 != "" && econf.gm1 != "0") {
-            aaCenter.AA_DoCommand(p, econf.gm1.c_str());
-        }
-        if (econf.target == 0) {
-            break;
+    if (aaCenter.aa_event_gameevents.find(event_id) != aaCenter.aa_event_gameevents.end()) {
+        AA_Event_GameEvent econf = aaCenter.aa_event_gameevents[event_id];
+        for (auto p : aaCenter.aa_onlinePlayers) {
+            if (econf.gm1 != "" && econf.gm1 != "0") {
+                aaCenter.AA_DoCommand(p, econf.gm1.c_str());
+            }
+            if (econf.target == 0) {
+                break;
+            }
         }
     }
     //自动组队，增加zone
@@ -294,12 +296,14 @@ void GameEventMgr::StopEvent(uint16 event_id, bool overwrite)
 {
     GameEventData &data = mGameEvent[event_id];
     AA_Event_GameEvent econf = aaCenter.aa_event_gameevents[event_id];
-    for (auto p : aaCenter.aa_onlinePlayers) {
-        if (econf.gm2 != "" && econf.gm2 != "0") {
-            aaCenter.AA_DoCommand(p, econf.gm2.c_str());
-        }
-        if (econf.target == 0) {
-            break;
+    if (aaCenter.aa_event_gameevents.find(event_id) != aaCenter.aa_event_gameevents.end()) {
+        for (auto p : aaCenter.aa_onlinePlayers) {
+            if (econf.gm2 != "" && econf.gm2 != "0") {
+                aaCenter.AA_DoCommand(p, econf.gm2.c_str());
+            }
+            if (econf.target == 0) {
+                break;
+            }
         }
     }
     //自动组队，取消zone

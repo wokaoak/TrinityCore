@@ -150,6 +150,7 @@ class TC_GAME_API Object
     public:
         uint32 aa_id = 0;
         uint32 aa_pet_id = 0;
+        uint32 aa_reset_timer = 0;
         virtual ~Object();
 
         bool IsInWorld() const { return m_inWorld; }

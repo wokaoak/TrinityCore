@@ -593,6 +593,7 @@ struct AA_Jianding_Item {
     uint32 itemid = 0;
     uint32 need = 0;
     uint32 chance = 0;
+    uint32 nonsuchzu = 0;
     uint32 nonsuchid = 0;
     std::string items = "";
     std::string pcitems = "";
@@ -999,6 +1000,17 @@ struct AA_Item_Nonsuch_Id {
     uint32 zu = 0;
 };
 
+struct AA_Item_Nonsuch_Need {
+    uint32 id = 0;
+    int32 class1 = -1;
+    int32 subclass = -1;
+    int32 InventoryType = -1;
+    uint32 ItemLevel = 0;
+    uint32 Quality = 0;
+    std::string values = "";
+    uint32 zu = 0;
+};
+
 struct AA_Item_Upgrade {
     std::string upgrade_spell = "";
     uint32 id = 0;
@@ -1241,55 +1253,71 @@ struct AA_Player_Stats_Conf
     int32 map = -1;
     int32 zone = -1;
     int32 area = -1;
-    uint32 liliang = 0;
+    uint32 liliangxx = 0;
+    uint32 liliangsx = 0;
     uint32 liliangbl = 0;
-    uint32 minjie = 0;
+    uint32 minjiexx = 0;
+    uint32 minjiesx = 0;
     uint32 minjiebl = 0;
-    uint32 zhili = 0;
+    uint32 zhilixx = 0;
+    uint32 zhilisx = 0;
     uint32 zhilibl = 0;
-    uint32 jingshen = 0;
-    uint32 jingshenbl = 0;
-    uint32 naili = 0;
+    uint32 nailixx = 0;
+    uint32 nailisx = 0;
     uint32 nailibl = 0;
-    uint32 faqiang = 0;
+    uint32 faqiangxx = 0;
+    uint32 faqiangsx = 0;
     uint32 faqiangbl = 0;
-    uint32 gongqiang = 0;
+    uint32 gongqiangxx = 0;
+    uint32 gongqiangsx = 0;
     uint32 gongqiangbl = 0;
-    uint32 zhiliao = 0;
+    uint32 zhiliaoxx = 0;
+    uint32 zhiliaosx = 0;
     uint32 zhiliaobl = 0;
-    uint32 shensheng = 0;
+    uint32 shenshengxx = 0;
+    uint32 shenshengsx = 0;
     uint32 shenshengbl = 0;
-    uint32 huoyan = 0;
+    uint32 huoyanxx = 0;
+    uint32 huoyansx = 0;
     uint32 huoyanbl = 0;
-    uint32 ziran = 0;
+    uint32 ziranxx = 0;
+    uint32 ziransx = 0;
     uint32 ziranbl = 0;
-    uint32 bingshuang = 0;
+    uint32 bingshuangxx = 0;
+    uint32 bingshuangsx = 0;
     uint32 bingshuangbl = 0;
-    uint32 anying = 0;
+    uint32 anyingxx = 0;
+    uint32 anyingsx = 0;
     uint32 anyingbl = 0;
-    uint32 aoshu = 0;
+    uint32 aoshuxx = 0;
+    uint32 aoshusx = 0;
     uint32 aoshubl = 0;
+    float blockxx = 0;//0' COMMENT '格挡上限数值',
     float blocksx = 0;//0' COMMENT '格挡上限数值',
+    float parryxx = 0;//0' COMMENT '招架数值上限',
     float parrysx = 0;//0' COMMENT '招架数值上限',
+    float dodgexx = 0;//100' COMMENT '闪避数值上限',
     float dodgesx = 0;//100' COMMENT '闪避数值上限',
+    float bjxx = 0;//100' COMMENT '暴击上限',
     float bjsx = 0;//100' COMMENT '暴击上限',
-    uint32 renxingsx = 0;//100' COMMENT '韧性上限',
-    float renxingbl = 0;//100' COMMENT '韧性倍率   公式为:当前韧性 除以 renxingbl',
+    uint32 hujiaxx = 0;//100' COMMENT '护甲上限',
     uint32 hujiasx = 0;//100' COMMENT '护甲上限',
     float hujiabl = 0;//100' COMMENT '护甲倍率   公式为:当前护甲 除以 hujiabl',
-    uint32 jzsx = 0;//100' COMMENT '精通上限',
-    float jzbl = 0;//100' COMMENT '精通倍率',
     uint32 hpxx = 0;//100' COMMENT '血量下限',
     uint32 hpsx = 0;//100' COMMENT '血量上限',
     float hpbl = 0;//100' COMMENT '血量倍率',
+    uint32 jsxx = 0;//100' COMMENT '急速上限',
     uint32 jssx = 0;//100' COMMENT '急速上限',
     float jsbl = 0;//100' COMMENT '急速倍率',
+    uint32 ptshxx = 0;//100' COMMENT '普通伤害上限',
     uint32 ptshsx = 0;//100' COMMENT '普通伤害上限',
     float ptshbl = 0;//100' COMMENT 'PVP普通伤害倍率 公式为:PVP普通伤害 乘以 ptshbl',
     float cptshbl = 0;//100' COMMENT 'PVE普通伤害倍率 公式为:PVE普通伤害 乘以 cptshbl',
+    uint32 jnshxx = 0;//100' COMMENT '技能伤害上限',
     uint32 jnshsx = 0;//100' COMMENT '技能伤害上限',
     float jnshbl = 0;//100' COMMENT 'PVP技能伤害倍率 公式为:PVP技能伤害 乘以 jnshbl',
     float cjnshbl = 0;//100' COMMENT 'PVE技能伤害倍率 公式为:PVE技能伤害 乘以 cjnshbl',
+    uint32 zlshxx = 0;//100' COMMENT '治疗伤害上限',
     uint32 zlshsx = 0;//100' COMMENT '治疗伤害上限',
     float zlshbl = 0;//100' COMMENT 'PVP治疗伤害倍率 公式为:PVP治疗伤害 乘以 zlshbl',
     float czlshbl = 0;//100' COMMENT 'PVE治疗伤害倍率 公式为:PVE治疗伤害 乘以 czlshbl',
@@ -1299,12 +1327,19 @@ struct AA_Player_Stats_Conf
     float mjtofq = 0;// 敏捷转法强，
     float nltofq = 0;// 耐力转法强，
     float zltofq = 0;// 智力转法强，
-    float jstofq = 0;// 精神转法强，
     float lltogq = 0;// 力量转攻强，
     float mjtogq = 0;// 敏捷转攻强，
     float nltogq = 0;// 耐力转攻强，
     float zltogq = 0;// 智力转攻强，
-    float jstogq = 0;// 精神转攻强
+    float damage_base_xx = 0;
+    float damage_base_sx = 0;
+    float damage_base_bl = 0;
+    float damage_off_xx = 0;
+    float damage_off_sx = 0;
+    float damage_off_bl = 0;
+    float damage_ranged_xx = 0;
+    float damage_ranged_sx = 0;
+    float damage_ranged_bl = 0;
 };
 
 struct AA_Ai
@@ -1587,6 +1622,8 @@ struct AA_Item_Jianding_Xl
 {
     uint32 entry = 0;
     uint32 zu = 0;
+    uint32 need = 0;
+    std::string xianzhi = "";
 };
 
 struct AA_Item_Qh_Id
@@ -1640,6 +1677,7 @@ struct AA_Creature {
     uint32 qiegevalue_dot = 0;
     float qiegepoint_dot = 0;
     uint32 qiege = 0;
+    float resetDistance = 0;
     std::string ais = "";
     uint32 nonsuch_group = 0;
     std::string lootid = "";
@@ -2153,6 +2191,7 @@ public:
     std::unordered_map<uint32, AA_Item_Nonsuch> aa_item_nonsuchs;
     std::unordered_map<uint32, std::vector<uint32>> aa_item_nonsuch_zus;
     std::unordered_map<uint32, AA_Item_Nonsuch_Id> aa_item_nonsuch_ids;
+    std::unordered_map<uint32, AA_Item_Nonsuch_Need> aa_item_nonsuch_needs;
     std::unordered_map<uint32, AA_Realmlist> aa_realmlists;
     std::unordered_map<uint32, AA_Item_NoJianding> aa_item_nojiandings;
     std::unordered_map<uint32, std::vector<AA_CreatureTemplate>> aa_creature_templates;
@@ -2462,10 +2501,10 @@ public:
     Item* GetItemByGUIDLow(Player* player, ObjectGuid::LowType guid);
     //    void M_NonsuchItem(Player *player, Item* pItem, uint32 nonsuch_group, bool isInit, uint32 nonsuch_id = 0);
     uint32 M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 type, uint32 nonsuch_id = 0, uint32 itemid = 0);
-    void M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id = 0, uint32 itemid = 0);
-    bool M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id = 0, uint32 itemid = 0);
-    bool M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id = 0, uint32 itemid = 0);
-    bool M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 nonsuch_id = 0, uint32 itemid = 0);
+    void M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid = 0);
+    bool M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid = 0);
+    bool M_NonsuchItemFmSpell(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid = 0);
+    bool M_NonsuchItemSet(Player* player, Item* pItem, uint32 nonsuchId, int32 type, uint32 itemid = 0);
     void M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel = 0);
     void M_CleanUpgradeItem(Item* pItem);
     void M_LevelItem(Player* player, Item* pItem);

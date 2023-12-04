@@ -279,8 +279,6 @@ private:
 
 struct TC_GAME_API Loot
 {
-    uint32 creatureEntry = 0;
-    
     NotNormalLootItemMap const& GetPlayerFFAItems() const { return PlayerFFAItems; }
 
     std::vector<LootItem> items;

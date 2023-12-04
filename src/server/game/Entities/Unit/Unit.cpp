@@ -8271,8 +8271,11 @@ int32 Unit::SpellBaseHealingBonusDone(SpellSchoolMask schoolMask) const
             if (conf.zhiliaobl > 0) {
                 advertisedBenefit = advertisedBenefit * (conf.zhiliaobl / 100.0);
             }
-            if (conf.zhiliao > 0 && advertisedBenefit > conf.zhiliao) {
-                advertisedBenefit = conf.zhiliao;
+            if (conf.zhiliaoxx > 0 && advertisedBenefit <= conf.zhiliaoxx) {
+                advertisedBenefit = conf.zhiliaoxx;
+            }
+            if (conf.zhiliaosx > 0 && advertisedBenefit > conf.zhiliaosx) {
+                advertisedBenefit = conf.zhiliaosx;
             }
         }
     }
@@ -10077,8 +10080,11 @@ float Unit::GetTotalStatValue(Stats stat) const
                 if (conf.liliangbl > 0) {
                     value = value * (conf.liliangbl / 100.0);
                 }
-                if (conf.liliang > 0 && value > conf.liliang) {
-                    value = conf.liliang;
+                if (conf.liliangxx > 0 && value <= conf.liliangxx) {
+                    value = conf.liliangxx;
+                }
+                if (conf.liliangsx > 0 && value > conf.liliangsx) {
+                    value = conf.liliangsx;
                 }
             }
         } else if (stat == STAT_AGILITY) { //敏捷
@@ -10088,8 +10094,11 @@ float Unit::GetTotalStatValue(Stats stat) const
                 if (conf.minjiebl > 0) {
                     value = value * (conf.minjiebl / 100.0);
                 }
-                if (conf.minjie > 0 && value > conf.minjie) {
-                    value = conf.minjie;
+                if (conf.minjiexx > 0 && value <= conf.minjiexx) {
+                    value = conf.minjiexx;
+                }
+                if (conf.minjiesx > 0 && value > conf.minjiesx) {
+                    value = conf.minjiesx;
                 }
             }
         } else if (stat == STAT_STAMINA) { //耐力
@@ -10099,8 +10108,11 @@ float Unit::GetTotalStatValue(Stats stat) const
                 if (conf.nailibl > 0) {
                     value = value * (conf.nailibl / 100.0);
                 }
-                if (conf.naili > 0 && value > conf.naili) {
-                    value = conf.naili;
+                if (conf.nailixx > 0 && value <= conf.nailixx) {
+                    value = conf.nailixx;
+                }
+                if (conf.nailisx > 0 && value > conf.nailisx) {
+                    value = conf.nailisx;
                 }
             }
         } else if (stat == STAT_INTELLECT) {//智力
@@ -10110,8 +10122,11 @@ float Unit::GetTotalStatValue(Stats stat) const
                 if (conf.zhilibl > 0) {
                     value = value * (conf.zhilibl / 100.0);
                 }
-                if (conf.zhili > 0 && value > conf.zhili) {
-                    value = conf.zhili;
+                if (conf.zhilixx > 0 && value <= conf.zhilixx) {
+                    value = conf.zhilixx;
+                }
+                if (conf.zhilisx > 0 && value > conf.zhilisx) {
+                    value = conf.zhilisx;
                 }
             }
         }
@@ -10193,48 +10208,66 @@ void Unit::UpdateResistances(uint32 school)
                 if (conf.shenshengbl > 0) {
                     value = value * (conf.shenshengbl / 100.0);
                 }
-                if (conf.shensheng > 0 && value > conf.shensheng) {
-                    value = conf.shensheng;
+                if (conf.shenshengxx > 0 && value <= conf.shenshengxx) {
+                    value = conf.shenshengxx;
+                }
+                if (conf.shenshengsx > 0 && value > conf.shenshengsx) {
+                    value = conf.shenshengsx;
                 }
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_FIRE) {
                 if (conf.huoyanbl > 0) {
                     value = value * (conf.huoyanbl / 100.0);
                 }
-                if (conf.huoyan > 0 && value > conf.huoyan) {
-                    value = conf.huoyan;
+                if (conf.huoyanxx > 0 && value <= conf.huoyanxx) {
+                    value = conf.huoyanxx;
+                }
+                if (conf.huoyansx > 0 && value > conf.huoyansx) {
+                    value = conf.huoyansx;
                 }
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_NATURE) {
                 if (conf.ziranbl > 0) {
                     value = value * (conf.ziranbl / 100.0);
                 }
-                if (conf.ziran > 0 && value > conf.ziran) {
-                    value = conf.ziran;
+                if (conf.ziranxx > 0 && value <= conf.ziranxx) {
+                    value = conf.ziranxx;
+                }
+                if (conf.ziransx > 0 && value > conf.ziransx) {
+                    value = conf.ziransx;
                 }
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_FROST) {
                 if (conf.bingshuangbl > 0) {
                     value = value * (conf.bingshuangbl / 100.0);
                 }
-                if (conf.bingshuang > 0 && value > conf.bingshuang) {
-                    value = conf.bingshuang;
+                if (conf.bingshuangxx > 0 && value <= conf.bingshuangxx) {
+                    value = conf.bingshuangxx;
+                }
+                if (conf.bingshuangsx > 0 && value > conf.bingshuangsx) {
+                    value = conf.bingshuangsx;
                 }
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_SHADOW) {
                 if (conf.anyingbl > 0) {
                     value = value * (conf.anyingbl / 100.0);
                 }
-                if (conf.anying > 0 && value > conf.anying) {
-                    value = conf.anying;
+                if (conf.anyingxx > 0 && value <= conf.anyingxx) {
+                    value = conf.anyingxx;
+                }
+                if (conf.anyingsx > 0 && value > conf.anyingsx) {
+                    value = conf.anyingsx;
                 }
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_ARCANE) {
                 if (conf.aoshubl > 0) {
                     value = value * (conf.aoshubl / 100.0);
                 }
-                if (conf.aoshu > 0 && value > conf.aoshu) {
-                    value = conf.aoshu;
+                if (conf.aoshuxx > 0 && value <= conf.aoshuxx) {
+                    value = conf.aoshuxx;
+                }
+                if (conf.aoshusx > 0 && value > conf.aoshusx) {
+                    value = conf.aoshusx;
                 }
             }
         }
