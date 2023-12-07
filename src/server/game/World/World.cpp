@@ -1802,7 +1802,7 @@ void World::SetInitialWorldSettings()
     if (aaCenter.aa_version.aa_login_count == 1) {//单机体验
         aaCenter.aa_version.status = "";
     }
-    //aaCenter.aa_version.status = "a1ba2ba3ba4ba5ba6ba7ba8ba9ba10ba100ba101ba102ba103ba104ba105ba106ba107ba108ba109ba110ba111ba112ba113ba114ba200ba201ba202ba203ba204ba205ba206ba207ba208ba209ba210ba211ba212ba213ba214ba215ba300ba301ba302ba303ba304ba305ba400ba401ba402ba403ba404ba405ba406ba407ba408ba409b";
+    //aaCenter.aa_version.status = "a1ba2ba3ba4ba5ba6ba7ba8ba9ba10ba100ba101ba102ba103ba104ba105ba106ba107ba108ba109ba110ba111ba112ba113ba114ba200ba201ba202ba203ba204ba205ba206ba207ba208ba209ba210ba211ba212ba213ba214ba215ba300ba301ba302ba303ba304ba305ba400ba401ba402ba403ba404ba405ba406ba407ba408ba409ba410b";
     //aaCenter.aa_version.aa_login_count = 50;
 
     TC_LOG_INFO("server.loading", "Initialize data stores...");
@@ -2749,10 +2749,10 @@ void World::SetInitialWorldSettings()
             TC_LOG_INFO("server.loading", ">> 『 记忆传送 』 → 验证失败  〔1.0k    定制功能   定制用户：蚂蚁〕");
         }
         if (aaCenter.AA_VerifyCode("a112b")) {
-            TC_LOG_INFO("server.loading", ">> 『 鉴定洗炼 』 → 验证通过  〔1.0k    定制功能   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 鉴定洗炼 』 → 验证通过  〔1.5k    定制功能   定制用户：AH〕");
         }
         else {
-            TC_LOG_INFO("server.loading", ">> 『 鉴定洗炼 』 → 验证失败  〔1.0k    定制功能   定制用户：AH〕");
+            TC_LOG_INFO("server.loading", ">> 『 鉴定洗炼 』 → 验证失败  〔1.5k    定制功能   定制用户：AH〕");
         }
         if (aaCenter.AA_VerifyCode("a113b")) {
             TC_LOG_INFO("server.loading", ">> 『 需求鉴定 』 → 验证通过  〔2.0k    定制功能   定制用户：DB〕");
@@ -3141,6 +3141,9 @@ void AA_World_Update(World* world, uint32 diff)
                 }
                 if (conf.game_event > 0) {
                     if (!sGameEventMgr->IsActiveEvent(conf.game_event)) {
+                        if (aaCenter.aa_groups.find(conf.zoneid) != aaCenter.aa_groups.end()) {
+                            aaCenter.aa_groups.erase(conf.zoneid);
+                        }
                         continue;
                     }
                 }

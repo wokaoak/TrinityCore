@@ -221,23 +221,6 @@ bool Player::UpdateStats(Stats stat)
     return true;
 }
 
-void AA_UpdateFaqiang(Player* player, int32& DoneAdvertisedBenefit)
-{
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
-
-    DoneAdvertisedBenefit += int32(CalculatePct(DoneAdvertisedBenefit, aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 545)));
-
-    if (conf.faqiangbl > 0) {
-        DoneAdvertisedBenefit = DoneAdvertisedBenefit * conf.faqiangbl * 0.01;
-    }
-    if (conf.faqiangxx > 0 && DoneAdvertisedBenefit <= conf.faqiangxx) {
-        DoneAdvertisedBenefit = conf.faqiangxx;
-    }
-    if (conf.faqiangsx > 0 && DoneAdvertisedBenefit > conf.faqiangsx) {
-        DoneAdvertisedBenefit = conf.faqiangsx;
-    }
-}
-
 void Player::ApplySpellPowerBonus(int32 amount, bool apply)
 {
     if (HasAuraType(SPELL_AURA_OVERRIDE_SPELL_POWER_BY_AP_PCT))
@@ -245,23 +228,8 @@ void Player::ApplySpellPowerBonus(int32 amount, bool apply)
 
     apply = _ModifyUInt32(apply, m_baseSpellPower, amount);
 
-    int32 heal = amount;
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
-    if (conf.class1 > 0) {
-        if (conf.zhiliaobl > 0) {
-            heal = heal * (conf.zhiliaobl / 100.0);
-        }
-        if (conf.zhiliaoxx > 0 && heal <= conf.zhiliaoxx) {
-            heal = conf.zhiliaoxx;
-        }
-        if (conf.zhiliaosx > 0 && heal > conf.zhiliaosx) {
-            heal = conf.zhiliaosx;
-        }
-    }
-
     // For speed just update for client
-    ApplyModUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), heal, apply);
-    AA_UpdateFaqiang(this, amount);
+    ApplyModUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), amount, apply);
     for (int i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
         ApplyModDamageDonePos(SpellSchools(i), amount, apply);
 
@@ -270,6 +238,8 @@ void Player::ApplySpellPowerBonus(int32 amount, bool apply)
         UpdateAttackPowerAndDamage();
         UpdateAttackPowerAndDamage(true);
     }
+
+    UpdateSpellDamageAndHealingBonus();
 }
 
 void Player::UpdateSpellDamageAndHealingBonus()
@@ -277,36 +247,20 @@ void Player::UpdateSpellDamageAndHealingBonus()
     // Magic damage modifiers implemented in Unit::SpellDamageBonusDone
     // This information for client side use only
     // Get healing bonus for all schools
-    int32 heal = SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ALL);
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
-    if (conf.class1 > 0) {
-        if (conf.zhiliaobl > 0) {
-            heal = heal * (conf.zhiliaobl / 100.0);
-        }
-        if (conf.zhiliaoxx > 0 && heal <= conf.zhiliaoxx) {
-            heal = conf.zhiliaoxx;
-        }
-        if (conf.zhiliaosx > 0 && heal > conf.zhiliaosx) {
-            heal = conf.zhiliaosx;
-        }
-    }
-    SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), heal);
+    SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModHealingDonePos), SpellBaseHealingBonusDone(SPELL_SCHOOL_MASK_ALL));
     // Get damage bonus for all schools
     Unit::AuraEffectList const& modDamageAuras = GetAuraEffectsByType(SPELL_AURA_MOD_DAMAGE_DONE);
     for (uint16 i = SPELL_SCHOOL_HOLY; i < MAX_SPELL_SCHOOL; ++i)
     {
-        int32 amount = std::accumulate(modDamageAuras.begin(), modDamageAuras.end(), 0, [i](int32 negativeMod, AuraEffect const* aurEff)
-            {
-                if (aurEff->GetAmount() < 0 && aurEff->GetMiscValue() & (1 << i))
-                    negativeMod += aurEff->GetAmount();
-                return negativeMod;
-            });
-        AA_UpdateFaqiang(this, amount);
-        SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDoneNeg, i), amount);
-
-        amount = SpellBaseDamageBonusDone(SpellSchoolMask(1 << i)) - m_activePlayerData->ModDamageDoneNeg[i];
-        AA_UpdateFaqiang(this, amount);
-        SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDonePos, i), amount);
+        SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDoneNeg, i),
+            std::accumulate(modDamageAuras.begin(), modDamageAuras.end(), 0, [i](int32 negativeMod, AuraEffect const* aurEff)
+        {
+            if (aurEff->GetAmount() < 0 && aurEff->GetMiscValue() & (1 << i))
+                negativeMod += aurEff->GetAmount();
+            return negativeMod;
+        }));
+        SetUpdateFieldStatValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::ModDamageDonePos, i),
+            SpellBaseDamageBonusDone(SpellSchoolMask(1 << i)) - m_activePlayerData->ModDamageDoneNeg[i]);
     }
 
     if (HasAuraType(SPELL_AURA_OVERRIDE_ATTACK_POWER_BY_SP_PCT))
@@ -608,19 +562,19 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
         aa_base_attPower += CalculatePct(GetStat(STAT_INTELLECT), conf.zltogq);
     }
 
-    float bl = aaCenter.AA_FindMapValueUint32(aa_fm_values, 538);
-    base_attPower += CalculatePct(base_attPower, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
-    attPowerMod += CalculatePct(attPowerMod, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
     base_attPower += aa_base_attPower;
     attPowerMod += aa_attPowerMod;
 
+    base_attPower += CalculatePct(base_attPower, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
+    attPowerMod += CalculatePct(attPowerMod, aaCenter.AA_FindMapValueUint32(aa_fm_values, 538));
+
     if (conf.class1 > 0) {
         if (conf.gongqiangbl > 0) {
-            bl += conf.gongqiangbl;
+            base_attPower = base_attPower * conf.gongqiangbl * 0.01;
+            attPowerMod = attPowerMod * conf.gongqiangbl * 0.01;
         }
     }
-    base_attPower += base_attPower * bl * 0.01;
-    attPowerMod += attPowerMod * bl * 0.01;
+
     if (conf.class1 > 0) {
         if (conf.gongqiangxx > 0 && (base_attPower + attPowerMod) <= conf.gongqiangxx) {
             base_attPower = (conf.gongqiangxx - attPowerMod);
@@ -820,8 +774,29 @@ void Player::UpdateBlockPercentage()
 void Player::UpdateCritPercentage(WeaponAttackType attType)
 {
     Player* player = this;
-    auto applyCritLimit = [player](float value)
+    auto applyCritLimit = [player, attType](float value)
     {
+        switch (attType)
+        {
+        case OFF_ATTACK:
+            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) > 0) {
+                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) * 0.01;
+            }
+            break;
+        case RANGED_ATTACK:
+            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 520) > 0) {
+                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 520) * 0.01;
+            }
+            break;
+        case BASE_ATTACK:
+            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) > 0) {
+                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) * 0.01;
+            }
+            break;
+        default:
+            break;
+        }
+
         //aawow 职业属性平衡，暴击上限倍数
         AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
         if (conf.class1 > 0) {
@@ -1092,6 +1067,10 @@ void Player::UpdateSpellCritChance()
     crit += GetTotalAuraModifier(SPELL_AURA_MOD_CRIT_PCT);
     // Increase crit from spell crit ratings
     crit += GetRatingBonusValue(CR_CRIT_SPELL);
+
+    if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 521) > 0) {
+        crit += aaCenter.AA_FindMapValueUint32(aa_fm_values, 521) * 0.01;
+    }
 
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
     //aawow 职业属性平衡，技能暴击上限倍数

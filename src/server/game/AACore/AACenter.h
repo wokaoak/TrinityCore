@@ -2039,6 +2039,7 @@ public:
     //传送坐标石
     std::unordered_map<uint32, std::map<int32, AA_Item_Zuobiao>> aa_item_zuobiaos;
     std::unordered_map<uint32, AA_Item_Zuobiao_Conf> aa_item_zuobiao_confs;
+    bool AA_ItemZuobiao_Save(Player* player, uint32 entry, ObjectGuid::LowType, uint32 index);
 
     //物品租赁
     std::unordered_map<uint32, AA_Item_Zulin> aa_item_zulins;

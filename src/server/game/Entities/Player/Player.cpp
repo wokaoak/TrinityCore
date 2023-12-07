@@ -5697,52 +5697,6 @@ void Player::UpdateRating(CombatRating cr)
     if (amount < 0)
         amount = 0;
 
-    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
-    if (cr == CR_HASTE_MELEE || cr == CR_HASTE_RANGED || cr == CR_HASTE_SPELL) {
-        if (cr == CR_HASTE_MELEE) {
-            if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 528) > 0) {
-                amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 528) * 0.01;
-            }
-        }
-        else if (cr == CR_HASTE_RANGED) {
-            if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 529) > 0) {
-                amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 529) * 0.01;
-            }
-        }
-        else if (cr == CR_HASTE_SPELL)
-        {
-            if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 530) > 0) {
-                amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 530) * 0.01;
-            }
-        }
-        if (conf.jsbl > 0) {
-            amount = amount * conf.jsbl * 0.01;
-        }
-        if (conf.jsxx > 0 && amount <= (int32)conf.jsxx) {
-            amount = conf.jsxx;
-        }
-        if (conf.jssx > 0 && amount > (int32)conf.jssx) {
-            amount = conf.jssx;
-        }
-    }
-
-    if (cr == CR_CRIT_MELEE) {
-        if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 519) > 0) {
-            amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 519) * 0.01;
-        }
-    }
-    else if (cr == CR_CRIT_RANGED) {
-        if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 520) > 0) {
-            amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 520) * 0.01;
-        }
-    }
-    else if (cr == CR_CRIT_SPELL)
-    {
-        if (aaCenter.AA_FindMapValueUint32(aa_fm_values, 521) > 0) {
-            amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 521) * 0.01;
-        }
-    }
-
     uint32 oldRating = m_activePlayerData->CombatRatings[cr];
     SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::CombatRatings, cr), amount);
 
@@ -12592,6 +12546,42 @@ Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool updat
         //aawow 生物死亡，掉落极品鉴定，拾取鉴定
         ItemTemplate const* pProto = item->GetTemplate();
         if (pProto) {
+            if (!loot) { //购买制造物品
+                std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["购买制造物品"];
+                for (auto mapconf : mapeventconfs) {
+                    if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
+                        aaCenter.AA_EventMapStart(this, mapconf);
+                    }
+                }
+
+                std::set<uint32> aiids = aaCenter.AA_GetAis(this, "购买制造物品");
+                for (auto id : aiids) {
+                    if (id > 0) {
+                        AA_Ai conf = aaCenter.aa_ais[id];
+                        if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
+                            aaCenter.AA_AiStart(this, nullptr, id);
+                        }
+                    }
+                }
+            } else {
+                //拾取掉落触发
+                std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["拾取掉落物品"];
+                for (auto mapconf : mapeventconfs) {
+                    if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
+                        aaCenter.AA_EventMapStart(this, mapconf);
+                    }
+                }
+
+                std::set<uint32> aiids = aaCenter.AA_GetAis(this, "拾取掉落物品");
+                for (auto id : aiids) {
+                    if (id > 0) {
+                        AA_Ai conf = aaCenter.aa_ais[id];
+                        if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
+                            aaCenter.AA_AiStart(this, nullptr, id);
+                        }
+                    }
+                }
+            }
             uint32 noticeid = 0;
             if (aaCenter.aa_item_nojiandings.find(pProto->GetId()) == aaCenter.aa_item_nojiandings.end())
             {
@@ -12611,24 +12601,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool updat
                             zu = aaCenter.AA_StringRandom(aaCenter.aa_item_jianding_buys[pProto->GetId()].zus);
                             if (zu > 0) {
                                 noticeid = aaCenter.M_NonsuchItem(this, item, zu, -2);
-                            }
-                        }
-
-                        //购买制造物品
-                        std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["购买制造物品"];
-                        for (auto mapconf : mapeventconfs) {
-                            if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
-                                aaCenter.AA_EventMapStart(this, mapconf);
-                            }
-                        }
-
-                        std::set<uint32> aiids = aaCenter.AA_GetAis(this, "购买制造物品");
-                        for (auto id : aiids) {
-                            if (id > 0) {
-                                AA_Ai conf = aaCenter.aa_ais[id];
-                                if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
-                                    aaCenter.AA_AiStart(this, nullptr, id);
-                                }
                             }
                         }
                     }
@@ -12658,24 +12630,6 @@ Item* Player::StoreNewItem(ItemPosCountVec const& pos, uint32 itemId, bool updat
                             }
                             if (zu > 0) {
                                 noticeid = aaCenter.M_NonsuchItem(this, item, zu, -2);
-                            }
-                        }
-
-                        //拾取掉落触发
-                        std::vector<AA_Event_Map> mapeventconfs = aaCenter.aa_event_maps["拾取掉落物品"];
-                        for (auto mapconf : mapeventconfs) {
-                            if (mapconf.value == -1 || (mapconf.value > 0 && mapconf.value == pProto->GetId())) {
-                                aaCenter.AA_EventMapStart(this, mapconf);
-                            }
-                        }
-
-                        std::set<uint32> aiids = aaCenter.AA_GetAis(this, "拾取掉落物品");
-                        for (auto id : aiids) {
-                            if (id > 0) {
-                                AA_Ai conf = aaCenter.aa_ais[id];
-                                if (conf.event_param1 == -1 || (conf.event_param1 > 0 && conf.event_param1 == pProto->GetId())) {
-                                    aaCenter.AA_AiStart(this, nullptr, id);
-                                }
                             }
                         }
                     }

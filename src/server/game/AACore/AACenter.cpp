@@ -24487,3 +24487,75 @@ void AACenter::AA_Update_YimingAura(Player* player)
         }
     }
 }
+
+bool AACenter::AA_ItemZuobiao_Save(Player* player, uint32 itemEntry, ObjectGuid::LowType itemGuidlow, uint32 index)
+{
+    AA_Item_Zuobiao_Conf conf = aaCenter.aa_item_zuobiao_confs[itemEntry];
+    if (conf.count <= 0 || conf.count > 20) {
+        return false;
+    }
+
+    if (conf.maps != "") {
+        std::vector<int32> v; v.clear();
+        aaCenter.AA_StringToVectorInt(conf.maps, v, ",");
+        if (std::find(v.begin(), v.end(), player->GetMapId()) != v.end()) {
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[记|r|cFF00D9FF忆|r|cFF00B3FF传|r|cFF008DFF送|r|cFF00FFFF]|r|cffFFFF00当前地图禁止记忆传送!");
+            return false;
+        }
+    }
+    if (conf.zones != "") {
+        std::vector<int32> v; v.clear();
+        aaCenter.AA_StringToVectorInt(conf.zones, v, ",");
+        if (std::find(v.begin(), v.end(), player->GetZoneId()) != v.end()) {
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[记|r|cFF00D9FF忆|r|cFF00B3FF传|r|cFF008DFF送|r|cFF00FFFF]|r|cffFFFF00当前区域Zone禁止记忆传送!");
+            return false;
+        }
+    }
+    if (conf.areas != "") {
+        std::vector<int32> v; v.clear();
+        aaCenter.AA_StringToVectorInt(conf.areas, v, ",");
+        if (std::find(v.begin(), v.end(), player->GetAreaId()) != v.end()) {
+            aaCenter.AA_SendMessage(player, 1, "|cFF00FFFF[记|r|cFF00D9FF忆|r|cFF00B3FF传|r|cFF008DFF送|r|cFF00FFFF]|r|cffFFFF00当前区域Area禁止记忆传送!");
+            return false;
+        }
+    }
+
+    Position pos = player->GetPosition();
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].guid = itemGuidlow;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].index = index;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].itemEntry = itemEntry;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].map = player->GetMapId();
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].zone = player->GetZoneId();
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].area = player->GetAreaId();
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].x = pos.m_positionX;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].y = pos.m_positionY;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].z = pos.m_positionZ;
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].o = pos.GetOrientation();
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].map_name = player->GetMap()->GetMapName();
+    LocaleConstant locale = LOCALE_zhCN;
+    AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry(player->GetAreaId());
+    if (areaEntry)
+    {
+        aaCenter.aa_item_zuobiaos[itemGuidlow][index].area_name = areaEntry->AreaName[locale];
+    }
+    if (player->GetMap() && player->GetMap()->IsDungeon()) {
+        aaCenter.aa_item_zuobiaos[itemGuidlow][index].nanduid = aaCenter.aa_minstancevalues[player->GetMap()->GetInstanceId()][3];
+    }
+    time_t timep;
+    time(&timep); /*当前time_t类型UTC时间*/
+    aaCenter.aa_item_zuobiaos[itemGuidlow][index].update_time = timep;
+
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    sAAData->AA_REP_Item_Zuobiao(itemGuidlow, index, trans);
+    CharacterDatabase.CommitTransaction(trans);
+    std::string msg = "";
+    if (aaCenter.aa_item_zuobiaos[itemGuidlow][index].area_name != "") {
+        msg = "|cFF00FFFF[记|r|cFF00D9FF忆|r|cFF00B3FF传|r|cFF008DFF送|r|cFF00FFFF]|r坐标已记录：" + aaCenter.aa_item_zuobiaos[itemGuidlow][index].area_name + "[map]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].map) + "[x]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].x) + "\n[y]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].y) + "[z]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].z);
+    }
+    else if (aaCenter.aa_item_zuobiaos[itemGuidlow][index].map_name != "") {
+        msg = "|cFF00FFFF[记|r|cFF00D9FF忆|r|cFF00B3FF传|r|cFF008DFF送|r|cFF00FFFF]|r坐标已记录：" + aaCenter.aa_item_zuobiaos[itemGuidlow][index].map_name + "[map]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].map) + "[x]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].x) + "\n[y]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].y) + "[z]：" + std::to_string(aaCenter.aa_item_zuobiaos[itemGuidlow][index].z);
+    }
+    aaCenter.AA_SendMessage(player, 1, msg.c_str());
+
+    return true;
+}

@@ -1064,6 +1064,21 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
 
                     Player* attacker_a = nullptr;
                     Player* attacker_v = victim->ToPlayer();
+
+                    //记忆传送，记录死亡坐标
+                    if (attacker_v != nullptr) {
+                        uint32 entry = 0;
+                        if (aaCenter.aa_item_zuobiao_confs.size()) {
+                            for (auto& itr : aaCenter.aa_item_zuobiao_confs) {
+                                if (itr.first > 0) {
+                                    if (Item* item = attacker_v->GetItemByEntry(itr.first)) {
+                                        aaCenter.AA_ItemZuobiao_Save(attacker_v, itr.first, item->GetGUIDLow(), 0);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if (Creature* c = victim->ToCreature()) {
                         attacker_a = ObjectAccessor::FindPlayer(c->GetCreatorGUID());
                     }
@@ -1180,7 +1195,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                                 std::vector<int32> v; v.clear();
                                 aaCenter.AA_StringToVectorInt(conf.chengfa_dies, v, ",");
                                 //被玩家击杀
-                                if (attacker_a && attacker_v) {
+                                if (attacker_a && attacker_v && attacker_a != attacker_v) {
                                     if (std::find(v.begin(), v.end(), 0) == v.end() && std::find(v.begin(), v.end(), 2) == v.end()) {
                                         p_yiming = nullptr;
                                     }
@@ -1227,7 +1242,10 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                                 std::vector<int32> v; v.clear();
                                 aaCenter.AA_StringToVectorInt(conf.chengfa_items, v, ",");
                                 for (auto itemid : v) {
-                                    if (itemid && p_yiming->HasItemCount(itemid, 1)) {
+                                    if (Item* item = p_yiming->GetItemByEntry(itemid))
+                                    {
+                                        uint32 count = 1;
+                                        p_yiming->DestroyItemCount(item, count, true);
                                         p_yiming = nullptr;
                                         break;
                                     }
@@ -7799,8 +7817,21 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
 
     if (GetTypeId() == TYPEID_PLAYER)
     {
+        uint32 value = ToPlayer()->GetBaseSpellPowerBonus();
+        AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+        value += value * aaCenter.AA_FindMapValueUint32(aa_fm_values, 545) * 0.01;
+        if (conf.faqiangbl > 0) {
+            value = value * conf.faqiangbl * 0.01;
+        }
+        if (conf.faqiangxx > 0 && value <= conf.faqiangxx) {
+            value = conf.faqiangxx;
+        }
+        if (conf.faqiangsx > 0 && value > conf.faqiangsx) {
+            value = conf.faqiangsx;
+        }
+
         // Base value
-        DoneAdvertisedBenefit += ToPlayer()->GetBaseSpellPowerBonus();
+        DoneAdvertisedBenefit += value;
 
         // Check if we are ever using mana - PaperDollFrame.lua
         if (GetPowerIndex(POWER_MANA) != MAX_POWERS)
@@ -7823,7 +7854,6 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
         DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 607)));
         DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 608)));
 
-        AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
         if (conf.class1 > 0) {
             DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STRENGTH), conf.lltofq));
             DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_AGILITY), conf.mjtofq));
@@ -12151,8 +12181,15 @@ void Unit::SetMeleeAnimKitId(uint16 animKitId)
                 }
             }
 
-            if (Player* killed = victim->ToPlayer())
-                sScriptMgr->OnPlayerKilledByCreature(killerCre, killed);
+            if (Player* killed = victim->ToPlayer()) {
+                //如果是被玩家宠物杀死，算做PVP
+                if (killerCre->GetOwner() && killerCre->GetOwner()->ToPlayer()) {
+                    sScriptMgr->OnPVPKill(killerCre->GetOwner()->ToPlayer(), killed);
+                }
+                else {
+                    sScriptMgr->OnPlayerKilledByCreature(killerCre, killed);
+                }
+            }
         }
     }
 }
