@@ -279,7 +279,6 @@ struct AA_Yiming_Conf
     uint32 is_paimai = 0;//是否允许拍卖
     uint32 is_youjian = 0;//是否允许邮件
     uint32 is_chuansong = 0;//是否允许传送
-    uint32 is_yongbing = 0;//是否允许召唤仆从
     std::string jinzhi_items = "";//禁止的物品_多个逗号隔开
     std::string jinzhi_spells = "";//禁止的法术_多个逗号隔开
     std::string chengfa_dies = "";//惩罚死亡模式_多个逗号隔开
@@ -347,17 +346,6 @@ struct AA_Shouling_Conf {
 struct AA_Biwu_Team {
     ObjectGuid::LowType p1 = 0;
     ObjectGuid::LowType p2 = 0;
-};
-
-struct AA_Diy_Duel {
-    uint32 id = 0;
-    std::string name = "";
-    std::string namepre = "";
-    std::string namesuf = "";
-    uint32 need_add = 0;
-    std::string gm_add = "";
-    uint32 need_exit = 0;
-    std::string gm_exit = "";
 };
 
 struct AA_Xitong_Group {
@@ -784,8 +772,6 @@ struct AA_Need_Conf
     uint32 mobi = 0;
     uint32 jifen = 0;
     uint32 battlecore = 0;
-    uint32 honorcore = 0;
-    uint32 tianfu = 0;
     uint32 deplete = 0;
     std::string items = "";
     uint32 level_item_ItemLevel = 0; //物品ItemLevel
@@ -795,9 +781,6 @@ struct AA_Need_Conf
     uint32 level_item_qh = 0; //物品强化等级
     uint32 level_item_jxsx = 0; //物品觉醒属性等级
     uint32 level_item_jxjn = 0; //物品觉醒技能等级
-    uint32 level_pet_jh = 0; //宠物进化等级
-    uint32 level_pet_qh = 0; //宠物强化等级
-    uint32 level_pet_jx = 0; //宠物觉醒等级
     std::string quests = "";
     std::string achievements = "";
     std::string spells = "";
@@ -816,7 +799,6 @@ struct AA_Need_Conf
     std::string game_event = "";
     uint32 group_count = 0;
     uint32 group_duizhang = 0;
-    uint32 is_yongbing = 0;
     uint32 notice = 0;
     std::string text = "";
 };
@@ -849,7 +831,6 @@ struct AA_Reward_Conf
     uint32 mobi = 0;
     uint32 jifen = 0;
     uint32 battlecore = 0;
-    uint32 honorcore = 0;
     std::string items = "";
     std::string spells = "";
     std::string buffs = "";
@@ -1388,12 +1369,6 @@ struct AA_Ai_Item
     std::string ais = "";
 };
 
-struct AA_Ai_Pet
-{
-    uint32 id = 0;
-    std::string ais = "";
-};
-
 struct AA_Ai_Creature
 {
     uint32 id = 0;
@@ -1898,9 +1873,6 @@ struct AA_Paihang { //军衔等级，斗气等级，巅峰等级，今日累充�
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_cz;
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_jxsx;
     std::vector<std::pair<ObjectGuid, uint32>> aa_level_item_jxjn;
-    std::vector<std::pair<ObjectGuid, uint32>> aa_level_pet_jh;
-    std::vector<std::pair<ObjectGuid, uint32>> aa_level_pet_qh;
-    std::vector<std::pair<ObjectGuid, uint32>> aa_level_pet_jx;
     std::map< std::string, std::vector<std::pair<ObjectGuid, uint32>> > aa_diy_guids;
     std::map< std::string, std::vector<std::pair<ObjectGuid, uint32>> > aa_diy_accounts;
     bool isOk = false;
@@ -2049,9 +2021,6 @@ public:
     std::unordered_map<uint32, std::vector<uint32>> aa_auraid_conf_zus;
     std::unordered_map<uint32, AA_SpellId_Conf> aa_spellid_confs;
     std::unordered_map<uint32, std::vector<uint32>> aa_spellid_conf_zus;
-
-    //自定义阵营
-    std::unordered_map<int32, AA_Diy_Duel> aa_diy_duels;
 
     //系统自动组队
     std::unordered_map<int32, std::set<ObjectGuid>> aa_groups;
@@ -2344,7 +2313,6 @@ public:
     /*Ai*/
     std::unordered_map<uint32, AA_Ai> aa_ais;
     std::unordered_map<uint32, std::set<uint32>> aa_ai_zus;
-    std::unordered_map<uint32, AA_Ai_Pet> aa_ai_pets;
     std::unordered_map<uint32, AA_Ai_Title> aa_ai_titles;
     std::unordered_map<uint32, AA_Ai_Item> aa_ai_items;
     std::unordered_map<uint32, AA_Ai_Creature> aa_ai_creatures;

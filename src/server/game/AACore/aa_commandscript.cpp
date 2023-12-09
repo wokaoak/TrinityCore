@@ -2759,8 +2759,15 @@ public:
                 count_pet = count_pet + 1;
             }
         }
-        if (count_pet >= aaCenter.aa_petzhan_confs[7].value1) {
-            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战宠出战数量不能超过" + aaCenter.aa_color_yellow + std::to_string(aaCenter.aa_petzhan_confs[7].value1) + "|cffFF0000只。";
+
+        uint32 count_max = aaCenter.aa_petzhan_confs[7].value1;
+        uint32 accountid = player->GetSession()->GetAccountId();
+        uint32 viplevel = aaCenter.aa_accounts[accountid].vip;
+        uint32 botcount = aaCenter.aa_vip_confs[viplevel].botcount;
+        count_max += botcount;
+        count_max += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 404);
+        if (count_pet >= count_max) {
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战宠出战数量不能超过" + aaCenter.aa_color_yellow + std::to_string(count_max) + "|cffFF0000只。";
             aaCenter.AA_SendMessage(player, 1, msg.c_str());
             return false;
         }
@@ -2919,8 +2926,10 @@ public:
                 count_pet = count_pet + 1;
             }
         }
-        if (count_pet >= aaCenter.aa_petzhan_confs[8].value1) {
-            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战宠合体数量不能超过" + aaCenter.aa_color_yellow + std::to_string(aaCenter.aa_petzhan_confs[8].value1) + "|cffFF0000只。";
+
+        uint32 count_max = aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 407) + aaCenter.aa_petzhan_confs[8].value1;
+        if (count_pet >= count_max) {
+            std::string msg = "|cFF00FFFF[系|r|cFF00D9FF统|r|cFF00B3FF提|r|cFF008DFF示|r|cFF00FFFF]|r|cffFF0000战宠合体数量不能超过" + aaCenter.aa_color_yellow + std::to_string(count_max) + "|cffFF0000只。";
             aaCenter.AA_SendMessage(player, 1, msg.c_str());
             return false;
         }

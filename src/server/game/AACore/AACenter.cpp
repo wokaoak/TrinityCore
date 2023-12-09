@@ -1055,7 +1055,6 @@ std::string AACenter::AA_GetRewardText(uint32 rewardid, uint32 count)
                 std::string s5 = conf.mobi > 0 ? aa_color_yellow + "· " + aa_color_blues + "[" + aaCenter.aa_world_confs[63].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.mobi * count) + "&" : "";
                 std::string s6 = conf.jifen > 0 ? aa_color_yellow + "· " + aa_color_blues + "[" + aaCenter.aa_world_confs[64].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.jifen * count) + "&" : "";
                 std::string s7 = conf.battlecore > 0 ? aa_color_yellow + "· " + aa_color_blues + "[" + aaCenter.aa_world_confs[65].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.battlecore * count) + "&" : "";
-                std::string s8 = conf.honorcore > 0 ? aa_color_yellow + "· " + aa_color_blues + "[荣誉点数]" + aa_color_yellow + " x " + std::to_string(conf.honorcore * count) + "&" : "";
                 std::string itemstr = "";
                 if (conf.items != "" && conf.items != "0") {
                     std::map<int32, int32> items; items.clear();
@@ -1075,7 +1074,7 @@ std::string AACenter::AA_GetRewardText(uint32 rewardid, uint32 count)
                 }
                 std::string s14 = conf.spells != "0" && conf.spells != "" ? "学习技能&" : "";
                 std::string s15 = conf.buffs != "0" && conf.buffs != "" ? "获得Buff&" : "";
-                std::string ss = s1 + s200 + s201 + s202 + s203 + s204 + s205 + s206 + s207 + s208 + s209 + s3 + s4 + s5 + s6 + s7 + s8 + itemstr + s14 + s15;//+s16;
+                std::string ss = s1 + s200 + s201 + s202 + s203 + s204 + s205 + s206 + s207 + s208 + s209 + s3 + s4 + s5 + s6 + s7 + itemstr + s14 + s15;//+s16;
                 aaCenter.AA_StringReplaceLast(ss, "&", "");
                 text = ss;
             }
@@ -1108,9 +1107,6 @@ std::string AACenter::AA_GetNeedText(uint32 needid, uint32 count)
                 std::string s404 = conf.level_item_cz > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[物品成长等级]" + aa_color_yellow + " x " + std::to_string(conf.level_item_cz) + "&" : "";
                 std::string s405 = conf.level_item_jxsx > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[物品觉醒属性等级]" + aa_color_yellow + " x " + std::to_string(conf.level_item_jxsx) + "&" : "";
                 std::string s406 = conf.level_item_jxjn > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[物品觉醒技能等级]" + aa_color_yellow + " x " + std::to_string(conf.level_item_jxjn) + "&" : "";
-                std::string s407 = conf.level_pet_jh > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[宠物进化等级]" + aa_color_yellow + " x " + std::to_string(conf.level_pet_jh) + "&" : "";
-                std::string s408 = conf.level_pet_qh > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[宠物强化等级]" + aa_color_yellow + " x " + std::to_string(conf.level_pet_qh) + "&" : "";
-                std::string s409 = conf.level_pet_jx > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[宠物觉醒等级]" + aa_color_yellow + " x " + std::to_string(conf.level_pet_jx) + "&" : "";
                 std::string s5 = "";
                 if (conf.gender == 1) {
                     s5 = aa_color_red + aa_color_red + "· 需要" + aa_color_blues + "[性别]" + aa_color_yellow + " 男&";
@@ -1254,7 +1250,6 @@ std::string AACenter::AA_GetNeedText(uint32 needid, uint32 count)
                 std::string s13 = conf.mobi > 0 ? (aa_color_red + "· 消耗" + aa_color_blues + "[" + aaCenter.aa_world_confs[63].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.mobi * count) + "&") : "";
                 std::string s14 = conf.jifen > 0 ? (aa_color_red + "· 消耗" + aa_color_blues + "[" + aaCenter.aa_world_confs[64].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.jifen * count) + "&") : "";
                 std::string s15 = conf.battlecore > 0 ? (aa_color_red + "· 消耗" + aa_color_blues + "[" + aaCenter.aa_world_confs[65].value2 + "]" + aa_color_yellow + " x " + std::to_string(conf.battlecore * count) + "&") : "";
-                std::string s16 = conf.honorcore > 0 ? (aa_color_red + "· 消耗" + aa_color_blues + "[荣誉点数]" + aa_color_yellow + " x " + std::to_string(conf.honorcore * count) + "&") : "";
                 std::string itemstr = "";
                 if (conf.items != "" && conf.items != "0") {
                     std::map<int32, int32> items; items.clear();
@@ -1279,7 +1274,7 @@ std::string AACenter::AA_GetNeedText(uint32 needid, uint32 count)
                 std::string s25 = conf.buffs != "0" && conf.buffs != "" ? "携带：指定Buff&" : "";
                 std::string s26 = conf.group_count > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[队伍人数]" + aa_color_yellow + " x " + std::to_string(conf.group_count) + "&" : "";
                 std::string s27 = conf.group_duizhang > 0 ? aa_color_red + "· 需要" + aa_color_blues + "[队长]&" : "";
-                std::string ss = s1 + s200 + s201 + s202 + s3 + s301 + s400 + s401 + s402 + s403 + s404 + s405 + s406 + s407 + s408 + s409 + s5 + s6 + s7 + s8 + s9 + s10 + s11 + s12 + s13 + s14 + s15 + s16 + itemstr + s22 + s23 + s24 + s25 + s26 + s27;
+                std::string ss = s1 + s200 + s201 + s202 + s3 + s301 + s400 + s401 + s402 + s403 + s404 + s405 + s406 + s5 + s6 + s7 + s8 + s9 + s10 + s11 + s12 + s13 + s14 + s15 + itemstr + s22 + s23 + s24 + s25 + s26 + s27;
                 aaCenter.AA_StringReplaceLast(ss, "&", "");
                 text = ss;
             }
@@ -4565,11 +4560,6 @@ bool AACenter::M_CanNeedDo(Player* player, std::string& needstr, uint32 needid, 
             needstr = needstr + aa_color_blues + "· [队长] " + aa_color_yellow + "未满足\n";
             isOk = false;
         }
-    }
-
-    if (conf.is_yongbing == 1) {
-        needstr = needstr + aa_color_blues + "· [雇佣兵专属] " + aa_color_yellow + "未满足\n";
-        isOk = false;
     }
 
     if (isOk) {
@@ -11268,7 +11258,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 result += std::to_string(conf.mobi); result += ",";
                 result += std::to_string(conf.jifen); result += ",";
                 result += std::to_string(conf.battlecore); result += ",";
-                result += std::to_string(conf.honorcore); result += ",";
                 result += std::to_string(0); result += ",";
                 result += std::to_string(conf.deplete); result += ",";
                 result += "\""; result += conf.items; result += "\",";
@@ -11279,9 +11268,6 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 result += std::to_string(conf.level_item_cz); result += ","; //物品成长等级
                 result += std::to_string(conf.level_item_jxsx); result += ","; //物品觉醒属性等级
                 result += std::to_string(conf.level_item_jxjn); result += ","; //物品觉醒技能等级
-                result += std::to_string(conf.level_pet_jh); result += ","; //宠物进化等级
-                result += std::to_string(conf.level_pet_qh); result += ","; //宠物强化等级
-                result += std::to_string(conf.level_pet_jx); result += ","; //宠物觉醒等级
                 result += "\""; result += conf.quests; result += "\",";
                 result += "\""; result += conf.achievements; result += "\",";
                 result += "\""; result += conf.spells; result += "\",";
@@ -11322,7 +11308,7 @@ void AACenter::AA_ReceiveAddon(Player* player, std::string& prefix, std::string&
                 result += std::to_string(conf.mobi); result += ",";
                 result += std::to_string(conf.jifen); result += ",";
                 result += std::to_string(conf.battlecore); result += ",";
-                result += std::to_string(conf.honorcore); result += ",";
+                result += std::to_string(0); result += ","; //result += std::to_string(conf.honorcore); result += ",";
                 result += "\""; result += conf.items; result += "\",";
                 result += "\""; result += conf.spells; result += "\",";
                 result += "\""; result += conf.buffs; result += "\",";
@@ -14471,7 +14457,6 @@ void AACenter::LoadAAData_World()
                 conf.is_paimai = fields[i++].GetUInt32();
                 conf.is_youjian = fields[i++].GetUInt32();
                 conf.is_chuansong = fields[i++].GetUInt32();
-                conf.is_yongbing = fields[i++].GetUInt32();
                 conf.jinzhi_items = fields[i++].GetString();
                 conf.jinzhi_spells = fields[i++].GetString();
                 conf.chengfa_dies = fields[i++].GetString();
@@ -14622,29 +14607,6 @@ void AACenter::LoadAAData_World()
         }
     }
     {
-        TC_LOG_INFO("server.loading", "正在加载 _自定义_阵营...");
-        uint32 oldMSTime = getMSTime();
-        aa_diy_duels.clear();
-        QueryResult result = WorldDatabase.Query("SELECT * FROM _自定义_阵营");
-        if (result) {
-            do {
-                Field* fields = result->Fetch();
-                AA_Diy_Duel conf;
-                int i = 1;
-                conf.id = fields[i++].GetUInt32();
-                conf.name = fields[i++].GetString();
-                conf.namepre = fields[i++].GetString();
-                conf.namesuf = fields[i++].GetString();
-                conf.need_add = fields[i++].GetUInt32();
-                conf.gm_add = fields[i++].GetString();
-                conf.need_exit = fields[i++].GetUInt32();
-                conf.gm_exit = fields[i++].GetString();
-                aa_diy_duels[conf.id] = conf;
-            } while (result->NextRow());
-            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义_阵营 用时 {} 毫秒", (unsigned long)aa_diy_duels.size(), GetMSTimeDiffToNow(oldMSTime));
-        }
-    }
-    {
         TC_LOG_INFO("server.loading", "正在加载 __系统_自动组队...");
         uint32 oldMSTime = getMSTime();
         aa_xitong_groups.clear();
@@ -14658,7 +14620,7 @@ void AACenter::LoadAAData_World()
                 conf.count = fields[3].GetUInt32();
                 conf.zoneid = fields[4].GetInt32();
                 conf.iszhenying = fields[5].GetUInt32();
-                conf.isgonghui = fields[5].GetUInt32();
+                conf.isgonghui = fields[6].GetUInt32();
                 aa_xitong_groups[conf.id] = conf;
                 if (conf.game_event == 0) {
                     aa_xitong_group_zones.insert(conf.zoneid);
@@ -16396,52 +16358,48 @@ void AACenter::LoadAAData_World()
             do {
                 Field* fields = result->Fetch();
                 AA_Need_Conf conf;
-                conf.id = fields[1].GetUInt32();
-                conf.level = fields[2].GetUInt32();
-                conf.jxlevel = fields[3].GetUInt32();
-                conf.dqlevel = fields[4].GetUInt32();
-                conf.dflevel = fields[5].GetUInt32();
-                conf.viplevel = fields[6].GetUInt32();
-                conf.jifen_all = fields[7].GetUInt32();
-                conf.money = fields[8].GetUInt32();
-                conf.paodian = fields[9].GetUInt32();
-                conf.mobi = fields[10].GetUInt32();
-                conf.jifen = fields[11].GetUInt32();
-                conf.battlecore = fields[12].GetUInt32();
-                conf.honorcore = fields[13].GetUInt32();
-                conf.deplete = fields[15].GetUInt32();
-                conf.items = fields[16].GetString();
-                conf.level_item_ItemLevel = fields[17].GetUInt32();
-                conf.level_item_Quality = fields[18].GetUInt32();
-                conf.level_item_jd = fields[19].GetUInt32();
-                conf.level_item_cz = fields[20].GetUInt32();
-                conf.level_item_qh = fields[21].GetUInt32();
-                conf.level_item_jxsx = fields[22].GetUInt32();
-                conf.level_item_jxjn = fields[23].GetUInt32();
-                conf.level_pet_jh = fields[24].GetUInt32();
-                conf.level_pet_qh = fields[25].GetUInt32();
-                conf.level_pet_jx = fields[26].GetUInt32();
-                conf.quests = fields[27].GetString();
-                conf.achievements = fields[28].GetString();
-                conf.spells = fields[29].GetString();
-                conf.buffs = fields[30].GetString();
-                conf.gender = fields[31].GetUInt32();
-                conf.team = fields[32].GetUInt8();
-                conf.race = fields[33].GetUInt32();
-                conf.class1 = fields[34].GetUInt32();
-                conf.guild = fields[35].GetUInt32();
-                conf.mapid = fields[36].GetInt32();
-                conf.areaid = fields[37].GetInt32();
-                conf.zoneid = fields[38].GetInt32();
-                conf.diy_guid = fields[39].GetString();
-                conf.diy_account = fields[40].GetString();
-                conf.diy_system = fields[41].GetString();
-                conf.game_event = fields[42].GetString();
-                conf.group_count = fields[43].GetUInt32();
-                conf.group_duizhang = fields[44].GetUInt32();
-                conf.is_yongbing = fields[45].GetUInt32();
-                conf.notice = fields[46].GetUInt32();
-                conf.text = fields[47].GetString();
+                int i = 1;
+                conf.id = fields[i++].GetUInt32();
+                conf.level = fields[i++].GetUInt32();
+                conf.jxlevel = fields[i++].GetUInt32();
+                conf.dqlevel = fields[i++].GetUInt32();
+                conf.dflevel = fields[i++].GetUInt32();
+                conf.viplevel = fields[i++].GetUInt32();
+                conf.jifen_all = fields[i++].GetUInt32();
+                conf.money = fields[i++].GetUInt32();
+                conf.paodian = fields[i++].GetUInt32();
+                conf.mobi = fields[i++].GetUInt32();
+                conf.jifen = fields[i++].GetUInt32();
+                conf.battlecore = fields[i++].GetUInt32();
+                conf.deplete = fields[i++].GetUInt32();
+                conf.items = fields[i++].GetString();
+                conf.level_item_ItemLevel = fields[i++].GetUInt32();
+                conf.level_item_Quality = fields[i++].GetUInt32();
+                conf.level_item_jd = fields[i++].GetUInt32();
+                conf.level_item_cz = fields[i++].GetUInt32();
+                conf.level_item_qh = fields[i++].GetUInt32();
+                conf.level_item_jxsx = fields[i++].GetUInt32();
+                conf.level_item_jxjn = fields[i++].GetUInt32();
+                conf.quests = fields[i++].GetString();
+                conf.achievements = fields[i++].GetString();
+                conf.spells = fields[i++].GetString();
+                conf.buffs = fields[i++].GetString();
+                conf.gender = fields[i++].GetUInt32();
+                conf.team = fields[i++].GetUInt8();
+                conf.race = fields[i++].GetUInt32();
+                conf.class1 = fields[i++].GetUInt32();
+                conf.guild = fields[i++].GetUInt32();
+                conf.mapid = fields[i++].GetInt32();
+                conf.areaid = fields[i++].GetInt32();
+                conf.zoneid = fields[i++].GetInt32();
+                conf.diy_guid = fields[i++].GetString();
+                conf.diy_account = fields[i++].GetString();
+                conf.diy_system = fields[i++].GetString();
+                conf.game_event = fields[i++].GetString();
+                conf.group_count = fields[i++].GetUInt32();
+                conf.group_duizhang = fields[i++].GetUInt32();
+                conf.notice = fields[i++].GetUInt32();
+                conf.text = fields[i++].GetString();
                 aa_needs[conf.id] = conf;
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _模板_需求 用时 {} 毫秒", (unsigned long)aa_needs.size(), GetMSTimeDiffToNow(oldMSTime));
@@ -16470,7 +16428,6 @@ void AACenter::LoadAAData_World()
                 conf.mobi = fields[i++].GetUInt32();
                 conf.jifen = fields[i++].GetUInt32();
                 conf.battlecore = fields[i++].GetUInt32();
-                conf.honorcore = fields[i++].GetUInt32();
                 conf.items = fields[i++].GetString();
                 conf.spells = fields[i++].GetString();
                 conf.buffs = fields[i++].GetString();
@@ -16502,7 +16459,6 @@ void AACenter::LoadAAData_World()
                 n_conf.mobi = conf.mobi;
                 n_conf.jifen = conf.jifen;
                 n_conf.battlecore = conf.battlecore;
-                n_conf.honorcore = conf.honorcore;
                 //                n_conf.deplete = fields[14].GetUInt32();
                 n_conf.items = conf.items;
                 //                n_conf.level_item = fields[25].GetUInt32();
@@ -16910,22 +16866,6 @@ void AACenter::LoadAAData_World()
                 aa_ai_spell_items[conf.id] = conf;
             } while (result->NextRow());
             TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义ai_物品技能带ai 用时 {} 毫秒", (unsigned long)aa_ai_spell_items.size(), GetMSTimeDiffToNow(oldMSTime));
-        }
-    }
-    {
-        TC_LOG_INFO("server.loading", "正在加载 _自定义Ai_宠物带Ai...");
-        uint32 oldMSTime = getMSTime();
-        aa_ai_pets.clear();
-        QueryResult result = WorldDatabase.Query("SELECT * FROM _自定义Ai_宠物带Ai");
-        if (result) {
-            do {
-                Field* fields = result->Fetch();
-                AA_Ai_Pet conf;
-                conf.id = fields[1].GetUInt32();
-                conf.ais = fields[2].GetString();
-                aa_ai_pets[conf.id] = conf;
-            } while (result->NextRow());
-            TC_LOG_INFO("server.loading", ">> 成功加载 {}条 _自定义Ai_宠物带Ai 用时 {} 毫秒", (unsigned long)aa_ai_pets.size(), GetMSTimeDiffToNow(oldMSTime));
         }
     }
     {
@@ -18210,9 +18150,6 @@ AA_Paihang AACenter::AA_GetPaihangs()
     aa_paihang.aa_level_item_cz.clear();
     aa_paihang.aa_level_item_jxsx.clear();
     aa_paihang.aa_level_item_jxjn.clear();
-    aa_paihang.aa_level_pet_jh.clear();
-    aa_paihang.aa_level_pet_qh.clear();
-    aa_paihang.aa_level_pet_jx.clear();
     aa_paihang.aa_diy_guids.clear();
     aa_paihang.aa_diy_accounts.clear();
 
@@ -18245,9 +18182,6 @@ AA_Paihang AACenter::AA_GetPaihangs()
     std::map<ObjectGuid, uint32> aa_level_item_cz;
     std::map<ObjectGuid, uint32> aa_level_item_jxsx;
     std::map<ObjectGuid, uint32> aa_level_item_jxjn;
-    std::map<ObjectGuid, uint32> aa_level_pet_jh;
-    std::map<ObjectGuid, uint32> aa_level_pet_qh;
-    std::map<ObjectGuid, uint32> aa_level_pet_jx;
     std::map< std::string, std::map<ObjectGuid, uint32> > aa_diy_guids;
     std::map< std::string, std::map<ObjectGuid, uint32> > aa_diy_accounts;
 
@@ -18330,9 +18264,6 @@ AA_Paihang AACenter::AA_GetPaihangs()
     paihangpx(aa_paihang.aa_level_item_cz, aa_level_item_cz);
     paihangpx(aa_paihang.aa_level_item_jxsx, aa_level_item_jxsx);
     paihangpx(aa_paihang.aa_level_item_jxjn, aa_level_item_jxjn);
-    paihangpx(aa_paihang.aa_level_pet_jh, aa_level_pet_jh);
-    paihangpx(aa_paihang.aa_level_pet_qh, aa_level_pet_qh);
-    paihangpx(aa_paihang.aa_level_pet_jx, aa_level_pet_jx);
     return aa_paihang;
 }
 
@@ -19169,132 +19100,6 @@ std::string AACenter::AA_GetPaihangInfo(std::string& message, AA_Paihang conf)
             int num = atoi(nums.c_str());
             if (num > 0 && (int)conf.aa_level_item_jxjn.size() >= num) {
                 std::pair<ObjectGuid, uint32> m = conf.aa_level_item_jxjn[num - 1];
-                aaCenter.AA_StringReplace(message, fulstr, std::to_string(m.second));
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-
-    if (message.find("<$宠物进化等级排行姓名@") != std::string::npos) {
-        std::string prestr = "<$宠物进化等级排行姓名@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_jh.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_jh[num - 1];
-                if (Player* p = ObjectAccessor::FindPlayer(m.first)) {
-                    if (p && p->IsInWorld()) {
-                        std::string name = p->GetName();
-                        aaCenter.AA_StringReplace(message, fulstr, name);
-                    }
-                }
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-    if (message.find("<$宠物进化等级排行数量@") != std::string::npos) {
-        std::string prestr = "<$宠物进化等级排行数量@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_jh.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_jh[num - 1];
-                aaCenter.AA_StringReplace(message, fulstr, std::to_string(m.second));
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-
-    if (message.find("<$宠物强化等级排行姓名@") != std::string::npos) {
-        std::string prestr = "<$宠物强化等级排行姓名@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_qh.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_qh[num - 1];
-                if (Player* p = ObjectAccessor::FindPlayer(m.first)) {
-                    if (p && p->IsInWorld()) {
-                        std::string name = p->GetName();
-                        aaCenter.AA_StringReplace(message, fulstr, name);
-                    }
-                }
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-    if (message.find("<$宠物强化等级排行数量@") != std::string::npos) {
-        std::string prestr = "<$宠物强化等级排行数量@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_qh.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_qh[num - 1];
-                aaCenter.AA_StringReplace(message, fulstr, std::to_string(m.second));
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-
-    if (message.find("<$宠物觉醒等级排行姓名@") != std::string::npos) {
-        std::string prestr = "<$宠物觉醒等级排行姓名@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_jx.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_jx[num - 1];
-                if (Player* p = ObjectAccessor::FindPlayer(m.first)) {
-                    if (p && p->IsInWorld()) {
-                        std::string name = p->GetName();
-                        aaCenter.AA_StringReplace(message, fulstr, name);
-                    }
-                }
-            }
-            else {
-                aaCenter.AA_StringReplace(message, fulstr, "无");
-            }
-        }
-        else {
-            aaCenter.AA_StringReplace(message, fulstr, "无");
-        }
-    }
-    if (message.find("<$宠物觉醒等级排行数量@") != std::string::npos) {
-        std::string prestr = "<$宠物觉醒等级排行数量@";
-        std::string nums = aaCenter.AA_StringGet(message, prestr, ">");
-        std::string fulstr = prestr + nums + ">";
-        if (nums != "") {
-            int num = atoi(nums.c_str());
-            if (num > 0 && (int)conf.aa_level_pet_jx.size() >= num) {
-                std::pair<ObjectGuid, uint32> m = conf.aa_level_pet_jx[num - 1];
                 aaCenter.AA_StringReplace(message, fulstr, std::to_string(m.second));
             }
             else {
@@ -20158,126 +19963,6 @@ void AACenter::AA_PaihangReward(bool isAura)
         }
         //获取配置
         AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["物品觉醒技能等级数量"];
-        if (px_conf.id != i + 1) {
-            continue;
-        }
-        if (isAura) {
-            if (px_conf.auras != "" && px_conf.auras != "0") {
-                std::vector<int32> spells; spells.clear();
-                aaCenter.AA_StringToVectorInt(px_conf.auras, spells, ",");
-                for (auto itr : spells) {
-                    if (itr > 0) {
-                        if (!player->HasAura(itr)) {
-                            player->AddAura(itr, player);
-                        }
-                    }
-                }
-            }
-            continue;
-        }
-        if (px_conf.reward == 0) {
-            continue;
-        }
-        aaCenter.M_Reward(player, px_conf.reward, 1);
-        if (px_conf.notice == 0) {
-            continue;
-        }
-        AA_Message aa_message;
-        AA_Notice notice = aaCenter.aa_notices[px_conf.notice];
-        aaCenter.AA_SendNotice(player, notice, true, aa_message);
-    }
-    for (size_t i = 0; i < p_conf.aa_level_pet_jh.size(); i++) {
-        //获取玩家，和数值
-        std::pair<ObjectGuid, uint32> p = p_conf.aa_level_pet_jh[i];
-        Player* player = ObjectAccessor::FindPlayer(p.first);
-        if (!player || !player->IsInWorld()) {
-            continue;
-        }
-        if (p.second <= 0) {
-            continue;
-        }
-        //获取配置
-        AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["宠物进化等级"];
-        if (px_conf.id != i + 1) {
-            continue;
-        }
-        if (isAura) {
-            if (px_conf.auras != "" && px_conf.auras != "0") {
-                std::vector<int32> spells; spells.clear();
-                aaCenter.AA_StringToVectorInt(px_conf.auras, spells, ",");
-                for (auto itr : spells) {
-                    if (itr > 0) {
-                        if (!player->HasAura(itr)) {
-                            player->AddAura(itr, player);
-                        }
-                    }
-                }
-            }
-            continue;
-        }
-        if (px_conf.reward == 0) {
-            continue;
-        }
-        aaCenter.M_Reward(player, px_conf.reward, 1);
-        if (px_conf.notice == 0) {
-            continue;
-        }
-        AA_Message aa_message;
-        AA_Notice notice = aaCenter.aa_notices[px_conf.notice];
-        aaCenter.AA_SendNotice(player, notice, true, aa_message);
-    }
-    for (size_t i = 0; i < p_conf.aa_level_pet_qh.size(); i++) {
-        //获取玩家，和数值
-        std::pair<ObjectGuid, uint32> p = p_conf.aa_level_pet_qh[i];
-        Player* player = ObjectAccessor::FindPlayer(p.first);
-        if (!player || !player->IsInWorld()) {
-            continue;
-        }
-        if (p.second <= 0) {
-            continue;
-        }
-        //获取配置
-        AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["宠物强化等级数量"];
-        if (px_conf.id != i + 1) {
-            continue;
-        }
-        if (isAura) {
-            if (px_conf.auras != "" && px_conf.auras != "0") {
-                std::vector<int32> spells; spells.clear();
-                aaCenter.AA_StringToVectorInt(px_conf.auras, spells, ",");
-                for (auto itr : spells) {
-                    if (itr > 0) {
-                        if (!player->HasAura(itr)) {
-                            player->AddAura(itr, player);
-                        }
-                    }
-                }
-            }
-            continue;
-        }
-        if (px_conf.reward == 0) {
-            continue;
-        }
-        aaCenter.M_Reward(player, px_conf.reward, 1);
-        if (px_conf.notice == 0) {
-            continue;
-        }
-        AA_Message aa_message;
-        AA_Notice notice = aaCenter.aa_notices[px_conf.notice];
-        aaCenter.AA_SendNotice(player, notice, true, aa_message);
-    }
-    for (size_t i = 0; i < p_conf.aa_level_pet_jx.size(); i++) {
-        //获取玩家，和数值
-        std::pair<ObjectGuid, uint32> p = p_conf.aa_level_pet_jx[i];
-        Player* player = ObjectAccessor::FindPlayer(p.first);
-        if (!player || !player->IsInWorld()) {
-            continue;
-        }
-        if (p.second <= 0) {
-            continue;
-        }
-        //获取配置
-        AA_PaihangX px_conf = aaCenter.aa_paihangxs[i + 1]["宠物觉醒等级数量"];
         if (px_conf.id != i + 1) {
             continue;
         }
