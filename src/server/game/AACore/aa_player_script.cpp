@@ -376,6 +376,7 @@ public:
         aaCenter.aa_vendor_guid.erase(guid);
         aaCenter.m_aiTimes.erase(guid);
         aaCenter.m_aiGGTimes.erase(guid);
+        aaCenter.aa_rating_values.erase(guid);
     }
     void OnUpdateArea(Player* player, uint32 oldArea, uint32 newArea) override
     {

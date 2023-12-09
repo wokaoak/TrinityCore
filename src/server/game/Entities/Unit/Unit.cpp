@@ -7849,16 +7849,16 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
             }
         }
 
-        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 605)));
-        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 606)));
-        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 607)));
-        DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 608)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 605)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 606)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 607)));
+        DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 608)));
 
         if (conf.class1 > 0) {
-            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STRENGTH), conf.lltofq));
-            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_AGILITY), conf.mjtofq));
-            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_STAMINA), conf.nltofq));
-            DoneAdvertisedBenefit += int32(CalculatePct(GetStat(STAT_INTELLECT), conf.zltofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_STRENGTH), conf.lltofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_AGILITY), conf.mjtofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_STAMINA), conf.nltofq));
+            DoneAdvertisedBenefit += int32(CalculatePct(GetTotalStatValue(STAT_INTELLECT), conf.zltofq));
         }
     }
 

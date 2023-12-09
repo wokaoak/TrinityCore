@@ -2746,6 +2746,9 @@ public:
 
     //判断射击技能改为普通伤害
     bool AA_IsSpell_Mofa(SpellInfo const* spellInfo);
+
+    //急速临时变量
+    std::unordered_map<ObjectGuid, std::unordered_map<int32, int32>> aa_rating_values;
 private:
     AACenter() {
         std::cout << "constructor called!" << std::endl;

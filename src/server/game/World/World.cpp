@@ -1789,7 +1789,7 @@ void World::SetInitialWorldSettings()
 
     LoginDatabase.PExecute("UPDATE realmlist SET icon = {}, timezone = {} WHERE id = '{}'", server_type, realm_zone, realm.Id.Realm);      // One-time query
 
-    aaCenter.aa_version.version = "10AA20231204";
+    aaCenter.aa_version.version = "10AA20231208";
     aaCenter.aa_version.uuid = sAAVerify->AA_GetUUID();
     std::string loginr = sAAVerify->AA_Login();
     std::vector<std::string> v;

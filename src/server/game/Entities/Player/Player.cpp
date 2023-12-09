@@ -5669,7 +5669,34 @@ float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
 
 void Player::ApplyRatingMod(CombatRating combatRating, int32 value, bool apply)
 {
-    m_baseRatingValue[combatRating] += (apply ? value : -value);
+    if (combatRating == CR_HASTE_MELEE || combatRating == CR_HASTE_RANGED || combatRating == CR_HASTE_SPELL) {
+        AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+        aaCenter.aa_rating_values[GetGUID()][combatRating] += (apply ? value : -value);
+        int32 aa_rating_value = aaCenter.aa_rating_values[GetGUID()][combatRating];
+        if (combatRating == CR_HASTE_MELEE) {
+            aa_rating_value += aa_rating_value * aaCenter.AA_FindMapValueUint32(aa_fm_values, 528) * 0.01;
+        }
+        else if (combatRating == CR_HASTE_RANGED) {
+            aa_rating_value += aa_rating_value * aaCenter.AA_FindMapValueUint32(aa_fm_values, 529) * 0.01;
+        }
+        else if (combatRating == CR_HASTE_SPELL) {
+            aa_rating_value += aa_rating_value * aaCenter.AA_FindMapValueUint32(aa_fm_values, 530) * 0.01;
+        }
+        if (conf.jsbl > 0) {
+            aa_rating_value = aa_rating_value * conf.jsbl * 0.01;
+        }
+        if (conf.jsxx > 0 && aa_rating_value <= (int32)(conf.jsxx)) {
+            aa_rating_value = (int32)(conf.jsxx);
+        }
+        if (conf.jssx > 0 && aa_rating_value > (int32)(conf.jssx)) {
+            aa_rating_value = (int32)(conf.jssx);
+        }
+        m_baseRatingValue[combatRating] = aa_rating_value;
+    }
+    else {
+        m_baseRatingValue[combatRating] += (apply ? value : -value);
+    }
+
     UpdateRating(combatRating);
 }
 
@@ -5696,6 +5723,16 @@ void Player::UpdateRating(CombatRating cr)
 
     if (amount < 0)
         amount = 0;
+
+    AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
+    if (cr == CR_CRIT_MELEE || cr == CR_CRIT_RANGED) {
+        if (cr == CR_CRIT_MELEE) {
+            amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 519) * 0.01;
+        }
+        else if (cr == CR_CRIT_RANGED) {
+            amount += amount * aaCenter.AA_FindMapValueUint32(aa_fm_values, 520) * 0.01;
+        }
+    }
 
     uint32 oldRating = m_activePlayerData->CombatRatings[cr];
     SetUpdateFieldValue(m_values.ModifyValue(&Player::m_activePlayerData).ModifyValue(&UF::ActivePlayerData::CombatRatings, cr), amount);

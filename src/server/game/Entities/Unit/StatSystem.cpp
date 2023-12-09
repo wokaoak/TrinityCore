@@ -549,17 +549,17 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
 
     float aa_base_attPower = 0.0;
     float aa_attPowerMod = 0.0;
-    aa_attPowerMod += CalculatePct(GetStat(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 600));
-    aa_attPowerMod += CalculatePct(GetStat(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 601));
-    aa_attPowerMod += CalculatePct(GetStat(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 602));
-    aa_attPowerMod += CalculatePct(GetStat(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 603));
+    aa_attPowerMod += CalculatePct(GetTotalStatValue(STAT_STAMINA), aaCenter.AA_FindMapValueUint32(aa_fm_values, 600));
+    aa_attPowerMod += CalculatePct(GetTotalStatValue(STAT_STRENGTH), aaCenter.AA_FindMapValueUint32(aa_fm_values, 601));
+    aa_attPowerMod += CalculatePct(GetTotalStatValue(STAT_AGILITY), aaCenter.AA_FindMapValueUint32(aa_fm_values, 602));
+    aa_attPowerMod += CalculatePct(GetTotalStatValue(STAT_INTELLECT), aaCenter.AA_FindMapValueUint32(aa_fm_values, 603));
 
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(ToPlayer());
     if (conf.class1 > 0) {
-        aa_base_attPower += CalculatePct(GetStat(STAT_STAMINA), conf.nltogq);
-        aa_base_attPower += CalculatePct(GetStat(STAT_STRENGTH), conf.lltogq);
-        aa_base_attPower += CalculatePct(GetStat(STAT_AGILITY), conf.mjtogq);
-        aa_base_attPower += CalculatePct(GetStat(STAT_INTELLECT), conf.zltogq);
+        aa_base_attPower += CalculatePct(GetTotalStatValue(STAT_STAMINA), conf.nltogq);
+        aa_base_attPower += CalculatePct(GetTotalStatValue(STAT_STRENGTH), conf.lltogq);
+        aa_base_attPower += CalculatePct(GetTotalStatValue(STAT_AGILITY), conf.mjtogq);
+        aa_base_attPower += CalculatePct(GetTotalStatValue(STAT_INTELLECT), conf.zltogq);
     }
 
     base_attPower += aa_base_attPower;
@@ -776,40 +776,18 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
     Player* player = this;
     auto applyCritLimit = [player, attType](float value)
     {
-        switch (attType)
-        {
-        case OFF_ATTACK:
-            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) > 0) {
-                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) * 0.01;
-            }
-            break;
-        case RANGED_ATTACK:
-            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 520) > 0) {
-                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 520) * 0.01;
-            }
-            break;
-        case BASE_ATTACK:
-            if (aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) > 0) {
-                value += aaCenter.AA_FindMapValueUint32(player->aa_fm_values, 519) * 0.01;
-            }
-            break;
-        default:
-            break;
-        }
-
-        //aawow 职业属性平衡，暴击上限倍数
-        AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
-        if (conf.class1 > 0) {
-            if (conf.bjxx > 0 && value <= conf.bjxx) {
-                value = conf.bjxx;
-            }
-            if (conf.bjsx > 0 && value > conf.bjsx) {
-                value = conf.bjsx;
-            }
-        }
-        
         if (sWorld->getBoolConfig(CONFIG_STATS_LIMITS_ENABLE))
             value = value > sWorld->getFloatConfig(CONFIG_STATS_LIMITS_CRIT) ? sWorld->getFloatConfig(CONFIG_STATS_LIMITS_CRIT) : value;
+
+        if (attType == OFF_ATTACK || attType == RANGED_ATTACK || attType == BASE_ATTACK) {
+            AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(player);
+            if (conf.bjxx > 0 && value <= (float)(conf.bjxx)) {
+                value = (float)(conf.bjxx);
+            }
+            if (conf.bjsx > 0 && value > (float)(conf.bjsx)) {
+                value = (float)(conf.bjsx);
+            }
+        }
         return value;
     };
 

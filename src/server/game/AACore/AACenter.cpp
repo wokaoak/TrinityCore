@@ -8746,9 +8746,36 @@ void AACenter::AddValue(Player* player, uint32 statType, int32 val, bool apply)
     if (!player) {
         return;
     }
-    if (statType >= 500 && statType <= 599) { //百分比属性
+    if (statType >= 500) { //百分比属性
         player->aa_fm_values[statType] += (apply ? val : (-val));
-        player->UpdateAllStats();
+        if (statType == 519) {
+            player->ApplyRatingMod(CR_CRIT_MELEE, 0, apply);
+        }
+        else if (statType == 520) {
+            player->ApplyRatingMod(CR_CRIT_RANGED, 0, apply);
+        }
+        else if (statType == 521) {
+            player->ApplyRatingMod(CR_CRIT_SPELL, 0, apply);
+        }
+        else if (statType == 528) {
+            player->ApplyRatingMod(CR_HASTE_MELEE, 0, apply);
+        }
+        else if (statType == 529) {
+            player->ApplyRatingMod(CR_HASTE_RANGED, 0, apply);
+        }
+        else if (statType == 530) {
+            player->ApplyRatingMod(CR_HASTE_SPELL, 0, apply);
+        }
+        else if (statType == 538 || statType == 600 || statType == 601 || statType == 602 || statType == 603 || statType == 604) {
+            player->HandleStatFlatModifier(UNIT_MOD_ATTACK_POWER, TOTAL_VALUE, 0, apply);
+            player->HandleStatFlatModifier(UNIT_MOD_ATTACK_POWER_RANGED, TOTAL_VALUE, 0, apply);
+        }
+        else if (statType == 545 || statType == 605 || statType == 606 || statType == 607 || statType == 608 || statType == 609) {
+            player->ApplySpellPowerBonus(0, apply);
+        }
+        else {
+            player->UpdateAllStats();
+        }
         return;
     }
     if (statType >= 200) { //自定义技能
