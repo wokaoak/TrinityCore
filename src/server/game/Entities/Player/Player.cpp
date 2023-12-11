@@ -2339,11 +2339,11 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
         if (isJxOk) {
             float axp = 0;
             if (econf.creatureid > 0) {
-                axp = xp * (econf.exppjx / 100.0);
+                axp = xp * econf.exppjx * 0.01;
             }
             else {
                 if (aaCenter.aa_world_confs[48].value1 > 0) {
-                    axp = xp * (aaCenter.aa_world_confs[48].value1 / 100.0);
+                    axp = xp * aaCenter.aa_world_confs[48].value1 * 0.01;
                 }
             }
             if (axp > 0) {
@@ -2371,7 +2371,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
             }
             else {
                 if (aaCenter.aa_world_confs[49].value1 > 0) {
-                    axp = xp * (aaCenter.aa_world_confs[49].value1 / 100.0);
+                    axp = xp * aaCenter.aa_world_confs[49].value1 * 0.01;
                 }
             }
             if (axp > 0) {
@@ -2395,11 +2395,11 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
         if (isDfOk) {
             float axp = 0;
             if (econf.creatureid > 0) {
-                axp = xp * (econf.exppdf / 100.0);
+                axp = xp * econf.exppdf * 0.01;
             }
             else {
                 if (aaCenter.aa_world_confs[50].value1 > 0) {
-                    axp = xp * (aaCenter.aa_world_confs[50].value1 / 100.0);
+                    axp = xp * aaCenter.aa_world_confs[50].value1 * 0.01;
                 }
             }
             if (axp > 0) {
@@ -2428,7 +2428,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
                 }
                 else {
                     if (aaCenter.aa_world_confs[58].value1 > 0) {
-                        axp = xp * (aaCenter.aa_world_confs[58].value1 / 100.0);
+                        axp = xp * aaCenter.aa_world_confs[58].value1 * 0.01;
                     }
                 }
                 if (axp > 0) {

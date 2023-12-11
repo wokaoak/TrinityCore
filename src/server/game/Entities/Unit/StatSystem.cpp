@@ -363,7 +363,7 @@ void Player::UpdateArmor()
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
     if (conf.class1 > 0) {
         if (conf.hujiabl > 0) {
-            value = value * (conf.hujiabl / 100.0);
+            value = value * conf.hujiabl * 0.01;
         }
         if (conf.hujiaxx > 0 && value <= conf.hujiaxx) {
             value = conf.hujiaxx;
@@ -415,7 +415,7 @@ Stats Player::GetPrimaryStat() const
 
 void Player::UpdateMaxHealth()
 {
-    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 501) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 501) / 100.0) + 1) : 1;
+    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 501) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 501) * 0.01) + 1) : 1;
 
     UnitMods unitMod = UNIT_MOD_HEALTH;
 
@@ -448,7 +448,7 @@ void Player::UpdateMaxHealth()
     AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(this);
     if (conf.class1 > 0) {
         if (conf.hpbl > 0) {
-            value = value * (conf.hpbl / 100.0);
+            value = value * conf.hpbl * 0.01;
         }
     }
 
@@ -490,7 +490,7 @@ uint32 Player::GetPowerIndex(Powers power) const
 
 void Player::UpdateMaxPower(Powers power)
 {
-    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 500) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 500) / 100.0) + 1) : 1;
+    float juexing = aaCenter.AA_FindMapValueUint32(aa_fm_values, 500) > 0 ? ((aaCenter.AA_FindMapValueUint32(aa_fm_values, 500) * 0.01) + 1) : 1;
 
     uint32 powerIndex = GetPowerIndex(power);
     if (powerIndex == MAX_POWERS || powerIndex >= MAX_POWERS_PER_CLASS)
@@ -1289,7 +1289,7 @@ void Creature::UpdateMaxHealth()
             value = conf.health;
         }
         if (conf.health1 > 0 && conf.health1 != 100) {
-            value = value * (conf.health1 / 100.0);
+            value = value * conf.health1 * 0.01;
         }
     }
     //宠物调整_生命值

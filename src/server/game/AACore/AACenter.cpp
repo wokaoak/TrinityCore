@@ -819,6 +819,27 @@ void AACenter::Update(Unit* unit, uint32 diff)
         }
     }
     else if (Creature* creature = unit->ToCreature()) {
+        //禁止召唤战宠的地图
+        if (creature->aa_petzhan_id > 0) {
+            if (aaCenter.aa_world_confs[7].value2 != "") {
+                std::vector<int32> v; v.clear();
+                aaCenter.AA_StringToVectorInt(aaCenter.aa_world_confs[7].value2, v, ",");
+                int32 mapid = creature->GetMapId();
+                Player* player = nullptr;
+                if (creature->GetOwner()) {
+                    player = creature->GetOwner()->ToPlayer();
+                }
+                if (std::find(v.begin(), v.end(), mapid) != v.end()) {
+                    aaCenter.aa_character_petzhans[creature->aa_petzhan_id].is_chuzhan = 0;
+                    creature->aa_petzhan_id = 0;
+                    creature->ToTempSummon()->UnSummon();
+                    if (player) {
+                        player->UpdateAllStats();
+                    }
+                    sAAData->AA_REP_Character_ZhanPets.insert(creature->aa_petzhan_id);
+                }
+            }
+        }
         //离开原位置重置距离
         if (creature->aa_id > 0) {
             AA_Creature conf = aaCenter.aa_creatures[creature->aa_id];
@@ -1411,7 +1432,7 @@ std::string AACenter::AA_GetItemLinkJd(Item* item)
 std::string AACenter::AA_GetMoneyLink(uint32 money)
 {
     uint32 jinbi = money / 10000;
-    uint32 yinbi = (money - jinbi * 10000) / 100;
+    uint32 yinbi = (money - jinbi * 10000) * 0.01;
     uint32 tongbi = money - jinbi * 10000 - yinbi * 100;
     std::string str = "";
     if (jinbi > 0) {
@@ -3045,7 +3066,7 @@ void AACenter::AA_ApplyItemBonuses(Player* player, Item* pItem, bool apply, bool
             val = val + upgrade_val;
             int32 upgrade_id = conf.qh_id;
             uint32 upgrade_percent = aaCenter.aa_item_upgrades[upgrade_id].reward_percent;
-            val = val + qh_values[i] * (upgrade_percent / 100.0); //强化百分比奖励
+            val = val + qh_values[i] * upgrade_percent * 0.01; //强化百分比奖励
             uint32 upgrade_value = aaCenter.aa_item_upgrades[upgrade_id].reward_value;
             val += upgrade_value; //强化数值奖励
             //成长
@@ -3053,7 +3074,7 @@ void AACenter::AA_ApplyItemBonuses(Player* player, Item* pItem, bool apply, bool
             val = val + cz_val;
             int32 cz_id = conf.cz_id;
             uint32 cz_percent = aaCenter.aa_item_levels[cz_id].reward_percent;
-            val = val + cz_values[i] * (cz_percent / 100.0); //强化百分比奖励
+            val = val + cz_values[i] * cz_percent * 0.01; //强化百分比奖励
             uint32 cz_value = aaCenter.aa_item_levels[cz_id].reward_value;
             val += cz_value; //强化数值奖励
 
@@ -4785,7 +4806,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
         }
         if (conf.jxexp > 0) {
             if (vipxp > 0) {
-                aaCenter.GiveJXXP(player, conf.jxexp * count * vipxp / 100.0);
+                aaCenter.GiveJXXP(player, conf.jxexp * count * vipxp * 0.01);
             }
             else {
                 aaCenter.GiveJXXP(player, conf.jxexp * count);
@@ -4793,7 +4814,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
         }
         if (conf.dqexp > 0) {
             if (vipxp > 0) {
-                aaCenter.GiveDQXP(player, conf.dqexp * count * vipxp / 100.0);
+                aaCenter.GiveDQXP(player, conf.dqexp * count * vipxp * 0.01);
             }
             else {
                 aaCenter.GiveDQXP(player, conf.dqexp * count);
@@ -4801,7 +4822,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
         }
         if (conf.dfexp > 0) {
             if (vipxp > 0) {
-                aaCenter.GiveDFXP(player, conf.dfexp * count * vipxp / 100.0);
+                aaCenter.GiveDFXP(player, conf.dfexp * count * vipxp * 0.01);
             }
             else {
                 aaCenter.GiveDFXP(player, conf.dfexp * count);
@@ -4809,7 +4830,7 @@ void AACenter::M_RewardDo(Player* player, uint32 rewardid, uint32 count)
         }
         if (conf.czexp > 0) {
             if (vipxp > 0) {
-                aaCenter.GiveCZXP(player, conf.czexp * count * vipxp / 100.0);
+                aaCenter.GiveCZXP(player, conf.czexp * count * vipxp * 0.01);
             }
             else {
                 aaCenter.GiveCZXP(player, conf.czexp * count);
@@ -5222,7 +5243,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
             statVal = conf.fg_value1;
         }
         else { statVal = (rand() % (conf.fg_value2 - conf.fg_value1 + 1)) + conf.fg_value1; }
-        statVal = statVal * (stat_conf.value / 100.0);
+        statVal = statVal * stat_conf.value * 0.01;
         if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
             uint32 value1 = abs(stat_conf.value);
             uint32 value2 = abs(stat_conf.point);
@@ -5316,7 +5337,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
                 statVal = conf.fg_value1;
             }
             else { statVal = (rand() % (conf.fg_value2 - conf.fg_value1 + 1)) + conf.fg_value1; }
-            statVal = statVal * (stat_conf.value / 100.0);
+            statVal = statVal * stat_conf.value * 0.01;
             if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                 uint32 value1 = abs(stat_conf.value);
                 uint32 value2 = abs(stat_conf.point);
@@ -5354,7 +5375,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
             }
             AA_Stat stat_conf = aaCenter.aa_stats[type_id];
             if (stat_conf.value > 0) {
-                val = val * (stat_conf.value / 100.0);
+                val = val * stat_conf.value * 0.01;
             }
             if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                 uint32 value1 = -stat_conf.value;
@@ -5378,7 +5399,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
             AA_Stat stat_conf = aaCenter.aa_stats[type_id];
             uint32 statVal = pProto->GetDelay();
             if (stat_conf.value > 0) {
-                statVal = statVal * (stat_conf.value / 100.0);
+                statVal = statVal * stat_conf.value * 0.01;
             }
             if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                 uint32 value1 = -stat_conf.value;
@@ -5407,7 +5428,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
                         AA_Stat stat_conf = aaCenter.aa_stats[type_id];
                         uint32 statVal = damageMin;
                         if (stat_conf.value > 0) {
-                            statVal = statVal * (stat_conf.value / 100.0);
+                            statVal = statVal * stat_conf.value * 0.01;
                         }
                         if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                             uint32 value1 = -stat_conf.value;
@@ -5433,7 +5454,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
                         AA_Stat stat_conf = aaCenter.aa_stats[type_id];
                         uint32 statVal = damageMax;
                         if (stat_conf.value > 0) {
-                            statVal = statVal * (stat_conf.value / 100.0);
+                            statVal = statVal * stat_conf.value * 0.01;
                         }
                         if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                             uint32 value1 = -stat_conf.value;
@@ -5460,7 +5481,7 @@ uint32 AACenter::M_NonsuchItem(Player* player, Item* pItem, uint32 zu, int32 typ
             AA_Stat stat_conf = aaCenter.aa_stats[type_id];
             uint32 statVal = pProto->GetArmor(itemlevel);
             if (stat_conf.value > 0) {
-                statVal = statVal * (stat_conf.value / 100.0);
+                statVal = statVal * stat_conf.value * 0.01;
             }
             if (stat_conf.value < 0 && stat_conf.point < 0 && stat_conf.point <= stat_conf.value) {
                 uint32 value1 = -stat_conf.value;
@@ -5680,7 +5701,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                 uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                 uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                 AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                jd_values[i] = values[i] * (conf.jp_percent1 / 100.0) * (aconf.point / 100.0);
+                jd_values[i] = values[i] * conf.jp_percent1 * 0.01 * aconf.point * 0.01;
             }
         }
         else {
@@ -5691,7 +5712,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                     uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                    jd_values[i] = values[i] * (val / 100.0) * (aconf.point / 100.0);
+                    jd_values[i] = values[i] * val * 0.01 * aconf.point * 0.01;
                 }
             }
             else if (conf.jp_type == 1) {
@@ -5701,7 +5722,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                     uint32 val = (rand() % (conf.jp_percent2 - conf.jp_percent1 + 1)) + conf.jp_percent1;
-                    jd_values[i] = values[i] * (val / 100.0) * (aconf.point / 100.0);
+                    jd_values[i] = values[i] * val * 0.01 * aconf.point * 0.01;
                 }
             }
         }
@@ -5718,7 +5739,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                     uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                    jd_values[i] = pProto->GetBaseItemLevel() * (value11 / 100.0) * (aconf.point / 100.0);
+                    jd_values[i] = pProto->GetBaseItemLevel() * value11 * 0.01 * aconf.point * 0.01;
                 }
             }
             else {
@@ -5729,7 +5750,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                         uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                        jd_values[i] = pProto->GetBaseItemLevel() * (val / 100.0) * (aconf.point / 100.0);
+                        jd_values[i] = pProto->GetBaseItemLevel() * val * 0.01 * aconf.point * 0.01;
                     }
                 }
                 else if (conf.jp_type == 1) {
@@ -5739,7 +5760,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                         uint32 val = (rand() % (value22 - value11 + 1)) + value11;
-                        jd_values[i] = pProto->GetBaseItemLevel() * (val / 100.0) * (aconf.point / 100.0);
+                        jd_values[i] = pProto->GetBaseItemLevel() * val * 0.01 * aconf.point * 0.01;
                     }
                 }
             }
@@ -5752,7 +5773,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
             for (uint32 i = 0; i < count; i++) {
                 uint32 type = types[i];
                 AA_Stat aconf = aaCenter.aa_stats[type];
-                jd_values[i] += conf.jp_value1 * (aconf.value / 100.0);
+                jd_values[i] += conf.jp_value1 * aconf.value * 0.01;
             }
         }
         else {
@@ -5764,7 +5785,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                     uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                    jd_values[i] += val * (aconf.value / 100.0);
+                    jd_values[i] += val * aconf.value * 0.01;
                 }
             }
             else if (conf.jp_type == 1) {
@@ -5774,7 +5795,7 @@ void AACenter::M_NonsuchItemJipin(Player* player, Item* pItem, uint32 nonsuchId,
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.jp_statzu][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                     val = (rand() % (conf.jp_value2 - conf.jp_value1 + 1)) + conf.jp_value1;
-                    jd_values[i] += val * (aconf.value / 100.0);
+                    jd_values[i] += val * aconf.value * 0.01;
                 }
             }
         }
@@ -5974,7 +5995,7 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
                 else {
                     statVal = (rand() % (conf.fmval_value2 - conf.fmval_value1 + 1)) + conf.fmval_value1;
                 }
-                statVal = statVal * (stat_conf.value / 100.0);
+                statVal = statVal * stat_conf.value * 0.01;
             }
             else {
                 if (pProto->GetBaseItemLevel())
@@ -5982,8 +6003,8 @@ bool AACenter::M_NonsuchItemFmValue(Player* player, Item* pItem, uint32 nonsuchI
                     uint32 value11 = abs(conf.fmval_value1);
                     uint32 value22 = abs(conf.fmval_value2);
 
-                    uint32 value1 = pProto->GetBaseItemLevel() * (value11 / 100);
-                    uint32 value2 = pProto->GetBaseItemLevel() * (value22 / 100);
+                    uint32 value1 = pProto->GetBaseItemLevel() * value11 * 0.01;
+                    uint32 value2 = pProto->GetBaseItemLevel() * value22 * 0.01;
                     uint32 value = (rand() % (value2 - value1 + 1)) + value1;
                     statVal = value;
                 }
@@ -6291,7 +6312,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                             uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                             uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                             AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                            upgrade_values[i] = upgrade_values[i] + values[i] * (conf.percent1 / 100.0) * (aconf.point / 100.0);
+                            upgrade_values[i] = upgrade_values[i] + values[i] * conf.percent1 * 0.01 * aconf.point * 0.01;
                         }
                     }
                     else {
@@ -6302,7 +6323,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                                 uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                                 uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                                 AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                                upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                                upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                             }
                         }
                         else if (conf.distribution == 1) {
@@ -6312,7 +6333,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                                 uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                                 AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                                 uint32 val = (rand() % (conf.percent2 - conf.percent1 + 1)) + conf.percent1;
-                                upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                                upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                             }
                         }
                     }
@@ -6324,7 +6345,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                         for (uint32 i = 0; i < upgrade_values.size(); i++) {
                             uint32 type = types[i];
                             AA_Stat aconf = aaCenter.aa_stats[type];
-                            upgrade_values[i] += conf.value1 * (aconf.value / 100.0);
+                            upgrade_values[i] += conf.value1 * aconf.value * 0.01;
                         }
                     }
                     else {
@@ -6336,7 +6357,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                                 uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                                 uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                                 AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                                upgrade_values[i] += val * (aconf.value / 100.0);
+                                upgrade_values[i] += val * aconf.value * 0.01;
                             }
                         }
                         else if (conf.distribution == 1) {
@@ -6346,7 +6367,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                                 uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                                 AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                                 val = (rand() % (conf.value2 - conf.value1 + 1)) + conf.value1;
-                                upgrade_values[i] += val * (aconf.value / 100.0);
+                                upgrade_values[i] += val * aconf.value * 0.01;
                             }
                         }
                     }
@@ -6430,7 +6451,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                         uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                        upgrade_values[i] = upgrade_values[i] + values[i] * (conf.percent1 / 100.0) * (aconf.point / 100.0);
+                        upgrade_values[i] = upgrade_values[i] + values[i] * conf.percent1 * 0.01 * aconf.point * 0.01;
                     }
                 }
                 else {
@@ -6441,7 +6462,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                             uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                             uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                             AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                            upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                            upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                         }
                     }
                     else if (conf.distribution == 1) {
@@ -6451,7 +6472,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                             uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                             AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                             uint32 val = (rand() % (conf.percent2 - conf.percent1 + 1)) + conf.percent1;
-                            upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                            upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                         }
                     }
                 }
@@ -6465,7 +6486,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                         uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                        upgrade_values[i] += conf.value1 * (aconf.value / 100.0);
+                        upgrade_values[i] += conf.value1 * aconf.value * 0.01;
                     }
                 }
                 else {
@@ -6477,7 +6498,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                             uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                             uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                             AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                            upgrade_values[i] += val * (aconf.value / 100.0);
+                            upgrade_values[i] += val * aconf.value * 0.01;
                         }
                     }
                     else if (conf.distribution == 1) {
@@ -6487,7 +6508,7 @@ void AACenter::M_UpgradeItem(Player* player, Item* pItem, uint32 qhjlevel)
                             uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                             AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                             val = (rand() % (conf.value2 - conf.value1 + 1)) + conf.value1;
-                            upgrade_values[i] += val * (aconf.value / 100.0);
+                            upgrade_values[i] += val * aconf.value * 0.01;
                         }
                     }
                 }
@@ -6635,7 +6656,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                     uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                    upgrade_values[i] = upgrade_values[i] + values[i] * (conf.percent1 / 100.0) * (aconf.point / 100.0);
+                    upgrade_values[i] = upgrade_values[i] + values[i] * conf.percent1 * 0.01 * aconf.point * 0.01;
                 }
             }
             else {
@@ -6646,7 +6667,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                         uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                        upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                        upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                     }
                 }
                 else if (conf.distribution == 1) {
@@ -6656,7 +6677,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                         uint32 val = (rand() % (conf.percent2 - conf.percent1 + 1)) + conf.percent1;
-                        upgrade_values[i] = upgrade_values[i] + values[i] * (val / 100.0) * (aconf.point / 100.0);
+                        upgrade_values[i] = upgrade_values[i] + values[i] * val * 0.01 * aconf.point * 0.01;
                     }
                 }
             }
@@ -6670,7 +6691,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                     uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                     uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                     AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                    upgrade_values[i] += conf.value1 * (aconf.value / 100.0);
+                    upgrade_values[i] += conf.value1 * aconf.value * 0.01;
                 }
             }
             else {
@@ -6682,7 +6703,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                         uint32 fg_type = aaCenter.aa_stats[fg_typeid].type;
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
-                        upgrade_values[i] += val * (aconf.value / 100.0);
+                        upgrade_values[i] += val * aconf.value * 0.01;
                     }
                 }
                 else if (conf.distribution == 1) {
@@ -6692,7 +6713,7 @@ void AACenter::M_LevelItem(Player* player, Item* pItem)
                         uint32 qh_typeid = aaCenter.aa_stat_types[conf.stat_group][fg_type];
                         AA_Stat aconf = aaCenter.aa_stats[qh_typeid];
                         val = (rand() % (conf.value2 - conf.value1 + 1)) + conf.value1;
-                        upgrade_values[i] += val * (aconf.value / 100.0);
+                        upgrade_values[i] += val * aconf.value * 0.01;
                     }
                 }
             }
@@ -9865,7 +9886,7 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                     val += conf.action_param1;
                 }
                 if (conf.action_param2 != 0) {
-                    val += (unit->GetHealth() * (conf.action_param2 / 100.0));
+                    val += (unit->GetHealth() * conf.action_param2 * 0.01);
                 }
                 val += unit->GetHealth();
                 if (val < 1) {
@@ -9879,7 +9900,7 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                     valm += conf.action_param3;
                 }
                 if (conf.action_param4 != 0) {
-                    valm += (unit->GetMaxHealth() * (conf.action_param4 / 100.0));
+                    valm += (unit->GetMaxHealth() * conf.action_param4 * 0.01);
                 }
                 valm += unit->GetMaxHealth();
                 if (valm < 1) {
@@ -9898,13 +9919,13 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                     val = value;
                 }
                 else if (conf.action_param1 == 1) {//1 造成伤害的百分比
-                    val = value * (conf.action_param2 / 100.0);
+                    val = value * conf.action_param2 * 0.01;
                 }
                 else if (conf.action_param1 == 2) {//2 当前生命值百分比
-                    val = unit->GetHealth() * (conf.action_param2 / 100.0);
+                    val = unit->GetHealth() * conf.action_param2 * 0.01;
                 }
                 else if (conf.action_param1 == 3) {//3 最大生命值百分比
-                    val = unit->GetMaxHealth() * (conf.action_param2 / 100.0);
+                    val = unit->GetMaxHealth() * conf.action_param2 * 0.01;
                 }
                 else if (conf.action_param1 == 4) {//4 固定值
                     val = conf.action_param2;
@@ -9924,7 +9945,7 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                     if (conf.event_param3 != 0) {
                         CombatRating type = (CombatRating)(conf.event_param1);
                         float value = player->GetRatingBonusValue(type);
-                        float v = value * (conf.event_param3 / 100.0);
+                        float v = value * conf.event_param3 * 0.01;
                         v = v > value ? value : v;
                         aaCenter.AddValue(player, conf.event_param2, v, true);
                         aaCenter.AddValue(player, conf.event_param1, v, false);
@@ -9940,7 +9961,7 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                     if (conf.action_param2 != 0 || conf.action_param3 != 0) {
                         CombatRating type = (CombatRating)(conf.action_param1);
                         float value = player->GetRatingBonusValue(type);
-                        float v = value * (conf.action_param3 / 100.0);
+                        float v = value * conf.action_param3 * 0.01;
                         if (conf.action_param3 > 0) {
                             aaCenter.AddValue(player, conf.action_param1, v, true);
                         }
@@ -10009,7 +10030,7 @@ void AA_AiStart_Async(Unit* attacker, Unit* victim, uint32 aiid, int32 value, bo
                 //                    if (citr != p->GetSpellCooldownMap().end())
                 //                    {
                 //                        uint32 duration = citr->second.maxduration;
-                //                        int32 val = conf.action_param3 * ((int32)duration / 100.0);
+                //                        int32 val = conf.action_param3 * duration * 0.01;
                 //                        p->ModifySpellCooldown(spellid, val);
                 //                    }
                 //                }
@@ -17865,8 +17886,8 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             speed_run = conf.walk_speed;
         }
         if (conf.walk_speed1 > 0 && conf.walk_speed1 != 100) {
-            speed_walk = speed_walk * (conf.walk_speed1 / 100.0);
-            speed_run = speed_run * (conf.walk_speed1 / 100.0);
+            speed_walk = speed_walk * conf.walk_speed1 * 0.01;
+            speed_run = speed_run * conf.walk_speed1 * 0.01;
         }
         if (speed_walk != cInfo->speed_walk || speed_run != cInfo->speed_run) {
             creature->SetSpeed(MOVE_WALK, speed_walk);
@@ -17883,9 +17904,9 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             Health = conf.health;
         }
         if (conf.health1 > 0 && conf.health1 != 100) {
-            CreateHealth = CreateHealth * (conf.health1 / 100.0);
-            MaxHealth = MaxHealth * (conf.health1 / 100.0);
-            Health = Health * (conf.health1 / 100.0);
+            CreateHealth = CreateHealth * conf.health1 * 0.01;
+            MaxHealth = MaxHealth * conf.health1 * 0.01;
+            Health = Health * conf.health1 * 0.01;
         }
         creature->SetCreateHealth(CreateHealth);
         creature->SetMaxHealth(MaxHealth);
@@ -17902,9 +17923,9 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             mana = conf.mana;
         }
         if (conf.mana1 > 0 && conf.mana1 != 100) {
-            CreateMana = CreateMana * (conf.mana1 / 100.0);
-            maxmana = maxmana * (conf.mana1 / 100.0);
-            mana = mana * (conf.mana1 / 100.0);
+            CreateMana = CreateMana * conf.mana1 * 0.01;
+            maxmana = maxmana * conf.mana1 * 0.01;
+            mana = mana * conf.mana1 * 0.01;
         }
         creature->SetCreateMana(CreateMana);
         creature->SetMaxPower(POWER_MANA, maxmana);
@@ -17921,8 +17942,8 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             RangeAttackTime = conf.attack_speed;
         }
         if (conf.attack_speed1 > 0 && conf.attack_speed1 != 100) {
-            BaseAttackTime = BaseAttackTime * (conf.attack_speed1 / 100.0);
-            RangeAttackTime = RangeAttackTime * (conf.attack_speed1 / 100.0);
+            BaseAttackTime = BaseAttackTime * conf.attack_speed1 * 0.01;
+            RangeAttackTime = RangeAttackTime * conf.attack_speed1 * 0.01;
         }
         if (BaseAttackTime != cInfo->BaseAttackTime || RangeAttackTime != cInfo->RangeAttackTime) {
             creature->SetBaseAttackTime(BASE_ATTACK, BaseAttackTime);
@@ -17936,7 +17957,7 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             armor = conf.armor;
         }
         if (conf.armor1 > 0 && conf.armor1 != 100) {
-            armor = armor * (conf.armor1 / 100.0);
+            armor = armor * conf.armor1 * 0.01;
         }
         creature->SetStatFlatModifier(UNIT_MOD_ARMOR, BASE_VALUE, armor);
         //抗性
@@ -17955,12 +17976,12 @@ void AACenter::AA_ModifyCreature(Creature* creature, AA_Creature conf)
             resistance6 = conf.resistance;
         }
         if (conf.resistance1 > 0 && conf.resistance1 != 100) {
-            resistance1 = resistance1 * (conf.resistance1 / 100.0);
-            resistance2 = resistance2 * (conf.resistance1 / 100.0);
-            resistance3 = resistance3 * (conf.resistance1 / 100.0);
-            resistance4 = resistance4 * (conf.resistance1 / 100.0);
-            resistance5 = resistance5 * (conf.resistance1 / 100.0);
-            resistance6 = resistance6 * (conf.resistance1 / 100.0);
+            resistance1 = resistance1 * conf.resistance1 * 0.01;
+            resistance2 = resistance2 * conf.resistance1 * 0.01;
+            resistance3 = resistance3 * conf.resistance1 * 0.01;
+            resistance4 = resistance4 * conf.resistance1 * 0.01;
+            resistance5 = resistance5 * conf.resistance1 * 0.01;
+            resistance6 = resistance6 * conf.resistance1 * 0.01;
         }
         creature->SetStatFlatModifier(UNIT_MOD_RESISTANCE_HOLY, BASE_VALUE, float(resistance1));
         creature->SetStatFlatModifier(UNIT_MOD_RESISTANCE_FIRE, BASE_VALUE, float(resistance2));
@@ -23348,7 +23369,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     damage_tmp = fmval_count > 0 ? fmval_count : damage_tmp;
 
                     if (conf.health_spell > 0) {
-                        damage_tmp *= (conf.health_spell / 100.0);
+                        damage_tmp = damage_tmp * conf.health_spell * 0.01;
                     }
                 }
                 else if (isDot) {
@@ -23362,7 +23383,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                     damage_tmp = fmval_count > 0 ? fmval_count : damage_tmp;
 
                     if (conf.damage_dot > 0) {
-                        damage_tmp *= (conf.damage_dot / 100.0);
+                        damage_tmp = damage_tmp * conf.damage_dot * 0.01;
                     }
                 }
                 else {
@@ -23377,7 +23398,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                         damage_tmp = fmval_count > 0 ? fmval_count : damage_tmp;
 
                         if (conf.damage_spell > 0) {
-                            damage_tmp *= (conf.damage_spell / 100.0);
+                            damage_tmp = damage_tmp * conf.damage_spell* 0.01;
                         }
                     }
                     else {
@@ -23393,7 +23414,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                         damage_tmp = fmval_count > 0 ? fmval_count : damage_tmp;
 
                         if (conf.damage > 0) {
-                            damage_tmp *= (conf.damage / 100.0);
+                            damage_tmp = damage_tmp * conf.damage* 0.01;
                         }
                     }
                 }
@@ -23515,12 +23536,12 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
         if (isPVP) {
             if (isHeal) {
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 205) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 205) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 205) * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害减少
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 211) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 211) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 211) * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
@@ -23536,7 +23557,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(unit);
                 if (conf.class1 > 0) {
                     if (conf.zlshbl > 0) {
-                        damage_tmp = damage_tmp * (conf.zlshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.zlshbl * 0.01;
                     }
                     if (conf.zlshxx > 0 && damage_tmp <= conf.zlshxx) {
                         damage_tmp = conf.zlshxx;
@@ -23548,7 +23569,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //宠物，治疗伤害
                 if (conf_pet.id > 0) {
                     if (conf_pet.zlshbl > 0) {
-                        damage_tmp = damage_tmp * (conf_pet.zlshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.zlshbl * 0.01;
                     }
                     if (conf_pet.zlshsx > 0 && damage_tmp > conf_pet.zlshsx) {
                         damage_tmp = conf_pet.zlshsx;
@@ -23559,7 +23580,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP物理伤害增加百分比
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 201) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 201) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 201) * 0.01);
                 }
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP物理伤害增加
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 200) > 0) {
@@ -23571,7 +23592,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 207) > 0) {
                     uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 207);
                     damage = damage > 100 ? 100 : damage;
-                    damage_tmp -= (damage_tmp * (damage / 100.0));
+                    damage_tmp -= (damage_tmp * damage * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到物理伤害减少
@@ -23589,7 +23610,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 203) > 0) {
-                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 203) / 100.0);
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 203) * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
@@ -23601,7 +23622,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 209) > 0) {
                     uint32 damage1 = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 209);
                     damage1 = damage1 > 100 ? 100 : damage1;
-                    damage_tmp -= (damage_tmp * (damage1 / 100.0));
+                    damage_tmp -= (damage_tmp * damage1 * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害减少
@@ -23620,7 +23641,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             if (conf.class1 > 0) {
                 if (!aaCenter.AA_IsSpell_Mofa(spellInfo)) {
                     if (conf.ptshbl > 0) {
-                        damage_tmp *= (conf.ptshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.ptshbl * 0.01;
                     }
                     if (conf.ptshxx > 0 && damage_tmp <= (conf.ptshxx * 0.5)) {
                         damage_tmp = (conf.ptshxx * 0.5);
@@ -23631,7 +23652,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 }
                 else {
                     if (conf.jnshbl > 0) {
-                        damage_tmp *= (conf.jnshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.jnshbl * 0.01;
                     }
                     if (conf.jnshxx > 0 && damage_tmp <= conf.jnshxx) {
                         damage_tmp = conf.jnshxx;
@@ -23645,7 +23666,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             if (conf_pet.id > 0) {
                 if (!aaCenter.AA_IsSpell_Mofa(spellInfo)) {
                     if (conf_pet.ptshbl > 0) {
-                        damage_tmp *= (conf_pet.ptshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.ptshbl * 0.01;
                     }
                     if (conf_pet.ptshsx > 0 && damage_tmp > (conf_pet.ptshsx * 0.5)) {
                         damage_tmp = (conf_pet.ptshsx * 0.5);
@@ -23653,7 +23674,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 }
                 else {
                     if (conf_pet.jnshbl > 0) {
-                        damage_tmp *= (conf_pet.jnshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.jnshbl * 0.01;
                     }
                     if (conf_pet.jnshsx > 0 && damage_tmp > conf_pet.jnshsx) {
                         damage_tmp = conf_pet.jnshsx;
@@ -23663,7 +23684,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             //aawow 职业属性平衡 pvp受伤百分比
             conf = aaCenter.AA_GetPlayerStatConfWithMap(victim);
             if (conf.jianshangpvp != 0 && conf.jianshangpvp != 100) {
-                damage_tmp *= (conf.jianshangpvp * 0.01);
+                damage_tmp = damage_tmp * conf.jianshangpvp * 0.01;
             }
 
             //宠物，pvp受伤百分比
@@ -23671,7 +23692,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 AA_Pet conf_pet = aaCenter.aa_pets[victim->aa_pet_id];
                 if (conf_pet.id > 0) {
                     if (conf_pet.jianshangpvp != 0 && conf_pet.jianshangpvp != 100) {
-                        damage_tmp *= (conf_pet.jianshangpvp * 0.01);
+                        damage_tmp = damage_tmp * conf_pet.jianshangpvp * 0.01;
                     }
                 }
             }
@@ -23681,12 +23702,12 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //觉醒属性，PVE魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是怪物 = PVE魔法伤害增加
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 305) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 305) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 305) * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是怪物 = PVE受到魔法伤害减少
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 311) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 311) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 311) * 0.01);
                 }
                 //觉醒属性，PVE魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是怪物 = PVE魔法伤害增加
@@ -23702,7 +23723,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 AA_Player_Stats_Conf conf = aaCenter.AA_GetPlayerStatConfWithMap(unit);
                 if (conf.class1 > 0) {
                     if (conf.czlshbl > 0) {
-                        damage_tmp = damage_tmp * (conf.czlshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.czlshbl * 0.01;
                     }
                     if (conf.zlshxx > 0 && damage_tmp <= conf.zlshxx) {
                         damage_tmp = conf.zlshxx;
@@ -23714,7 +23735,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //宠物,治疗伤害
                 if (conf_pet.id > 0) {
                     if (conf_pet.czlshbl > 0) {
-                        damage_tmp = damage_tmp * (conf_pet.czlshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.czlshbl * 0.01;
                     }
                     if (conf_pet.zlshsx > 0 && damage_tmp > conf_pet.zlshsx) {
                         damage_tmp = conf_pet.zlshsx;
@@ -23725,7 +23746,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP物理魔法增加百分比
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 301) > 0) {
-                    damage_tmp += (damage_tmp * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 301) / 100.0));
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 301) * 0.01);
                 }
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 300) > 0) {
@@ -23737,7 +23758,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 307) > 0) {
                     uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 307);
                     damage = damage > 100 ? 100 : damage;
-                    damage_tmp -= (damage_tmp * (damage / 100.0));
+                    damage_tmp -= (damage_tmp * damage * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害减少
@@ -23755,7 +23776,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
                 if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 303) > 0) {
-                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 303) / 100.0);
+                    damage_tmp += (damage_tmp * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 303) * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //攻击者-玩家或仆从，被攻击者是人物 = PVP魔法伤害增加
@@ -23767,7 +23788,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 309) > 0) {
                     uint32 damage1 = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 309);
                     damage1 = damage1 > 100 ? 100 : damage1;
-                    damage_tmp -= (damage_tmp * (damage1 / 100.0));
+                    damage_tmp -= (damage_tmp * damage1 * 0.01);
                 }
                 //觉醒属性，PVP魔法伤害增加-攻击目标
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害减少
@@ -23786,7 +23807,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             if (conf.class1 > 0) {
                 if (!aaCenter.AA_IsSpell_Mofa(spellInfo)) {
                     if (conf.cptshbl > 0) {
-                        damage_tmp *= (conf.cptshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.cptshbl * 0.01;
                     }
                     if (conf.ptshxx > 0 && damage_tmp <= (conf.ptshxx * 0.5)) {
                         damage_tmp = (conf.ptshxx * 0.5);
@@ -23797,7 +23818,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 }
                 else {
                     if (conf.cjnshbl > 0) {
-                        damage_tmp *= (conf.cjnshbl / 100.0);
+                        damage_tmp = damage_tmp * conf.cjnshbl * 0.01;
                     }
                     if (conf.jnshxx > 0 && damage_tmp <= conf.jnshxx) {
                         damage_tmp = conf.jnshxx;
@@ -23811,7 +23832,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             if (conf_pet.id > 0) {
                 if (!aaCenter.AA_IsSpell_Mofa(spellInfo)) {
                     if (conf_pet.cptshbl > 0) {
-                        damage_tmp *= (conf_pet.cptshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.cptshbl * 0.01;
                     }
                     if (conf_pet.ptshsx > 0 && damage_tmp > (conf_pet.ptshsx * 0.5)) {
                         damage_tmp = (conf_pet.ptshsx * 0.5);
@@ -23819,7 +23840,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 }
                 else {
                     if (conf_pet.cjnshbl > 0) {
-                        damage_tmp *= (conf_pet.cjnshbl / 100.0);
+                        damage_tmp = damage_tmp * conf_pet.cjnshbl * 0.01;
                     }
                     if (conf_pet.jnshsx > 0 && damage_tmp > conf_pet.jnshsx) {
                         damage_tmp = conf_pet.jnshsx;
@@ -23829,7 +23850,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
             //aawow 职业属性平衡 pve受伤百分比
             conf = aaCenter.AA_GetPlayerStatConfWithMap(victim);
             if (conf.jianshangpve != 0 && conf.jianshangpve != 100) {
-                damage_tmp *= (conf.jianshangpve * 0.01);
+                damage_tmp = damage_tmp * conf.jianshangpve * 0.01;
             }
 
             //宠物，pve受伤百分比
@@ -23837,7 +23858,7 @@ void AACenter::AA_ModifyDamage(Unit* unit, Unit* victim, uint32& damage_tmp, Spe
                 AA_Pet conf_pet = aaCenter.aa_pets[victim->aa_pet_id];
                 if (conf_pet.id > 0) {
                     if (conf_pet.jianshangpve != 0 && conf_pet.jianshangpve != 100) {
-                        damage_tmp *= (conf_pet.jianshangpve * 0.01);
+                        damage_tmp = damage_tmp * conf_pet.jianshangpve * 0.01;
                     }
                 }
             }
@@ -23890,7 +23911,7 @@ void AACenter::AA_ModifyZhenshi(Unit* unit, Unit* victim, uint32& damage_tmp, Sp
                 {
                     uint32 chanceMax = aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 230);
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 229) > 0 && chanceMax > 0) {
-                        uint32 qiege = victim->GetMaxHealth() * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 229) / 100;
+                        uint32 qiege = victim->GetMaxHealth() * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 229) * 0.01;
                         zhenshi = zhenshi + qiege;
                     }
                 }
@@ -23913,7 +23934,7 @@ void AACenter::AA_ModifyZhenshi(Unit* unit, Unit* victim, uint32& damage_tmp, Sp
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 329) > 0 && chanceMax > 0) {
                         uint32 chanceVal = rand() % 100;
                         if (chanceVal < chanceMax) {
-                            uint32 qiege = victim->GetMaxHealth() * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 329) / 100;
+                            uint32 qiege = victim->GetMaxHealth() * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 329) * 0.01;
                             zhenshi = zhenshi + qiege;
                         }
                     }
@@ -23990,7 +24011,7 @@ void AACenter::AA_ModifyZhenshi(Unit* unit, Unit* victim, uint32& damage_tmp, Sp
                     conf = aaCenter.aa_creatures[c->aa_id];
                 }
                 if (conf.jianshang_mf != 0 && conf.jianshang_mf != 100) {
-                    damage_tmp *= (conf.jianshang_mf / 100.0);
+                    damage_tmp = damage_tmp * conf.jianshang_mf * 0.01;
                 }
                 if (conf.qiege == 1 || (victim->GetOwner() && victim->GetOwner()->ToPlayer())) {
                     damage_tmp += zhenshi;
@@ -24015,7 +24036,7 @@ void AACenter::AA_ModifyZhenshi(Unit* unit, Unit* victim, uint32& damage_tmp, Sp
                     conf = aaCenter.aa_creatures[c->aa_id];
                 }
                 if (conf.jianshang_wl != 0 && conf.jianshang_wl != 100) {
-                    damage_tmp *= (conf.jianshang_wl / 100.0);
+                    damage_tmp = damage_tmp * conf.jianshang_wl * 0.01;
                 }
                 if (conf.qiege == 1 || (victim->GetOwner() && victim->GetOwner()->ToPlayer())) {
                     damage_tmp += zhenshi;

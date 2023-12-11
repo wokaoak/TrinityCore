@@ -1,4 +1,4 @@
-﻿/*
+/*
  * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ bool LootStoreItem::Roll(bool rate, Player const* personalLooter) const
         _chance += itemChance;
     }
     else {
-        _chance = _chance * (itemChance / 100.0);
+        _chance = _chance * itemChance * 0.01;
     }
 
     if (_chance >= 100.0f)
@@ -476,7 +476,7 @@ LootStoreItem const* LootTemplate::LootGroup::Roll(uint16 lootMode, Player const
                     _chance += itemChance;
                 }
                 else {
-                    _chance *= ((itemChance + 100.0) / 100.0);
+                    _chance = _chance *(itemChance + 100.0) * 0.01;
                 }
             }
 

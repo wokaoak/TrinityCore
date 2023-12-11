@@ -1503,7 +1503,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 xixue = xixue + aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 212);
             }
             if (aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 213) > 0) {
-                uint32 v = damage * (aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 213) / 100.0);
+                uint32 v = damage * aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 213) * 0.01;
                 xixue = xixue + v;
             }
             //魔法伤害
@@ -1518,7 +1518,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害反弹百分比
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 221) > 0) {
                     //反弹伤害，被攻击者反弹给攻击者
-                    Unit::DealDamage(victim, attacker, damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 221) / 100.0), nullptr, SPELL_DIRECT_DAMAGE, spellProto->GetSchoolMask(), nullptr, true, true);
+                    Unit::DealDamage(victim, attacker, damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 221) * 0.01, nullptr, SPELL_DIRECT_DAMAGE, spellProto->GetSchoolMask(), nullptr, true, true);
                 }
             }
             else { //物理伤害
@@ -1532,7 +1532,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害反弹百分比
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 219) > 0) {
                     //反弹伤害，被攻击者反弹给攻击者
-                    Unit::DealDamage(victim, attacker, damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 219) / 100.0), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, true, true);
+                    Unit::DealDamage(victim, attacker, damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 219) * 0.01, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, true, true);
                 }
             }
         }
@@ -1541,13 +1541,13 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 xixue = xixue + aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 312);
             }
             if (aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 313) > 0) {
-                uint32 v = damage * (aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 313) / 100.0);
+                uint32 v = damage * aaCenter.AA_FindMapValueUint32(attacker->aa_fm_values, 313) * 0.01;
                 xixue = xixue + v;
             }
             //副本pve吸血
             if (attacker->GetMap()->IsDungeon()) {
                 if (float value = aaCenter.aa_world_confs[47].value1) {
-                    xixue = xixue + (damage * (value / 100.0));
+                    xixue = xixue + damage * value * 0.01;
                 }
             }
             //魔法伤害
@@ -1562,7 +1562,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害反弹百分比
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 321) > 0) {
                     //反弹伤害，被攻击者反弹给攻击者
-                    Unit::DealDamage(victim, attacker, damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 321) / 100.0), nullptr, SPELL_DIRECT_DAMAGE, spellProto->GetSchoolMask(), nullptr, true, true);
+                    Unit::DealDamage(victim, attacker, damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 321) * 0.01, nullptr, SPELL_DIRECT_DAMAGE, spellProto->GetSchoolMask(), nullptr, true, true);
                 }
             }
             else { //物理伤害
@@ -1576,7 +1576,7 @@ bool Unit::HasBreakableByDamageCrowdControlAura(Unit* excludeCasterChannel) cons
                 //被攻击者-玩家或仆从，攻击者是人物 = PVP受到魔法伤害反弹百分比
                 if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 319) > 0) {
                     //反弹伤害，被攻击者反弹给攻击者
-                    Unit::DealDamage(victim, attacker, damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 319) / 100.0), nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, true, true);
+                    Unit::DealDamage(victim, attacker, damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 319) * 0.01, nullptr, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, nullptr, true, true);
                 }
             }
         }
@@ -1743,7 +1743,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                     if (victim && unit && unit->IsAlive() && victim->IsAlive()) {
                         if (isPVP) {
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) > 0) {
-                                crit_bonus += (crit_bonus * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) / 100.0));
+                                crit_bonus += (crit_bonus * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 216) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 216) * 0.5;
@@ -1754,7 +1754,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 226) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 226);
                                 damage = damage > 100 ? 100 : damage;
-                                crit_bonus -= (crit_bonus * (damage / 100.0));
+                                crit_bonus -= (crit_bonus * damage * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 225) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 225) * 0.5;
@@ -1770,7 +1770,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             //觉醒属性，PVE魔法伤害增加-攻击目标
                             //攻击者-玩家或机器人，被攻击者是怪物 = PVE魔法暴击伤害增加
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) > 0) {
-                                crit_bonus += (crit_bonus * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) / 100.0));
+                                crit_bonus += (crit_bonus * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 316) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 316) * 0.5;
@@ -1781,7 +1781,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 326) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 326);
                                 damage = damage > 100 ? 100 : damage;
-                                crit_bonus -= (crit_bonus * (damage / 100.0));
+                                crit_bonus -= (crit_bonus * damage * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 325) > 0) {
                                 uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 325) * 0.5;
@@ -1840,7 +1840,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                     if (victim && unit && unit->IsAlive() && victim->IsAlive()) {
                         if (isPVP) {
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 215) > 0) {
-                                damage += (damage * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 215) / 100.0));
+                                damage += (damage * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 215) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 214) > 0) {
                                 damage += aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 214);
@@ -1848,7 +1848,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             //觉醒属性，PVP魔法伤害增加-攻击目标
                             //被攻击者-玩家或机器人，攻击者是人物 = PVP受到魔法暴击伤害减少
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 224) > 0) {
-                                damage -= (damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 224) / 100.0));
+                                damage -= (damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 224) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 223) > 0) {
                                 damage -= aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 223);
@@ -1858,7 +1858,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             //觉醒属性，PVE魔法伤害增加-攻击目标
                             //攻击者-玩家或机器人，被攻击者是怪物 = PVE魔法暴击伤害增加
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 315) > 0) {
-                                damage += (damage * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 315) / 100.0));
+                                damage += (damage * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 315) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 314) > 0) {
                                 damage += aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 314);
@@ -1866,7 +1866,7 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                             //觉醒属性，PVP魔法伤害增加-攻击目标
                             //被攻击者-玩家或机器人，攻击者是怪物 = PVE受到魔法暴击伤害减少
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 324) > 0) {
-                                damage -= (damage * (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 324) / 100.0));
+                                damage -= (damage * aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 324) * 0.01);
                             }
                             if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 323) > 0) {
                                 damage -= aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 323);
@@ -2060,7 +2060,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
             if (unit && victim && unit->IsAlive() && victim->IsAlive()) {
                 if (isPVP) {
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) > 0) {
-                        damageInfo->Damage += (damageInfo->Damage * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) / 100.0));
+                        damageInfo->Damage += (damageInfo->Damage * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 217) * 0.01);
                     }
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 216) > 0) {
                         uint32 damage = aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 216) * 0.5;
@@ -2071,7 +2071,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
                     if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 226) > 0) {
                         uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 226);
                         damage = damage > 100 ? 100 : damage;
-                        damageInfo->Damage -= (damageInfo->Damage * (damage / 100.0));
+                        damageInfo->Damage -= (damageInfo->Damage * damage * 0.01);
                     }
                     if (aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 225) > 0) {
                         uint32 damage = aaCenter.AA_FindMapValueUint32(victim->aa_fm_values, 225) * 0.5;
@@ -2087,7 +2087,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, CalcDamageInfo* damageInfo, Weapon
                     //觉醒属性，PVE魔法伤害增加-攻击目标
                     //攻击者-玩家或机器人，被攻击者是怪物 = PVE魔法暴击伤害增加
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) > 0) {
-                        damageInfo->Damage += (damageInfo->Damage * (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) / 100.0));
+                        damageInfo->Damage += (damageInfo->Damage * aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 317) * 0.01);
                     }
                     if (aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 316) > 0) {
                         uint32 damage = aaCenter.AA_FindMapValueUint32(unit->aa_fm_values, 316) * 0.5;
@@ -10108,7 +10108,7 @@ float Unit::GetTotalStatValue(Stats stat) const
             value *= juexing;
             if (conf.class1 > 0) {
                 if (conf.liliangbl > 0) {
-                    value = value * (conf.liliangbl / 100.0);
+                    value = value * conf.liliangbl * 0.01;
                 }
                 if (conf.liliangxx > 0 && value <= conf.liliangxx) {
                     value = conf.liliangxx;
@@ -10122,7 +10122,7 @@ float Unit::GetTotalStatValue(Stats stat) const
             value *= juexing;
             if (conf.class1 > 0) {
                 if (conf.minjiebl > 0) {
-                    value = value * (conf.minjiebl / 100.0);
+                    value = value * conf.minjiebl * 0.01;
                 }
                 if (conf.minjiexx > 0 && value <= conf.minjiexx) {
                     value = conf.minjiexx;
@@ -10136,7 +10136,7 @@ float Unit::GetTotalStatValue(Stats stat) const
             value *= juexing;
             if (conf.class1 > 0) {
                 if (conf.nailibl > 0) {
-                    value = value * (conf.nailibl / 100.0);
+                    value = value * conf.nailibl * 0.01;
                 }
                 if (conf.nailixx > 0 && value <= conf.nailixx) {
                     value = conf.nailixx;
@@ -10150,7 +10150,7 @@ float Unit::GetTotalStatValue(Stats stat) const
             value *= juexing;
             if (conf.class1 > 0) {
                 if (conf.zhilibl > 0) {
-                    value = value * (conf.zhilibl / 100.0);
+                    value = value * conf.zhilibl * 0.01;
                 }
                 if (conf.zhilixx > 0 && value <= conf.zhilixx) {
                     value = conf.zhilixx;
@@ -10236,7 +10236,7 @@ void Unit::UpdateResistances(uint32 school)
         if (conf.class1 > 0) {
             if (SpellSchools(school) == SPELL_SCHOOL_HOLY) {
                 if (conf.shenshengbl > 0) {
-                    value = value * (conf.shenshengbl / 100.0);
+                    value = value * conf.shenshengbl * 0.01;
                 }
                 if (conf.shenshengxx > 0 && value <= conf.shenshengxx) {
                     value = conf.shenshengxx;
@@ -10247,7 +10247,7 @@ void Unit::UpdateResistances(uint32 school)
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_FIRE) {
                 if (conf.huoyanbl > 0) {
-                    value = value * (conf.huoyanbl / 100.0);
+                    value = value * conf.huoyanbl * 0.01;
                 }
                 if (conf.huoyanxx > 0 && value <= conf.huoyanxx) {
                     value = conf.huoyanxx;
@@ -10258,7 +10258,7 @@ void Unit::UpdateResistances(uint32 school)
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_NATURE) {
                 if (conf.ziranbl > 0) {
-                    value = value * (conf.ziranbl / 100.0);
+                    value = value * conf.ziranbl * 0.01;
                 }
                 if (conf.ziranxx > 0 && value <= conf.ziranxx) {
                     value = conf.ziranxx;
@@ -10269,7 +10269,7 @@ void Unit::UpdateResistances(uint32 school)
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_FROST) {
                 if (conf.bingshuangbl > 0) {
-                    value = value * (conf.bingshuangbl / 100.0);
+                    value = value * conf.bingshuangbl * 0.01;
                 }
                 if (conf.bingshuangxx > 0 && value <= conf.bingshuangxx) {
                     value = conf.bingshuangxx;
@@ -10280,7 +10280,7 @@ void Unit::UpdateResistances(uint32 school)
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_SHADOW) {
                 if (conf.anyingbl > 0) {
-                    value = value * (conf.anyingbl / 100.0);
+                    value = value * conf.anyingbl * 0.01;
                 }
                 if (conf.anyingxx > 0 && value <= conf.anyingxx) {
                     value = conf.anyingxx;
@@ -10291,7 +10291,7 @@ void Unit::UpdateResistances(uint32 school)
             }
             else if (SpellSchools(school) == SPELL_SCHOOL_ARCANE) {
                 if (conf.aoshubl > 0) {
-                    value = value * (conf.aoshubl / 100.0);
+                    value = value * conf.aoshubl * 0.01;
                 }
                 if (conf.aoshuxx > 0 && value <= conf.aoshuxx) {
                     value = conf.aoshuxx;

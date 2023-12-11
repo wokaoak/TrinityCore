@@ -1642,8 +1642,8 @@ void Creature::UpdateLevelDependantStats()
     if (this->aa_id > 0) {
         AA_Creature conf = aaCenter.aa_creatures[this->aa_id];
         if (conf.damage > 0 && conf.damage != 100) {
-            weaponBaseMinDamage = weaponBaseMinDamage * (conf.damage / 100.0);
-            weaponBaseMaxDamage = weaponBaseMaxDamage * (conf.damage / 100.0);
+            weaponBaseMinDamage = weaponBaseMinDamage * conf.damage * 0.01;
+            weaponBaseMaxDamage = weaponBaseMaxDamage * conf.damage * 0.01;
         }
 
         aaCenter.AA_ModifyCreature(this, conf);
